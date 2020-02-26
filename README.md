@@ -8,10 +8,13 @@ matplotlib, numpy, lmfit(wrapper for scipy), PyQt5(Basicly PySide2), sympy and s
 In order to use this code a Python editor is needed. For big programming projects PyCharm is recommended, but if its just a small script sublime text 3 will also work.
 
 Install every package listed above using the python package installer called pip :
-      open cmd in windows
-      type: python pip install 'package_name'
-          without the ''
-      let everything install
+
+      -open cmd in windows
+      -type: python pip install 'package_name'
+          -without the ''
+      -let everything install
+
+
 
 Download content from GitHub and put it into one folder.
 Run the main.py script.
