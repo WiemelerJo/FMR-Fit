@@ -41,3 +41,8 @@ Temporarily plotting of fitted or externaly loaded parameters is also placed on 
 
 One can select the angle to view the fit together with the experimentally obtained points.
 By checking the box 'Change values' the parameters of the fit become changeable.
+
+# Additional things
+
+If you find a bug please got to the issues page and add an entry there, to explain what happend and where it happend.
+Also if you have new suggestions you want to add to the programm, feel free to write an entry in the implementations Todo list at the 'Projects' tab on github.
