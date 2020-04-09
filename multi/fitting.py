@@ -1,11 +1,15 @@
 import math as m
 import matplotlib.pyplot as plt 
 import numpy as np
+import globals
 from lmfit import Model
 from lmfit import Parameters
 
 def func(B,args):
 	return ((4*args[3]*args[1]**2*(3*args[0]*args[1]-4*args[0]*(B-args[2])**2-8*m.sqrt(3)*args[1]*(B-args[2])))/(m.sqrt(3)*(4*(B-args[2])**2+3*args[1]**2)**2))
+
+def linear(B,slope,offset):
+    return slope*B+offset
 
 def dyson1(B, alpha1, dB1, R1, A1):
     return ((4*A1*dB1**2*(3*alpha1*dB1-4*alpha1*(B-R1)**2-8*m.sqrt(3)*dB1*(B-R1)))/(m.sqrt(3)*(4*(B-R1)**2+3*dB1**2)**2))
@@ -40,44 +44,44 @@ class Fit(object):
     def combine(self,fit_num):
         global combined
         if fit_num == 1:
-            def combined(B, alpha1, dB1, R1, A1):
-                combi = dyson1(B, alpha1, dB1, R1, A1)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + linear(B,slope,offset)
                 return combi
         if fit_num == 2:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + linear(B,slope,offset)
                 return combi
         if fit_num == 3:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + linear(B,slope,offset)
                 return combi
         if fit_num == 4:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + linear(B,slope,offset)
                 return combi
         if fit_num == 5:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + linear(B,slope,offset)
                 return combi
         if fit_num == 6:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + linear(B,slope,offset)
                 return combi
         if fit_num == 7:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7) + linear(B,slope,offset)
                 return combi
         if fit_num == 8:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7, alpha8, dB8, R8, A8):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7) + dyson8(B, alpha8, dB8, R8, A8)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7, alpha8, dB8, R8, A8):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7) + dyson8(B, alpha8, dB8, R8, A8) + linear(B,slope,offset)
                 return combi
         if fit_num == 9:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7, alpha8, dB8, R8, A8, alpha9, dB9, R9, A9):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7) + dyson8(B, alpha8, dB8, R8, A8) + dyson9(B, alpha9, dB9, R9, A9)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7, alpha8, dB8, R8, A8, alpha9, dB9, R9, A9):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7) + dyson8(B, alpha8, dB8, R8, A8) + dyson9(B, alpha9, dB9, R9, A9) + linear(B,slope,offset)
                 return combi
         if fit_num == 10:
-            def combined(B, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7, alpha8, dB8, R8, A8, alpha9, dB9, R9, A9, alpha10, dB10, R10, A10):
-                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7) + dyson8(B, alpha8, dB8, R8, A8) + dyson9(B, alpha9, dB9, R9, A9) + dyson10(B, alpha10, dB10, R10, A10)
+            def combined(B, slope,offset, alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, alpha3, dB3, R3, A3, alpha4, dB4, R4, A4, alpha5, dB5, R5, A5 ,alpha6, dB6, R6, A6, alpha7, dB7, R7, A7, alpha8, dB8, R8, A8, alpha9, dB9, R9, A9, alpha10, dB10, R10, A10):
+                combi = dyson1(B, alpha1, dB1, R1, A1) + dyson2(B, alpha2, dB2, R2, A2) + dyson3(B, alpha3, dB3, R3, A3) + dyson4(B, alpha4, dB4, R4, A4) + dyson5(B, alpha5, dB5, R5, A5) + dyson6(B, alpha6, dB6, R6, A6) + dyson7(B, alpha7, dB7, R7, A7) + dyson8(B, alpha8, dB8, R8, A8) + dyson9(B, alpha9, dB9, R9, A9) + dyson10(B, alpha10, dB10, R10, A10) + linear(B,slope,offset)
                 return combi
 
     def set_model(self,fit_num):
@@ -90,27 +94,47 @@ class Fit(object):
         global paramsL
         paramsD = Parameters()
         paramsL = Parameters()
+
+        paramsD.add_many( 
+            ('slope',init_values[0], True, bound_min[0], bound_max[0], None, None),             
+            ('offset',init_values[1], True, bound_min[1], bound_max[1], None, None)
+            )
+        paramsL.add_many(  
+            ('slope',init_values[0], True, bound_min[0], bound_max[0], None, None),             
+            ('offset',init_values[1], True, bound_min[1], bound_max[1], None, None)
+            )     
+
         for numbers in range(1,fit_num+1):
             paramsD.add_many(
-            ('alpha'+str(numbers), init_values[4*(numbers-1)], True, bound_min[4*(numbers-1)], bound_max[4*(numbers-1)], None, None),
-            ('dB'+str(numbers),init_values[1+4*(numbers-1)], True, bound_min[1+4*(numbers-1)], bound_max[1+4*(numbers-1)], None, None),
-            ('R'+str(numbers),init_values[2+4*(numbers-1)], True, bound_min[2+4*(numbers-1)], bound_max[2+4*(numbers-1)], None, None),
-            ('A'+str(numbers),init_values[3+4*(numbers-1)], True, bound_min[3+4*(numbers-1)], bound_max[3+4*(numbers-1)], None, None)
+            ('alpha'+str(numbers), init_values[4*(numbers-1)+2], True, bound_min[4*(numbers-1)+2], bound_max[4*(numbers-1)+2], None, None),
+            ('dB'+str(numbers),init_values[1+4*(numbers-1)+2], True, bound_min[1+4*(numbers-1)+2], bound_max[1+4*(numbers-1)+2], None, None),
+            ('R'+str(numbers),init_values[2+4*(numbers-1)+2], True, bound_min[2+4*(numbers-1)+2], bound_max[2+4*(numbers-1)+2], None, None),
+            ('A'+str(numbers),init_values[3+4*(numbers-1)+2], True, bound_min[3+4*(numbers-1)+2], bound_max[3+4*(numbers-1)+2], None, None)
                 )
             paramsL.add_many(   
-            ('dB'+str(numbers),init_values[3*(numbers-1)], True, bound_min[3*(numbers-1)], bound_max[3*(numbers-1)], None, None),
-            ('R'+str(numbers),init_values[1+3*(numbers-1)], True, bound_min[1+3*(numbers-1)], bound_max[1+3*(numbers-1)], None, None),
-            ('A'+str(numbers),init_values[2+3*(numbers-1)], True, bound_min[2+3*(numbers-1)], bound_max[2+3*(numbers-1)], None, None),
+            ('dB'+str(numbers),init_values[3*(numbers-1)+2], True, bound_min[3*(numbers-1)+2], bound_max[3*(numbers-1)+2], None, None),
+            ('R'+str(numbers),init_values[1+3*(numbers-1)+2], True, bound_min[1+3*(numbers-1)+2], bound_max[1+3*(numbers-1)+2], None, None),
+            ('A'+str(numbers),init_values[2+3*(numbers-1)+2], True, bound_min[2+3*(numbers-1)+2], bound_max[2+3*(numbers-1)+2], None, None),
                 )
-        '''
-        paramsD.add_many(   
-            ('offset',2, True, -5, 15, None, None),
-            ('slope',0.5, True, -9, 9, None, None)
-            )
-        paramsL.add_many(   
-            ('offset',2, True, -5, 15, None, None),
-            ('slope',0.5, True, -9, 9, None, None)
-            )'''
+
+    def give_params(self,fit_num, parameter_table_names_final,index_model,Adata2,Bdata2, j_min,j):
+        temp_paras = []
+        if index_model == 2:
+            #Lorentz
+            parameter_names = parameter_table_names_final
+            i = 0
+            for name in parameter_names:
+                temp_paras.append(float(self.fit(index_model,Adata2,Bdata2, j_min,j).params[str(name)].value))
+                i += 1 
+        else:
+            #Dyson
+            parameter_names = parameter_table_names_final
+            i = 0
+            for name in parameter_names:
+                temp_paras.append(float(self.fit(index_model,Adata2,Bdata2, j_min,j).params[str(name)].value))
+                i += 1 
+        return temp_paras
+
 
     def fit(self,index_model,Adata2,Bdata2, j_min,j):
         if index_model == 2:

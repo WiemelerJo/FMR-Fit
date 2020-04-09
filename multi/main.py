@@ -6,6 +6,7 @@ import numpy as np
 import time
 import math as m
 import threading
+import globals
 from lmfit import Model
 from lmfit import Parameters
 from lmfit import Parameter
@@ -46,20 +47,27 @@ parameter_table_names_L_final = []
 parameter_Table_names_D = ['alpha','dB','R','A']
 parameter_table_names_D_final = []
 
-#Arrays to set the default values in SpinBox. For L: [dB1, R1, A1, dB2, R2, A2, ...]
+#Arrays to set the default values in SpinBox. #For linear: [slope, offset]
+                                             #For L: [dB1, R1, A1, dB2, R2, A2, ...]
                                              #For D: [alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, ....]
+default_linear = [0.5,1]
 default_values_L = [0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7]
 default_values_D = [0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7]
 
-#Arrays for default Boundaries. For L: [dB1_min,dB1_max, R1_min,R1_max, ...]
+#Arrays for default Boundaries. For Linear : [slope_min,slope_max, offset_min,offset_max] 
+                               #For L: [dB1_min,dB1_max, R1_min,R1_max, ...]
                                #For D: [alpha1_min,alpha1_max, dB1_min,dB1_max ...]
+default_boundaries_linear_min = [-5, -5]
+default_boundaries_linear_max = [5, 5]
 default_boundaries_L_min = [0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0]
 default_boundaries_L_max = [0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15]
 default_boundaries_D_min = [0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0]
 default_boundaries_D_max = [1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15]
 
-#Arrays for step size for spinbox L: [dB, R, A]
+#Arrays for step size for spinbox Linear: [slope, offset]
+                                 #L: [dB, R, A]
                                  #D: [alpha,dB, R, A]
+default_stepsize_linear = [0.1, 0.1]
 default_stepsize_L = [0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1]
 default_stepsize_D = [0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1]
 
@@ -282,6 +290,8 @@ class MyForm(QMainWindow):
         self.make_parameter_table()
 
     def make_parameter_table(self):
+        global parameter_table_names_D_final
+        global parameter_table_names_L_final
         #create the table to edit the parameters
 
         #cleaning up
@@ -293,44 +303,92 @@ class MyForm(QMainWindow):
         try:
             if index_model == 2:
                 #table for lorentz
-                self.ui.Parameter_table.setRowCount(fit_num*3)
+                self.ui.Parameter_table.setRowCount(fit_num*3+2)
+                self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values slope
+                self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
+                self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
+                self.ui.Parameter_table.setCellWidget(0, 3, QCheckBox()) # use for fitting ?  
+
+                self.ui.Parameter_table.setCellWidget(1, 0, QDoubleSpinBox()) # initial_values offset
+                self.ui.Parameter_table.setCellWidget(1, 1, QDoubleSpinBox()) # bound_min
+                self.ui.Parameter_table.setCellWidget(1, 2, QDoubleSpinBox()) # bound_max
+                self.ui.Parameter_table.setCellWidget(1, 3, QCheckBox()) # use for fitting ? 
+
+                parameter_table_names_L_final.append('slope')
+                parameter_table_names_L_final.append('offset')   
+
                 for index in range(1,fit_num+1):
                     for list_index in parameter_Table_names_L:
                         parameter_table_names_L_final.append(list_index+str(index))
+
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_L_final)
+
                 for zähler in range(0,fit_num*3):
-                    self.ui.Parameter_table.setCellWidget(zähler, 0, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 1, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 2, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 3, QCheckBox())
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox()) # initial_values
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 1, QDoubleSpinBox()) # bound_min
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox()) # bound_max
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 3, QCheckBox()) # use for fitting ? 
+
                 self.set_default_values()
+
             else:
                 #table for dyson (at the moment!)
-                self.ui.Parameter_table.setRowCount(fit_num*4)
+                self.ui.Parameter_table.setRowCount(fit_num*4+2)
+                self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values
+                self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
+                self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
+                self.ui.Parameter_table.setCellWidget(0, 3, QCheckBox()) # use for fitting ?  
+
+                self.ui.Parameter_table.setCellWidget(1, 0, QDoubleSpinBox()) # initial_values offset
+                self.ui.Parameter_table.setCellWidget(1, 1, QDoubleSpinBox()) # bound_min
+                self.ui.Parameter_table.setCellWidget(1, 2, QDoubleSpinBox()) # bound_max
+                self.ui.Parameter_table.setCellWidget(1, 3, QCheckBox()) # use for fitting ? 
+
+                parameter_table_names_D_final.append('slope')
+                parameter_table_names_D_final.append('offset')  
+
                 for index in range(1,fit_num+1):
                     for list_index in parameter_Table_names_D:
                         parameter_table_names_D_final.append(list_index+str(index))
+
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_D_final)
+
                 for zähler in range(0,fit_num*4):
-                    self.ui.Parameter_table.setCellWidget(zähler, 0, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 1, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 2, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 3, QCheckBox())
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox())
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 1, QDoubleSpinBox())
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox())
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 3, QCheckBox())
+
                 self.set_default_values()
         except:
                 print('Error in make_parameter_table')
                 #Assuming a lorentz func as long as index_model hasnt been set
-                self.ui.Parameter_table.setRowCount(fit_num*3)
-                self.ui.Parameter_table.setRowCount(fit_num*3)
+                self.ui.Parameter_table.setRowCount(fit_num*3+2)
+                self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values slope
+                self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
+                self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
+                self.ui.Parameter_table.setCellWidget(0, 3, QCheckBox()) # use for fitting ?  
+
+                self.ui.Parameter_table.setCellWidget(1, 0, QDoubleSpinBox()) # initial_values offset
+                self.ui.Parameter_table.setCellWidget(1, 1, QDoubleSpinBox()) # bound_min
+                self.ui.Parameter_table.setCellWidget(1, 2, QDoubleSpinBox()) # bound_max
+                self.ui.Parameter_table.setCellWidget(1, 3, QCheckBox()) # use for fitting ? 
+
+                parameter_table_names_L_final.append('slope')
+                parameter_table_names_L_final.append('offset')   
+
                 for index in range(1,fit_num+1):
                     for list_index in parameter_Table_names_L:
                         parameter_table_names_L_final.append(list_index+str(index))
+
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_L_final)
+
                 for zähler in range(0,fit_num*3):
-                    self.ui.Parameter_table.setCellWidget(zähler, 0, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 1, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 2, QDoubleSpinBox())
-                    self.ui.Parameter_table.setCellWidget(zähler, 3, QCheckBox())
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox()) # initial_values
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 1, QDoubleSpinBox()) # bound_min
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox()) # bound_max
+                    self.ui.Parameter_table.setCellWidget(zähler+2, 3, QCheckBox()) # use for fitting ? 
+
                 self.set_default_values()
 
     def test_table(self):
@@ -340,32 +398,66 @@ class MyForm(QMainWindow):
         #sets default values into the spinbox according to arrays defined in the beginning
         #try:
         if index_model == 2:
+            for zahl in range(0,2):
+                self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
+
+                self.ui.Parameter_table.cellWidget(zahl,0).setMinimum(-100)
+                self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-100)
+                self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-100)
+
+                self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
+                self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
+                self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
+
+                self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
+                self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
+                self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
+
             for zähler in range(0,fit_num*3):
-                self.ui.Parameter_table.cellWidget(zähler,0).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler,1).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler,2).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
 
-                self.ui.Parameter_table.cellWidget(zähler,0).setSingleStep(default_stepsize_L[zähler])
-                self.ui.Parameter_table.cellWidget(zähler,1).setSingleStep(default_stepsize_L[zähler])
-                self.ui.Parameter_table.cellWidget(zähler,2).setSingleStep(default_stepsize_L[zähler]) 
+                self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_L[zähler])
+                self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_L[zähler])
+                self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_L[zähler]) 
 
-                self.ui.Parameter_table.cellWidget(zähler,0).setValue(default_values_L[zähler]) # Inital value
-                self.ui.Parameter_table.cellWidget(zähler,1).setValue(default_boundaries_L_min[zähler]) # Boundary minimum
-                self.ui.Parameter_table.cellWidget(zähler,2).setValue(default_boundaries_L_max[zähler]) # Boundary maximum
+                self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_L[zähler]) # Inital value
+                self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_L_min[zähler]) # Boundary minimum
+                self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_L_max[zähler]) # Boundary maximum
 
         else:
+            for zahl in range(0,2):
+                self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
+
+                self.ui.Parameter_table.cellWidget(zahl,0).setMinimum(-100)
+                self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-100)
+                self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-100)
+
+                self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
+                self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
+                self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
+
+                self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
+                self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
+                self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
+
             for zähler in range(0,fit_num*4):
-                self.ui.Parameter_table.cellWidget(zähler,0).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler,1).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler,2).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
+                self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
 
-                self.ui.Parameter_table.cellWidget(zähler,0).setSingleStep(default_stepsize_D[zähler])
-                self.ui.Parameter_table.cellWidget(zähler,1).setSingleStep(default_stepsize_D[zähler])
-                self.ui.Parameter_table.cellWidget(zähler,2).setSingleStep(default_stepsize_D[zähler]) 
+                self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_D[zähler])
+                self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_D[zähler])
+                self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_D[zähler]) 
 
-                self.ui.Parameter_table.cellWidget(zähler,0).setValue(default_values_D[zähler]) # Inital value
-                self.ui.Parameter_table.cellWidget(zähler,1).setValue(default_boundaries_D_min[zähler]) # Boundary minimum
-                self.ui.Parameter_table.cellWidget(zähler,2).setValue(default_boundaries_D_max[zähler]) # Boundary maximum
+                self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_D[zähler]) # Inital value
+                self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_D_min[zähler]) # Boundary minimum
+                self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_D_max[zähler]) # Boundary maximum
         #except:
          #   print('Error in set_default_values')
 
@@ -643,28 +735,48 @@ class MyForm(QMainWindow):
         global default_boundaries_D_min
         global default_boundaries_D_max
         '''
-        #function that reloads the parameter arrays
+
+        #function that reloads the parameter arrays, grabbs the values from the widgets and writes them into the arrays which are used for fitting
 
         if index_model == 2:
-            for zähler in range(0,fit_num*3):
+            for zahl in range(0,2):
+                init_lin = self.ui.Parameter_table.cellWidget(zahl,0).value() # Inital value linear
+                bounds_min_lin = self.ui.Parameter_table.cellWidget(zahl,1).value() # Boundary minimum linear
+                bounds_max_lin = self.ui.Parameter_table.cellWidget(zahl,2).value() # Boundary maximum linear
+                default_linear[zahl] = init_lin
+                default_boundaries_linear_min[zahl] = bounds_min_lin
+                default_boundaries_linear_max[zahl] = bounds_max_lin
+            for zähler in range(2,fit_num*3+2):
                 init = self.ui.Parameter_table.cellWidget(zähler,0).value() # Inital value
                 bounds_min = self.ui.Parameter_table.cellWidget(zähler,1).value() # Boundary minimum
                 bounds_max =self.ui.Parameter_table.cellWidget(zähler,2).value() # Boundary maximum
                 default_values_L[zähler] = init
                 default_boundaries_L_min[zähler] = bounds_min
                 default_boundaries_L_max[zähler] = bounds_max
+            init_values = default_linear + default_values_L
+            bound_min = default_boundaries_linear_min + default_boundaries_L_min
+            bound_max = default_boundaries_linear_max + default_boundaries_L_max
 
         else:
-            for zähler in range(0,fit_num*4):
+            for zahl in range(0,2):
+                init_lin = self.ui.Parameter_table.cellWidget(zahl,0).value() # Inital value linear
+                bounds_min_lin = self.ui.Parameter_table.cellWidget(zahl,1).value() # Boundary minimum linear
+                bounds_max_lin = self.ui.Parameter_table.cellWidget(zahl,2).value() # Boundary maximum linear
+                default_linear[zahl] = init_lin
+                default_boundaries_linear_min[zahl] = bounds_min_lin
+                default_boundaries_linear_max[zahl] = bounds_max_lin
+
+            for zähler in range(2,fit_num*4+2):
                 init = self.ui.Parameter_table.cellWidget(zähler,0).value() # Inital value
                 bounds_min = self.ui.Parameter_table.cellWidget(zähler,1).value() # Boundary minimum
                 bounds_max = self.ui.Parameter_table.cellWidget(zähler,2).value() # Boundary maximum
-                default_values_D[zähler] = init
-                default_boundaries_D_min[zähler] = bounds_min
-                default_boundaries_D_max[zähler] = bounds_max
-        init_values = default_values_D
-        bound_min = default_boundaries_D_min
-        bound_max = default_boundaries_D_max
+                default_values_D[zähler-2] = init
+                default_boundaries_D_min[zähler-2] = bounds_min
+                default_boundaries_D_max[zähler-2] = bounds_max
+            init_values = default_linear + default_values_D
+            bound_min = default_boundaries_linear_min + default_boundaries_D_min
+            bound_max = default_boundaries_linear_max + default_boundaries_D_max
+
         self.ui.label_show_init_params.setText('Parameter set!')
         if int(self.ui.select_datanumber.text()) > len(Adata)-1:
             i = len(Adata)-1
@@ -673,27 +785,26 @@ class MyForm(QMainWindow):
             i = int(self.ui.select_datanumber.text())
 
     def set_fit_params(self):
+        global temp_paras
+        global default_values_D
+        global default_values_L
+        global default_linear
         if fit_value == 'fitted':
             if index_model == 2:
-                for zähler in range(0,fit_num*3):
-                    self.ui.Parameter_table.cellWidget(zähler,0).setValue(default_values_L[zähler]) # Inital value
-                    self.ui.Parameter_table.cellWidget(zähler,1).setValue(default_boundaries_L_min[zähler]) # Boundary minimum
-                    self.ui.Parameter_table.cellWidget(zähler,2).setValue(default_boundaries_L_max[zähler]) # Boundary maximum
+                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num, parameter_table_names_final,index_model,Adata2,Bdata2, j_min,j)
             else:
-                for zähler in range(0,fit_num*4):
-                    self.ui.Parameter_table.cellWidget(zähler,0).setValue(default_values_D[zähler]) # Inital value
-                    self.ui.Parameter_table.cellWidget(zähler,1).setValue(default_boundaries_D_min[zähler]) # Boundary minimum
-                    self.ui.Parameter_table.cellWidget(zähler,2).setValue(default_boundaries_D_max[zähler]) # Boundary maximum
-
-            self.ui.init_alpha.setValue(float(self.fit(i).params['alpha'].value))
-            self.ui.init_dB.setValue(float(self.fit(i).params['dB'].value))
-            self.ui.init_R.setValue(float(self.fit(i).params['R'].value))
-            self.ui.init_A.setValue(float(self.fit(i).params['A'].value))
-            self.ui.init_slope.setValue(float(self.fit(i).params['slope'].value))
-            self.ui.init_offset.setValue(float(self.fit(i).params['offset'].value))
-            self.set_init_params()
+                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j)
+            self.refresh_inital_parameter()
         else:
             self.plot()
+
+    def refresh_inital_parameter(self):
+        if index_model == 2:
+            for zähler in range(0,fit_num*3+2):
+                self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
+        else:
+            for zähler in range(0,fit_num*4+2):
+                self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
 
 
 if __name__=="__main__":
