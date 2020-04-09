@@ -1,9 +1,9 @@
 import math as m
 import matplotlib.pyplot as plt 
 import numpy as np
-import globals
 from lmfit import Model
 from lmfit import Parameters
+from PyQt5.QtCore import *
 
 def func(B,args):
 	return ((4*args[3]*args[1]**2*(3*args[0]*args[1]-4*args[0]*(B-args[2])**2-8*m.sqrt(3)*args[1]*(B-args[2])))/(m.sqrt(3)*(4*(B-args[2])**2+3*args[1]**2)**2))
@@ -121,25 +121,71 @@ class Fit(object):
         temp_paras = []
         if index_model == 2:
             #Lorentz
-            parameter_names = parameter_table_names_final
-            i = 0
-            for name in parameter_names:
-                temp_paras.append(float(self.fit(index_model,Adata2,Bdata2, j_min,j).params[str(name)].value))
-                i += 1 
+            for name, param in result.params.items():
+                temp_paras.append(float(param.value))
         else:
             #Dyson
-            parameter_names = parameter_table_names_final
-            i = 0
-            for name in parameter_names:
-                temp_paras.append(float(self.fit(index_model,Adata2,Bdata2, j_min,j).params[str(name)].value))
-                i += 1 
+            for name, param in result.params.items():
+                temp_paras.append(float(param.value))
         return temp_paras
 
+    def give_param_table(self,index_model):
+        if index_model == 2:
+            return paramsL
+        else:
+            return paramsD
+
+    def give_model(self,index_model):
+        if index_model == 2:
+            print('Nothing here yet')
+        else:
+            return model
 
     def fit(self,index_model,Adata2,Bdata2, j_min,j):
+        global result
         if index_model == 2:
             print('Fitting Lorentz')
             result = model.fit(Adata2[j_min:j], paramsL, B=Bdata2[j_min:j])
         else:
             result = model.fit(Adata2[j_min:j], paramsD, B=Bdata2[j_min:j])
         return result
+
+
+class Worker(QThread):
+    #This class is responsible for the dynamic fit by creating a so called worker to do the job
+    i_signal = pyqtSignal() # signal for the processBar
+    error_dynfit_signal = pyqtSignal() # error signal
+    def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,dyn_value,i_min,i_max,j,j_min,exceptions):
+        QThread.__init__(self)
+
+    def fit(self,l):
+        Bdata2 = Bdata[l]
+        Adata2 = Adata[l]
+        result = dmodel.fit(Adata2[j_min:j], params, B=Bdata2[j_min:j])
+        return result
+
+    def run(self):
+        global dyn_fit_value
+        names = []
+        temp_paras = []
+
+        #clean up, just in case
+        names.clear()
+        temp_paras.clear()
+        '''
+        for name, param in result.params.items():
+            names.append('{:7s}'.format(name))  #create an array of names for the header
+            temp_paras.append(float(param.value))   #create the first parameters to save into the .dat file
+        '''
+        Parameter_list = np.zeros(shape=(i_max,len(temp_paras)))
+        for l in range(i_min,i_max):
+            if l not in exceptions:
+                self.i_signal.emit()
+                temp_paras.clear()
+                temp_result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #this is the fit
+                for name, param in temp_result.params.items():
+                    temp_paras.append(float(param.value))  
+                    paramsD[name].set(value=param.value,min=None,max=None)
+                Parameter_list[l] = temp_paras
+        np.savetxt(filename,Parameter_list,delimiter='\t',newline='\n', header=name)
+        dyn_fit_value = 'fitted'

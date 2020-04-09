@@ -6,7 +6,6 @@ import numpy as np
 import time
 import math as m
 import threading
-import globals
 from lmfit import Model
 from lmfit import Parameters
 from lmfit import Parameter
@@ -17,6 +16,7 @@ from Fitprogramm import *
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 from fitting import Fit
+#from fitting import Worker
 from parameter_plot import Params_Plot
 
 def dyson_func(B, alpha, dB, R, A, slope, offset):
@@ -39,7 +39,6 @@ colormap = 'inferno'
 tick_number = 256 #Max = 10000, bereits 1000 erstellt 200 MB file!
 excep_append = []
 exceptions = []
-Parameter_list = []
 fit_num = 1
 
 parameter_Table_names_L = ['dB','R','A']
@@ -61,7 +60,7 @@ default_boundaries_linear_min = [-5, -5]
 default_boundaries_linear_max = [5, 5]
 default_boundaries_L_min = [0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0]
 default_boundaries_L_max = [0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15]
-default_boundaries_D_min = [0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0, 0,0.0001,0,0]
+default_boundaries_D_min = [0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001]
 default_boundaries_D_max = [1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15]
 
 #Arrays for step size for spinbox Linear: [slope, offset]
@@ -73,60 +72,47 @@ default_stepsize_D = [0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1
 
 
 class Worker(QThread):
-    #This class is responsible for the dynamic fit
-    i_signal = pyqtSignal()
-    error_dynfit_signal = pyqtSignal()
-    def __init__(self,Bdata2,Adata2,Winkeldata,i,fileName,dyn_value,params,i_min,i_max,dmodel,j,j_min,exceptions):
+    #This class is responsible for the dynamic fit by creating a so called worker to do the job
+    i_signal = pyqtSignal() # signal for the processBar
+    error_dynfit_signal = pyqtSignal() # error signal
+    def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,dyn_value,i_min,i_max,j,j_min,exceptions):
         QThread.__init__(self)
 
-    def fit(self,l):
+    def fit(self,l,params_table,model):
         Bdata2 = Bdata[l]
         Adata2 = Adata[l]
-        result = dmodel.fit(Adata2[j_min:j], params, B=Bdata2[j_min:j])
-        return result
+        result_dyn = model.fit(Adata2[j_min:j], params_table, B=Bdata2[j_min:j])
+        return result_dyn
 
     def run(self):
         global dyn_fit_value
-        f = open(fileName,'w')
-        if dyn_value == 'single':
-            text = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(float(self.fit(i).params['alpha'].value),
-                float(self.fit(i).params['dB'].value),
-                float(self.fit(i).params['R'].value),
-                float(self.fit(i).params['A'].value),
-                float(self.fit(i).params['slope'].value),
-                float(self.fit(i).params['offset'].value),
-                float(Winkeldata[i][0])
-                )
-            f.write('Alpha\tLinewidth-dB[T]\tResonance-field[T]\tAmplitude[Arb.Units]\tSlope\tOffset\tAngle[Degree]\n' + text)
-        else:
-            Palpha = params['alpha']
-            PdB = params['dB']
-            PR = params['R']
-            PA = params['A']
-            Poffset = params['offset']
-            Pslope = params['slope']
-            f.write('Alpha\tLinewidth-dB[T]\tResonance-field[T]\tAmplitude[Arb.Units]\tSlope\tOffset\tAngle[Degree]\n')
-            Parameter_list.clear()
-            for l in range(i_min,i_max):
-                if l not in exceptions:    
-                    self.i_signal.emit()
-                    a = float(self.fit(l).params['alpha'].value)
-                    db = float(self.fit(l).params['dB'].value)
-                    R = float(self.fit(l).params['R'].value)
-                    A = float(self.fit(l).params['A'].value)
-                    slope = float(self.fit(l).params['slope'].value)
-                    offset = float(self.fit(l).params['offset'].value)
-                    text = a,db,R,A,slope,offset,float(Winkeldata[l][0])
-                    f.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n'.format(a,db,R,A,slope,offset,float(Winkeldata[l][0])))
-                    Parameter_list.append(text)
-                    Palpha.set(value=a,min=None,max=None)
-                    PdB.set(value=db,min=None,max=None)
-                    PR.set(value=R,min=None,max=None)
-                    PA.set(value=A,min=None,max=None)
-                    Pslope.set(value=slope,min=None,max=None)
-                    Poffset.set(value=offset,min=None,max=None)
+        names = []
+        temp_paras = []
+        params_table = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_param_table(index_model)
+        model = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_model(index_model)
+
+        #clean up, just in case
+        names.clear()
+        temp_paras.clear()
+
+        for name, param in result.params.items():
+            names.append('{:7s}'.format(name))  #create an array of names for the header
+            temp_paras.append(float(param.value))  #create the first parameters to save into the .dat file
+        temp_paras.append(float(Winkeldata[0][0]))
+
+        Parameter_list = np.zeros(shape=(i_max,len(temp_paras)))
+        for l in range(i_min,i_max):
+            if l not in exceptions:
+                self.i_signal.emit()
+                temp_paras.clear()
+                temp_result = self.fit(l,params_table,model) #this is the fit
+                for name, param in temp_result.params.items():
+                    temp_paras.append(float(param.value))  
+                    params_table[name].set(value=param.value,min=None,max=None)
+                temp_paras.append(float(Winkeldata[l][0]))
+                Parameter_list[l] = temp_paras
+        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='names\n  test \n test2')
         dyn_fit_value = 'fitted'
-        f.close()
 
 class ColourPlot(QThread):
     def __init__(self,X,Y,Z,colormap,tick_number,D_min,D_max,exceptions):
@@ -392,7 +378,9 @@ class MyForm(QMainWindow):
                 self.set_default_values()
 
     def test_table(self):
-        print(self.ui.Parameter_table.cellWidget(2,2).value())
+        for name, param in result.params.items():
+            print(float(param.value))
+
 
     def set_default_values(self):
         #sets default values into the spinbox according to arrays defined in the beginning
@@ -659,22 +647,25 @@ class MyForm(QMainWindow):
     def plot(self):
         global fit_value
         global dyn_value
+        global result
         dyn_value = 'single'
         self.model_type(False)
         if data_value == 'loaded':
             self.set_init_params()
+            result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j)
             fit_value = 'fitted'
+            self.ui.progressBar.setMaximum(i_max-len(exceptions))
             #self.ui.label_params_output.setText(self.fit(i).fit_report())
             plt.ion()
             plt.cla()
             plt.clf()
             plt.plot(Bdata2[j_min:j],Adata2[j_min:j], '-b', label='Experimental data')
             if index_model == 2:
-                self.ui.label_params_output.setText(Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j).fit_report())
-                plt.plot(Bdata2[j_min:j],Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j).best_fit, 'r--', label='Best fit Lorentz')
+                self.ui.label_params_output.setText(result.fit_report())
+                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Lorentz')
             else:
-                self.ui.label_params_output.setText(Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j).fit_report())
-                plt.plot(Bdata2[j_min:j],Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j).best_fit, 'r--', label='Best fit Dyson')
+                self.ui.label_params_output.setText(result.fit_report())
+                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Dyson')
             plt.xlabel('Magnetic Field [T]',fontsize=12)
             plt.ylabel('Amplitude [Arb. U.]',fontsize=12)
             plt.legend(fontsize=12)
@@ -715,8 +706,7 @@ class MyForm(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;Text Files (*.dat)",options=options)
         if fileName:
-
-            self.get_thread = Worker(Bdata2,Adata2,Winkeldata,i,fileName,dyn_value,params,i_min,i_max,dmodel,j,j_min,exceptions)
+            self.get_thread = Worker(index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,dyn_value,i_min,i_max,j,j_min,exceptions)
             self.get_thread.start()
             self.get_thread.i_signal.connect(self.update_bar)
             self.get_thread.error_dynfit_signal.connect(self.error_msg)
@@ -791,7 +781,7 @@ class MyForm(QMainWindow):
         global default_linear
         if fit_value == 'fitted':
             if index_model == 2:
-                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num, parameter_table_names_final,index_model,Adata2,Bdata2, j_min,j)
+                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j)
             else:
                 temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j)
             self.refresh_inital_parameter()
