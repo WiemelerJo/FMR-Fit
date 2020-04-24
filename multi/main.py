@@ -6,15 +6,16 @@ import numpy as np
 import time
 import math as m
 import threading
+from datetime import datetime
 from lmfit import Model
 from lmfit import Parameters
 from lmfit import Parameter
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction,QFileDialog,QProgressBar,QDoubleSpinBox, QCheckBox
-from PyQt5.QtCore import *
+from PyQt5.QtCore import QThread, pyqtSignal
 from Fitprogramm import *
-#from fbs_runtime.application_context.PyQt5 import ApplicationContext
-from matplotlib.colors import BoundaryNorm
-from matplotlib.ticker import MaxNLocator
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
+#from matplotlib.colors import BoundaryNorm
+#from matplotlib.ticker import MaxNLocator
 from fitting import Fit
 #from fitting import Worker
 from parameter_plot import Params_Plot
@@ -96,22 +97,23 @@ class Worker(QThread):
         temp_paras.clear()
 
         for name, param in result.params.items():
-            names.append('{:7s}'.format(name))  #create an array of names for the header
+            names.append('{}'.format(name))  #create an array of names for the header
             temp_paras.append(float(param.value))  #create the first parameters to save into the .dat file
         temp_paras.append(float(Winkeldata[0][0]))
 
         Parameter_list = np.zeros(shape=(i_max,len(temp_paras)))
         for l in range(i_min,i_max):
             if l not in exceptions:
-                self.i_signal.emit()
-                temp_paras.clear()
+                self.i_signal.emit() # update progressbar
+                temp_paras.clear() # clear temp_paras for each iteration
                 temp_result = self.fit(l,params_table,model) #this is the fit
                 for name, param in temp_result.params.items():
                     temp_paras.append(float(param.value))  
                     params_table[name].set(value=param.value,min=None,max=None)
                 temp_paras.append(float(Winkeldata[l][0]))
                 Parameter_list[l] = temp_paras
-        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='names\n  test \n test2')
+        now = datetime.now()
+        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='This data was fitted {}  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),exceptions,names))
         dyn_fit_value = 'fitted'
 
 class ColourPlot(QThread):
@@ -188,12 +190,14 @@ class MyForm(QMainWindow):
             excep_append = list(map(int, x.split(',')))
    
     def append_dropped_points(self):
+        #as something is added to the exceptions, this is beeing called
         global excep_append
         excep_append.append(str(self.ui.Scroll_Bar_dropped_points.value()))
         text = ','.join(map(str, excep_append))
         self.ui.Dropped_points_edit.setText(str(text))
 
     def Exceptions(self):
+        # takes the string input from the exception text field inside the GUI and seperates the entries into a list
         global exceptions
         global excep_append
         print('Hallo')
@@ -201,6 +205,7 @@ class MyForm(QMainWindow):
         exceptions = list(map(int, x.split(',')))
 
     def change_parameter_angle(self):
+        # has to be reworked 
         global W
         W = self.ui.parameter_data_select.value()
         self.select_fitted_params()
@@ -279,6 +284,7 @@ class MyForm(QMainWindow):
         global parameter_table_names_D_final
         global parameter_table_names_L_final
         #create the table to edit the parameters
+        #uses for loops to create the rows
 
         #cleaning up
         self.ui.Parameter_table.clearContents()
@@ -384,6 +390,7 @@ class MyForm(QMainWindow):
 
     def set_default_values(self):
         #sets default values into the spinbox according to arrays defined in the beginning
+        #it basicly is just a for loop in order to cath every row of the table according to the numbver of lines
         #try:
         if index_model == 2:
             for zahl in range(0,2):
@@ -469,27 +476,27 @@ class MyForm(QMainWindow):
         fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
         if fname[0]:
             try:
-                D = np.loadtxt(fname[0],dtype='float')
+                D = np.loadtxt(fname[0],dtype='float') #Load Data 
             except:
-                D = np.loadtxt(fname[0],dtype='float',skiprows=2)
-            counts = np.unique(D[:,2], return_counts=True)
+                D = np.loadtxt(fname[0],dtype='float',skiprows=2)   #Load Data with header file
+            counts = np.unique(D[:,2], return_counts=True)  #get the int count of different numbers at row 3
             counts1 = counts[1]
             n = counts1[0]
-            chunksize = int(len(D[:,0])/n)
-            self.ui.Drop_Scalebar.setMaximum(n-1)
-            i = 0
+            chunksize = int(len(D[:,0])/n)  #set chunk size for example 1024,2048,4096
+            self.ui.Drop_Scalebar.setMaximum(n-1)   #sets the maximum of the scroll bar for dropped points
+            i = 0   # laufvariable = 0
             i_min = 0
             i_max = int(chunksize)
-            D_min = min(D[:,3])
-            D_max = max(D[:,3])
+            D_min = min(D[:,3]) #for old colourplot
+            D_max = max(D[:,3]) #for old colourplot
 
-            Bdata = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize)
-            Winkeldata = np.split(np.array(D[:,2]),chunksize)
-            Adata = np.split(np.array(D[:,3]),chunksize)
-            X = np.split(np.true_divide(np.array(D[:,1]),10),chunksize)
-            Y = np.split(np.array(D[:,2]),chunksize)
-            Z = np.split(np.array(D[:,3]),chunksize)
-            if int(self.ui.select_datanumber.text()) > len(Adata)-1:
+            Bdata = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize)  #List of sublists, magnetic field
+            Winkeldata = np.split(np.array(D[:,2]),chunksize)   #List of sublists, angle data
+            Adata = np.split(np.array(D[:,3]),chunksize)    #List of sublists, amplitude data
+            X = np.split(np.true_divide(np.array(D[:,1]),10),chunksize) #List of sublists, magnetic field, for colour plot
+            Y = np.split(np.array(D[:,2]),chunksize)    #List of sublists, angle data, for colour plot
+            Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot
+            if int(self.ui.select_datanumber.text()) > len(Adata)-1: #catches errors, slider for datanumber
                 i = len(Adata)-1
                 self.ui.select_datanumber.setText(str(i))
             else:
@@ -518,18 +525,15 @@ class MyForm(QMainWindow):
             self.plot_data()
         else:
             self.openFileDialog()
-
-    def fit(self,i):
-        print('Help')
-        #result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j).fit()
-        #result = dmodel.fit(Adata2[j_min:j], params, B=Bdata2[j_min:j])
-        return result
         
     def error_msg(self):
         self.ui.label_params_output.setText('No data fitted yet!')
         print('Fehler irgendwo, bestimmt im dyn fit')
 
     def parameter_plot(self):
+
+        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
+
         if dyn_fit_value == 'fitted':
             Params_Plot(Parameter_list,'eigen')
         elif parameter_value == 'loaded':
@@ -540,12 +544,18 @@ class MyForm(QMainWindow):
             Params_Plot(Parameter_from_text,'eigen')
 
     def load_parameter_plot(self):
+
+        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
+
         print('Loading from file!')
         params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
         if params_fname[0]:
             Params_Plot(params_fname,'load')
 
     def load_parameters_to_text(self):
+
+        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
+
         global Parameter_from_text
         global parameter_value
         params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
@@ -555,6 +565,8 @@ class MyForm(QMainWindow):
 
 
     def select_fitted_params(self):
+        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
+
         global Parameter_from_text
         global parameter_value
         global data_value
@@ -593,6 +605,9 @@ class MyForm(QMainWindow):
             print('Data is not yet assigned!!')
 
     def changeing_parameters(self):
+
+        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
+
         global Parameter_from_text
         global parameter_value
         global data_value
@@ -634,6 +649,9 @@ class MyForm(QMainWindow):
 
 
     def plot_fitted_params(self,x,y,W,alpha_list,db_list,R_list,A_list,slope_list,offset_list):
+
+        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
+
         self.ui.parameter_plot_widget.canvas.ax.clear()
         self.ui.parameter_plot_widget.canvas.ax.set_xlabel('Magnetic Field [T]')
         self.ui.parameter_plot_widget.canvas.ax.set_ylabel('Amplitude [Arb. U.]')
@@ -651,21 +669,21 @@ class MyForm(QMainWindow):
         dyn_value = 'single'
         self.model_type(False)
         if data_value == 'loaded':
-            self.set_init_params()
-            result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j)
+            self.set_init_params()  #gets the initial parameters from the GUI
+            result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
             fit_value = 'fitted'
             self.ui.progressBar.setMaximum(i_max-len(exceptions))
             #self.ui.label_params_output.setText(self.fit(i).fit_report())
-            plt.ion()
-            plt.cla()
-            plt.clf()
-            plt.plot(Bdata2[j_min:j],Adata2[j_min:j], '-b', label='Experimental data')
+            plt.ion()   #enable user actions in plot
+            plt.cla()   #plot clean up
+            plt.clf()   #plot clean up
+            plt.plot(Bdata2[j_min:j],Adata2[j_min:j], '-b', label='Experimental data')  #plot original data
             if index_model == 2:
-                self.ui.label_params_output.setText(result.fit_report())
-                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Lorentz')
+                self.ui.label_params_output.setText(result.fit_report())    #print fit report Lorentz
+                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Lorentz')  #plot fit data Lorentz
             else:
-                self.ui.label_params_output.setText(result.fit_report())
-                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Dyson')
+                self.ui.label_params_output.setText(result.fit_report())    #print fit report Dyson
+                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Dyson')    #plot fit data Dyson
             plt.xlabel('Magnetic Field [T]',fontsize=12)
             plt.ylabel('Amplitude [Arb. U.]',fontsize=12)
             plt.legend(fontsize=12)
@@ -676,6 +694,7 @@ class MyForm(QMainWindow):
             self.ui.label_params_output.setText('Please select a fitting model first')
 
     def plot_data(self):
+        #Plots data into a matplotlib canvas created in "pyqtgraph" skript, its the vieport for the measurement
         self.ui.plotView.canvas.ax.clear()
         x=Bdata2[j_min:j]
         y=Adata2[j_min:j]
@@ -685,20 +704,26 @@ class MyForm(QMainWindow):
         self.ui.plotView.canvas.draw()
 
     def plot_in_colour(self):
+        #the most recent colour plotting routine
         from mayavi import mlab
         global tick_number
         global colormap
-        tick_number = self.ui.colour_tick_edit.text()
-        colormap = self.ui.colour_map_edit.text()
+        tick_number = self.ui.colour_tick_edit.text() #not needed for mayavi
+        colormap = self.ui.colour_map_edit.text()   #can also be changed in mayavi UI
         mlab.mesh(X,Y,Z, colormap=colormap)
+        mlab.xlabel('Magnetic Field')
+        mlab.ylabel('Angle')
         mlab.show()
         '''self.get_thread2 = ColourPlot(X,Y,Z,colormap,tick_number,D_min,D_max,exceptions)
         self.get_thread2.start()'''
 
     def Exit(self):
-        sys.exit()
+        sys.exit()  #Obviously not the start
 
     def saveFileDialog(self):
+        #started when Dyn Fit button pressed
+        #gets the filename for saving
+        #then starts the worker responsible for dyn fit
         global p
         global fileName
         p=0
@@ -712,6 +737,7 @@ class MyForm(QMainWindow):
             self.get_thread.error_dynfit_signal.connect(self.error_msg)
 
     def set_init_params(self):
+        #as the name say's
         global params
         global i
         global init_values
@@ -733,16 +759,20 @@ class MyForm(QMainWindow):
                 init_lin = self.ui.Parameter_table.cellWidget(zahl,0).value() # Inital value linear
                 bounds_min_lin = self.ui.Parameter_table.cellWidget(zahl,1).value() # Boundary minimum linear
                 bounds_max_lin = self.ui.Parameter_table.cellWidget(zahl,2).value() # Boundary maximum linear
+
                 default_linear[zahl] = init_lin
                 default_boundaries_linear_min[zahl] = bounds_min_lin
                 default_boundaries_linear_max[zahl] = bounds_max_lin
+
             for zähler in range(2,fit_num*3+2):
                 init = self.ui.Parameter_table.cellWidget(zähler,0).value() # Inital value
                 bounds_min = self.ui.Parameter_table.cellWidget(zähler,1).value() # Boundary minimum
                 bounds_max =self.ui.Parameter_table.cellWidget(zähler,2).value() # Boundary maximum
+
                 default_values_L[zähler] = init
                 default_boundaries_L_min[zähler] = bounds_min
                 default_boundaries_L_max[zähler] = bounds_max
+
             init_values = default_linear + default_values_L
             bound_min = default_boundaries_linear_min + default_boundaries_L_min
             bound_max = default_boundaries_linear_max + default_boundaries_L_max
@@ -752,6 +782,7 @@ class MyForm(QMainWindow):
                 init_lin = self.ui.Parameter_table.cellWidget(zahl,0).value() # Inital value linear
                 bounds_min_lin = self.ui.Parameter_table.cellWidget(zahl,1).value() # Boundary minimum linear
                 bounds_max_lin = self.ui.Parameter_table.cellWidget(zahl,2).value() # Boundary maximum linear
+
                 default_linear[zahl] = init_lin
                 default_boundaries_linear_min[zahl] = bounds_min_lin
                 default_boundaries_linear_max[zahl] = bounds_max_lin
@@ -760,14 +791,17 @@ class MyForm(QMainWindow):
                 init = self.ui.Parameter_table.cellWidget(zähler,0).value() # Inital value
                 bounds_min = self.ui.Parameter_table.cellWidget(zähler,1).value() # Boundary minimum
                 bounds_max = self.ui.Parameter_table.cellWidget(zähler,2).value() # Boundary maximum
+
                 default_values_D[zähler-2] = init
                 default_boundaries_D_min[zähler-2] = bounds_min
                 default_boundaries_D_max[zähler-2] = bounds_max
+
             init_values = default_linear + default_values_D
             bound_min = default_boundaries_linear_min + default_boundaries_D_min
             bound_max = default_boundaries_linear_max + default_boundaries_D_max
 
         self.ui.label_show_init_params.setText('Parameter set!')
+
         if int(self.ui.select_datanumber.text()) > len(Adata)-1:
             i = len(Adata)-1
             self.ui.select_datanumber.setText(str(i))
@@ -775,20 +809,22 @@ class MyForm(QMainWindow):
             i = int(self.ui.select_datanumber.text())
 
     def set_fit_params(self):
+        #reading names is adviced
         global temp_paras
         global default_values_D
         global default_values_L
         global default_linear
         if fit_value == 'fitted':
             if index_model == 2:
-                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j)
+                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz
             else:
-                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j)
-            self.refresh_inital_parameter()
+                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Dyson
+            self.refresh_inital_parameter() #Well ... guess what it does
         else:
-            self.plot()
+            self.plot() #....
 
     def refresh_inital_parameter(self):
+        # Oh hey still here?
         if index_model == 2:
             for zähler in range(0,fit_num*3+2):
                 self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
@@ -798,10 +834,10 @@ class MyForm(QMainWindow):
 
 
 if __name__=="__main__":
-    #appctxt = ApplicationContext()
+    #appctxt = ApplicationContext() #
     app = QApplication(sys.argv)
     w = MyForm()
     w.show()
-    #exit_code = appctxt.app.exec_()
-    #sys.exit(exit_code)
+    #exit_code = appctxt.app.exec_()  #
+    #sys.exit(exit_code) #
     sys.exit(app.exec_())
