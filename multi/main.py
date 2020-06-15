@@ -713,6 +713,7 @@ class MyForm(QMainWindow):
         mlab.mesh(X,Y,Z, colormap=colormap)
         mlab.xlabel('Magnetic Field')
         mlab.ylabel('Angle')
+        mlab.colorbar(title='Amplitude [Arb. Units]')
         mlab.show()
         '''self.get_thread2 = ColourPlot(X,Y,Z,colormap,tick_number,D_min,D_max,exceptions)
         self.get_thread2.start()'''

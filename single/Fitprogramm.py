@@ -287,6 +287,7 @@ class Ui_MainWindow(object):
         self.A_con_max = QtWidgets.QDoubleSpinBox(self.Fit_tab)
         self.A_con_max.setLocale(QtCore.QLocale(QtCore.QLocale.C, QtCore.QLocale.AnyCountry))
         self.A_con_max.setDecimals(4)
+        self.A_con_max.setMaximum(5000)
         self.A_con_max.setProperty("value", 15.0)
         self.A_con_max.setObjectName("A_con_max")
         self.horizontalLayout_4.addWidget(self.A_con_max)
