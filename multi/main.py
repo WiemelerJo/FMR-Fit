@@ -20,12 +20,12 @@ from fitting import Fit
 #from fitting import Worker
 from parameter_plot import Params_Plot
 
-def dyson_func(B, alpha, dB, R, A, slope, offset):
+'''def dyson_func(B, alpha, dB, R, A, slope, offset):
         return ((4*A*dB**2*(3*alpha*dB-4*alpha*(B-R)**2-8*m.sqrt(3)*dB*(B-R)))/(m.sqrt(3)*(4*(B-R)**2+3*dB**2)**2))+slope*B+offset
 
 def lorentz_func(B,dB, R, A, slope, offset):
     #return(-(A*(2*(B-dB)))/(m.pi*R**3*((B-dB**2)/(R**2)+1)**2))+slope*B+offset
-    return(-64*A*(B-R)/(9*dB*(1+(B-R)**2)/(dB*m.sqrt(3)/4)**2)**2+slope*B+offset)
+    return(-64*A*(B-R)/(9*dB*(1+(B-R)**2)/(dB*m.sqrt(3)/4)**2)**2+slope*B+offset)'''
 
 
 data_value = 'unloaded'
@@ -254,25 +254,9 @@ class MyForm(QMainWindow):
 
     def model_type(self,Bool):
         #selects the type of function used in the fit
-        global dmodel
         global index_model
         index_model = self.ui.comboBox_fit_model.currentIndex()
-        if index_model == 1:
-            if Bool == True:
-                print('Gaussian deriv. selected')
-            dmodel = Model(dyson_func)
-        elif index_model == 2:
-            if Bool == True:
-                print('Lorentzian deriv. selected')
-            dmodel = Model(lorentz_func)
-        elif index_model == 3:
-            if Bool == True:
-                print('Dyson deriv. selected')
-            dmodel = Model(dyson_func)
-        else:
-            if Bool == True:
-                print('Not supported')
-            dmodel = Model(dyson_func)
+
 
     def select_fit_number(self):
         #define the number of function that are beeing fitted

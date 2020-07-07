@@ -99,7 +99,7 @@ eq_halb_res = Eq(w**2,halb_res)
 #Formel der Resonanzfrequenz B_RES, Lösung [1] ist positive Lösung Funktion für Baselgia; Lösung [0] ist positive Lösung Funktion für Smit-Beljers-Suhl
 B_RES = solve(eq_halb_res,B)
 
-Bounds = [(0,2*m.pi),(0,3*m.pi)]    #Zum minimieren
+Bounds = [(0,2*m.pi),(0,3*m.pi),(0,2*m.pi)]    #Zum minimieren
 
 
 
@@ -124,16 +124,16 @@ def fit_funkt(phi_real,K2S,K2P,K4S,K4P,PHI_U):
     global PF1
     fkt = []
     P0 = B_RES.args[1]
-    PF = F.subs({g:consts[1],M:consts[2],mu0:consts[3],mub:consts[4],hbar:consts[5],gamma:consts[6],theta:consts[7],w:consts[8]}) 
-    P1 = P0.subs({g:consts[1],M:consts[2],mu0:consts[3],mub:consts[4],hbar:consts[5],gamma:consts[6],theta:consts[7],w:consts[8]})
+    PF = F.subs({g:consts[1],M:consts[2],mu0:consts[3],mub:consts[4],hbar:consts[5],gamma:consts[6],w:consts[8]}) 
+    P1 = P0.subs({g:consts[1],M:consts[2],mu0:consts[3],mub:consts[4],hbar:consts[5],gamma:consts[6],w:consts[8]})
     print(K2S,K2P,K4S,K4P)  
     for l,i in enumerate(phi_real):
-        start_Paras = [Angles_Start[0][l],Angles_Start[1][l]]
+        start_Paras = [Angles_Start[0][l],Angles_Start[1][l],Angles_Start[2][l]]
         P2 = P1.subs({phi:phi_real[l],K2s:K2S,K2p:K2P,K4s:K4S,K4p:K4P,phiU:PHI_U})
         PF1 = PF.subs({phi:phi_real[l],K2s:K2S,K2p:K2P,K4s:K4S,K4p:K4P,phiU:PHI_U,B:B_RANGE[l]})
         #print(P2)
         minim = minimize(minim_funktion,start_Paras,method = 'TNC')
-        P3 = P2.subs({thetaB:minim.x[0],phiB:minim.x[1]})
+        P3 = P2.subs({thetaB:minim.x[0],phiB:minim.x[1],theta:minim.x[2]})
         fkt.append(float(P3))
 
     #print(K2S)
@@ -223,6 +223,7 @@ Angles_Start = np.ndarray((2,len(phi_shifted)))
 for _,winkel in enumerate(phi_shifted):
     Angles_Start[0][_] = 5*m.pi/2
     Angles_Start[1][_] = winkel
+    Angles_Start[2][_] = m.pi/2
 '''
 
 Angles_Start = [[],[]]
@@ -250,6 +251,8 @@ model = Model(fit_funkt)
 
 it_while = 0
 start = time.time()
+
+'''
 while True:
     start_it = time.time()
     print('1. Starting iteration',it_while+1)
@@ -260,48 +263,19 @@ while True:
     #print('Die Summe von Eq und Phi_range',np.sum(EqAngles[1]-phi_shifted))
     B2_fkt = alt_fkt(B_2,phi_shifted)
     print('2.   ',abs(np.sum(B_1-B_2)))
-    ''' 
-    if abs(np.sum(B_1-B_2)) < maxBresDelta:
-        print('Finished after maxBresDelta was reached!. \nIt took,',it_while,'Iterations')
-        fkt_fur_fit = replace_for_ani_fit(phi_shifted,EqAngles[0],EqAngles[1])  #Erstelle Funktion für Fit
-        print('Now fitting and recalculating the eq angles!')        
-        ani_result = model.fit(B_RANGE, params_Fit, phi_real=phi_shifted) #Führe Fit durch
-
-        #Nun müssen die K´s in B1 gesetzt werden
-        gesamtWert_alt = params[0] + params[1] + params[2] + params[3] + params[4]
-        params[0] = ani_result.params['K2S'].value
-        params[1] = ani_result.params['K2P'].value
-        params[2] = ani_result.params['K4S'].value
-        params[3] = ani_result.params['K4P'].value
-        params[4] = ani_result.params['PHI_U'].value
-        params_Fit['K2S'].set(value=ani_result.params['K2S'].value,min=None,max=None)
-        params_Fit['K2P'].set(value=ani_result.params['K2P'].value,min=None,max=None)
-        params_Fit['K4S'].set(value=ani_result.params['K4S'].value,min=None,max=None)
-        params_Fit['K4P'].set(value=ani_result.params['K4P'].value,min=None,max=None)
-        params_Fit['PHI_U'].set(value=ani_result.params['PHI_U'].value,min=None,max=None)
-
-        gesamtWert_neu = params[0] + params[1] + params[2] + params[3] + params[4]
-        print('Alt vs Neu = ',gesamtWert_alt - gesamtWert_neu)
-        if abs(gesamtWert_alt - gesamtWert_neu) == 0:
-            break
-        B_origin = replace()
-
-        end_it = time.time()
-        print('Iteration',it_while,'took :',end_it-start_it,'seconds')
-    '''
     if it_while == 2:
         end_it = time.time()
         print('Iteration',it_while,'took :',end_it-start_it,'seconds')
         print('Reached maximum iterations')
         break
     else:
-        Angles_Start = np.ndarray((2,len(phi_shifted)))
+        Angles_Start = np.ndarray((3,len(phi_shifted)))
         Angles_Start = np.copy(EqAngles)
 
     it_while += 1
     end_it = time.time()
     print('Iteration',it_while,'took :',end_it-start_it,'seconds')
-
+'''
 #print(EqAngles[:,1])
 end = time.time()
 print('ENDE !!!!! It took ',end-start,'seconds to calculate')
