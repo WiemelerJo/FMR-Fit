@@ -141,6 +141,9 @@ class Fit(object):
         else:
             return model
 
+    def give_combined(self):
+        return combined
+
     def fit(self,index_model,Adata2,Bdata2, j_min,j):
         global result
         if index_model == 2:

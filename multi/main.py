@@ -6,6 +6,7 @@ import numpy as np
 import time
 import math as m
 import threading
+import Functions
 from datetime import datetime
 from lmfit import Model
 from lmfit import Parameters
@@ -27,19 +28,23 @@ def lorentz_func(B,dB, R, A, slope, offset):
     #return(-(A*(2*(B-dB)))/(m.pi*R**3*((B-dB**2)/(R**2)+1)**2))+slope*B+offset
     return(-64*A*(B-R)/(9*dB*(1+(B-R)**2)/(dB*m.sqrt(3)/4)**2)**2+slope*B+offset)'''
 
+def define_value_opt():
+    global value_opt
+    value_opt = dict()
+    value_opt['data'] = 'unloaded' #data_value
+    value_opt['fit'] = 'unfitted' #fit_value
+    value_opt['dyn'] = 'single' #dyn_value
+    value_opt['dyn_fit'] = 'unfitted' #dyn_fit_value
+    value_opt['parameter'] = 'unloaded' #parameter_value
+    value_opt['params_copied'] = False #Value to estimate whether the dyn plot is changeable or not  
 
-data_value = 'unloaded'
-fit_value = 'unfitted'
-dyn_value = 'single'
-dyn_fit_value = 'unfitted'
-parameter_value = 'unloaded'
 p = 0
 j = 350
 j_min = 0
 colormap = 'inferno'
 tick_number = 256 #Max = 10000, bereits 1000 erstellt 200 MB file!
 excep_append = []
-exceptions = []
+exceptions = [] #Array to store excepted lines in the fit
 fit_num = 1
 
 parameter_Table_names_L = ['dB','R','A']
@@ -76,7 +81,7 @@ class Worker(QThread):
     #This class is responsible for the dynamic fit by creating a so called worker to do the job
     i_signal = pyqtSignal() # signal for the processBar
     error_dynfit_signal = pyqtSignal() # error signal
-    def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,dyn_value,i_min,i_max,j,j_min,exceptions):
+    def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt,i_min,i_max,j,j_min,exceptions):
         QThread.__init__(self)
 
     def fit(self,l,params_table,model):
@@ -86,7 +91,8 @@ class Worker(QThread):
         return result_dyn
 
     def run(self):
-        global dyn_fit_value
+        global value_opt
+        global Parameter_list
         names = []
         temp_paras = []
         params_table = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_param_table(index_model)
@@ -100,7 +106,7 @@ class Worker(QThread):
             names.append('{}'.format(name))  #create an array of names for the header
             temp_paras.append(float(param.value))  #create the first parameters to save into the .dat file
         temp_paras.append(float(Winkeldata[0][0]))
-
+        print(names)
         Parameter_list = np.zeros(shape=(i_max,len(temp_paras)))
         for l in range(i_min,i_max):
             if l not in exceptions:
@@ -114,7 +120,7 @@ class Worker(QThread):
                 Parameter_list[l] = temp_paras
         now = datetime.now()
         np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='This data was fitted {}  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),exceptions,names))
-        dyn_fit_value = 'fitted'
+        value_opt['dyn_fit'] = 'fitted'
 
 class ColourPlot(QThread):
     def __init__(self,X,Y,Z,colormap,tick_number,D_min,D_max,exceptions):
@@ -171,13 +177,12 @@ class MyForm(QMainWindow):
         self.ui.plot_parameter.clicked.connect(self.parameter_plot)
         self.ui.load_params_from_file.clicked.connect(self.load_parameter_plot)
         self.ui.parameter_data_select.valueChanged.connect(self.change_parameter_angle)
-        self.ui.param_change_alpha.valueChanged.connect(self.changeing_parameters)
-        self.ui.param_change_R.valueChanged.connect(self.changeing_parameters)
-        self.ui.param_change_dB.valueChanged.connect(self.changeing_parameters)
-        self.ui.param_change_A.valueChanged.connect(self.changeing_parameters)
-        self.ui.param_change_slope.valueChanged.connect(self.changeing_parameters)
-        self.ui.param_change_offset.valueChanged.connect(self.changeing_parameters)
-        self.ui.pushButton.clicked.connect(self.test_table)
+        self.ui.param_change_alpha.valueChanged.connect(self.select_fitted_params)
+        self.ui.param_change_R.valueChanged.connect(self.select_fitted_params)
+        self.ui.param_change_dB.valueChanged.connect(self.select_fitted_params)
+        self.ui.param_change_A.valueChanged.connect(self.select_fitted_params)
+        self.ui.param_change_slope.valueChanged.connect(self.select_fitted_params)
+        self.ui.param_change_offset.valueChanged.connect(self.select_fitted_params)
         self.show()
 
     def reset_drop(self):
@@ -205,10 +210,8 @@ class MyForm(QMainWindow):
         exceptions = list(map(int, x.split(',')))
 
     def change_parameter_angle(self):
-        # has to be reworked 
-        global W
         W = self.ui.parameter_data_select.value()
-        self.select_fitted_params()
+        self.select_fitted_params(W)
 
     def set_dataslider(self):
         self.ui.select_datanumber.setValue(int(self.ui.Scroll_Bar_dropped_points.value()))
@@ -218,7 +221,8 @@ class MyForm(QMainWindow):
         global i
         global Bdata2
         global Adata2
-        if data_value == 'loaded':
+        global value_opt
+        if value_opt['data'] == 'loaded':
 
             if int(self.ui.select_datanumber.text()) > len(Adata)-1:
                 i = len(Adata)-1
@@ -248,8 +252,8 @@ class MyForm(QMainWindow):
 
     def dyn_fit(self):
         #starts the dynamic fitting routine
-        global dyn_value
-        dyn_value = 'dynamic'
+        global value_opt
+        value_opt['dyn'] = 'dynamic'
         self.saveFileDialog()
 
     def model_type(self,Bool):
@@ -367,11 +371,6 @@ class MyForm(QMainWindow):
 
                 self.set_default_values()
 
-    def test_table(self):
-        for name, param in result.params.items():
-            print(float(param.value))
-
-
     def set_default_values(self):
         #sets default values into the spinbox according to arrays defined in the beginning
         #it basicly is just a for loop in order to cath every row of the table according to the numbver of lines
@@ -443,7 +442,7 @@ class MyForm(QMainWindow):
 
 
     def openFileDialog(self):
-        global data_value
+        global value_opt
         global i
         global Bdata
         global Adata
@@ -490,7 +489,7 @@ class MyForm(QMainWindow):
             self.ui.progressBar.setMaximum(i_max)
             self.ui.Scroll_Bar_dropped_points.setMaximum(i_max)
             self.ui.parameter_data_select.setMaximum(i_max)
-            data_value = 'loaded'
+            value_opt['data'] = 'loaded'
             self.set_datanumber()
     
     def data_range(self):
@@ -498,7 +497,7 @@ class MyForm(QMainWindow):
         global j_min
         global Bdata2
         global Adata2
-        if data_value == 'loaded':
+        if value_opt['data'] == 'loaded':
             '''Bdata2 = Bdata[i]
             Adata2 = Adata[i]'''
             j = self.ui.Drop_Scalebar.value()
@@ -515,12 +514,10 @@ class MyForm(QMainWindow):
         print('Fehler irgendwo, bestimmt im dyn fit')
 
     def parameter_plot(self):
-
-        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
-
-        if dyn_fit_value == 'fitted':
+        global value_opt
+        if value_opt['dyn_fit'] == 'fitted':
             Params_Plot(Parameter_list,'eigen')
-        elif parameter_value == 'loaded':
+        elif value_opt['parameter'] == 'loaded':
             print('Unfitted parameters. Using from file instead!')
             Params_Plot(Parameter_from_text,'eigen')
         else:
@@ -528,84 +525,134 @@ class MyForm(QMainWindow):
             Params_Plot(Parameter_from_text,'eigen')
 
     def load_parameter_plot(self):
-
-        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
-
         print('Loading from file!')
         params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
         if params_fname[0]:
             Params_Plot(params_fname,'load')
 
     def load_parameters_to_text(self):
-
-        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
-
         global Parameter_from_text
-        global parameter_value
+        global value_opt
         params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
         if params_fname[0]:
             Parameter_from_text = np.loadtxt(params_fname[0],dtype='float',skiprows=1)
-        parameter_value = 'loaded'
+        value_opt['parameter'] = 'loaded'
 
 
-    def select_fitted_params(self):
+    def select_fitted_params(self,W):
         #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
-
         global Parameter_from_text
-        global parameter_value
-        global data_value
-        global dyn_fit_value
+        global value_opt
+        global Para_cp
 
-        if data_value == 'loaded':
-            x_temp = Bdata[W]
-            y_temp = Adata[W]
-            x = x_temp[j_min:j]
-            y = y_temp[j_min:j]
+        params = []
+        if self.ui.checkBox_change_values.isChecked()==True: # In order to change parameters manual and save them afterwards
 
-            if dyn_fit_value == 'fitted':
-                Para = np.array(Parameter_list)
-            elif  parameter_value == 'loaded':
-                Para = Parameter_from_text
-            else:
-                self.load_parameters_to_text()
-                Para = Parameter_from_text
-            alpha_list = Para[:,0]
-            db_list = Para[:,1]
-            R_list = Para[:,2]
-            A_list = Para[:,3]
-            slope_list = Para[:,4]
-            offset_list = Para[:,5]
-            Winkeldata_list = Para[:,6]   
-            self.plot_fitted_params(x,y,W,alpha_list,db_list,R_list,A_list,slope_list,offset_list)
-            self.ui.param_change_alpha.setValue(alpha_list[W])
-            self.ui.param_change_dB.setValue(db_list[W])            
-            self.ui.param_change_R.setValue(R_list[W])
-            self.ui.param_change_A.setValue(A_list[W])
-            self.ui.param_change_slope.setValue(slope_list[W])
-            self.ui.param_change_offset.setValue(offset_list[W])
-
-        else:
-            self.openFileDialog()
-            print('Data is not yet assigned!!')
-
-    def changeing_parameters(self):
-
-        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
-
-        global Parameter_from_text
-        global parameter_value
-        global data_value
-        global dyn_fit_value
-        if self.ui.checkBox_change_values.isChecked()==True:
-            if data_value == 'loaded':
+            if value_opt['data'] == 'loaded':
+                #Setup basic Data xy for plotting
                 x_temp = Bdata[W]
                 y_temp = Adata[W]
                 x = x_temp[j_min:j]
                 y = y_temp[j_min:j]
 
-                if dyn_fit_value == 'fitted':
+                #Setup Parameters
+                if value_opt['dyn_fit'] == 'fitted':
+                    Para_orig = np.array(Parameter_list)
+                elif  value_opt['parameter'] == 'loaded':
+                    Para_orig = Parameter_from_text
+                else:
+                    print('Please select a Parameterset!!')
+                    self.load_parameters_to_text()
+                    Para_orig = Parameter_from_text
+
+                #Copy Parameters in order to change them manualy, but without corrupting the orignal data
+                if not value_opt['params_copied']:
+                    Para_cp = np.copy(Para_orig)
+                    value_opt['params_copied'] = True
+                    slope = Para_cp[:,0][W]
+                    offset = Para_cp[:,1][W]
+
+                    Para_dim = Para_cp.shape[1]
+                    for i in range(2,Para_dim): #loop that creates the params array for an angle W
+                        params.append(Para_cp[:,i][W])
+
+                    #------------------------------------Hier noch dringend die Labels der SpinBoxen ändern!-----------------------------------------------------------------------------------------------
+                
+                #self.ui.param_change_alpha.setValue(alpha_list[W])
+                #self.ui.param_change_dB.setValue(db_list[W])            
+                #self.ui.param_change_R.setValue(R_list[W])
+                #self.ui.param_change_A.setValue(A_list[W])
+                #self.ui.param_change_slope.setValue(slope_list[W])
+                #self.ui.param_change_offset.setValue(offset_list[W])
+
+                else:
+                    #lesen der Variablen aus den Labels der SpinBoxen und dann formatieren zu params und plotten
+                    print('fw')
+                    
+
+
+                self.plot_fitted_params(x,y,slope,offset,params) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
+
+
+
+            else:
+                print('Please select a Dataset first!')
+                self.openFileDialog()            
+
+
+        else:
+            if value_opt['data'] == 'loaded':
+                x_temp = Bdata[W]
+                y_temp = Adata[W]
+                x = x_temp[j_min:j]
+                y = y_temp[j_min:j]
+
+                if value_opt['dyn_fit'] == 'fitted':
                     Para = np.array(Parameter_list)
-                elif  parameter_value == 'loaded':
+                elif  value_opt['parameter'] == 'loaded':
+                    Para = Parameter_from_text
+                else:
+                    print('Please select a Parameterset!!')
+                    self.load_parameters_to_text()
+                    Para = Parameter_from_text
+
+                slope = Para[:,0][W]
+                offset = Para[:,1][W]
+
+                Para_dim = Para.shape[1]
+                for i in range(2,Para_dim): #loop that creates the params array for an angle W
+                    params.append(Para[:,i][W])
+                self.plot_fitted_params(x,y,slope,offset,params) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
+
+                '''self.ui.param_change_alpha.setValue(alpha_list[W])
+                                                    self.ui.param_change_dB.setValue(db_list[W])            
+                                                    self.ui.param_change_R.setValue(R_list[W])
+                                                    self.ui.param_change_A.setValue(A_list[W])
+                                                    self.ui.param_change_slope.setValue(slope_list[W])
+                                                    self.ui.param_change_offset.setValue(offset_list[W])'''
+
+            else:
+                print('Please select a Dataset first!')
+                self.openFileDialog()
+            
+
+    def changeing_parameters(self,w):
+
+        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
+
+        global Parameter_from_text
+        global value_opt
+
+        if self.ui.checkBox_change_values.isChecked()==True:
+            try:
+                x_temp = Bdata[W]
+                y_temp = Adata[W]
+                x = x_temp[j_min:j]
+                y = y_temp[j_min:j]
+
+                if value_opt['dyn_fit'] == 'fitted':
+                    Para = np.array(Parameter_list)
+                elif  value_opt['parameter'] == 'loaded':
                     Para = Parameter_from_text
                 else:
                     print('No data loaded!')
@@ -624,38 +671,40 @@ class MyForm(QMainWindow):
                 A_list[W] = self.ui.param_change_A.value()
                 slope_list[W] = self.ui.param_change_slope.value()
                 offset_list[W] = self.ui.param_change_offset.value()
-                self.plot_fitted_params(x,y,W,alpha_list,db_list,R_list,A_list,slope_list,offset_list)    
 
-            else:       
-                self.openFileDialog()
-                print('Data is not yet assigned!!')
+                self.plot_fitted_params(x,y,slope,offset,params) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)     
 
+            except Exception as e:
+                print('Failed with Error',e)
+                print('Please try to load a Dataset and a Parameterset!')
 
-
-    def plot_fitted_params(self,x,y,W,alpha_list,db_list,R_list,A_list,slope_list,offset_list):
-
-        #----------------------------------------has to be reworked as of implementing multiple lines---------------------------------------------------
-
+    def plot_fitted_params(self,x,y,slope, offset,params):
         self.ui.parameter_plot_widget.canvas.ax.clear()
         self.ui.parameter_plot_widget.canvas.ax.set_xlabel('Magnetic Field [T]')
         self.ui.parameter_plot_widget.canvas.ax.set_ylabel('Amplitude [Arb. U.]')
-        self.ui.parameter_plot_widget.canvas.ax.plot(x, y,'o', label='Experimental data')
-        plotdys = dyson_func(x,alpha_list[W],db_list[W],R_list[W],A_list[W],slope_list[W],offset_list[W])
-        self.ui.parameter_plot_widget.canvas.ax.plot(x,plotdys,'r--',label='Dyson')
-        self.ui.parameter_plot_widget.canvas.ax.legend()
-        self.ui.parameter_plot_widget.canvas.draw() 
+        self.ui.parameter_plot_widget.canvas.ax.plot(x, y, color='black', marker='o', label='Experimental data') #Plot experimental Data
+        
+        '''if value_opt['dyn_fit'] == 'fitted':
+                                    self.ui.parameter_plot_widget.canvas.ax.plot(x, result.best_fit, label='Best Fit') #Fitted Function'''
+        try:
+            plot_func = Functions.functions_value(x, slope, offset, index_model, params) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
+            self.ui.parameter_plot_widget.canvas.ax.plot(x,plot_func,'r--',label='Dyson')
+            self.ui.parameter_plot_widget.canvas.ax.legend()
+            self.ui.parameter_plot_widget.canvas.draw()         
+        except NameError:
+            print('Please select a Model first!')
+
 
 
     def plot(self):
-        global fit_value
-        global dyn_value
+        global value_opt
         global result
-        dyn_value = 'single'
+        value_opt['dyn'] = 'single'
         self.model_type(False)
-        if data_value == 'loaded':
+        if value_opt['data'] == 'loaded':
             self.set_init_params()  #gets the initial parameters from the GUI
             result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
-            fit_value = 'fitted'
+            value_opt['fit'] = 'fitted'
             self.ui.progressBar.setMaximum(i_max-len(exceptions))
             #self.ui.label_params_output.setText(self.fit(i).fit_report())
             plt.ion()   #enable user actions in plot
@@ -716,7 +765,7 @@ class MyForm(QMainWindow):
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;Text Files (*.dat)",options=options)
         if fileName:
-            self.get_thread = Worker(index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,dyn_value,i_min,i_max,j,j_min,exceptions)
+            self.get_thread = Worker(index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt['dyn'],i_min,i_max,j,j_min,exceptions)
             self.get_thread.start()
             self.get_thread.i_signal.connect(self.update_bar)
             self.get_thread.error_dynfit_signal.connect(self.error_msg)
@@ -799,7 +848,7 @@ class MyForm(QMainWindow):
         global default_values_D
         global default_values_L
         global default_linear
-        if fit_value == 'fitted':
+        if value_opt['fit'] == 'fitted':
             if index_model == 2:
                 temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz
             else:
@@ -820,6 +869,7 @@ class MyForm(QMainWindow):
 
 if __name__=="__main__":
     #appctxt = ApplicationContext() #
+    define_value_opt()
     app = QApplication(sys.argv)
     w = MyForm()
     w.show()
