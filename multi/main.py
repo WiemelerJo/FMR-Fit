@@ -14,7 +14,7 @@ from lmfit import Parameter
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction,QFileDialog,QProgressBar,QDoubleSpinBox, QCheckBox
 from PyQt5.QtCore import QThread, pyqtSignal
 from Fitprogramm import *
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
+#from fbs_runtime.application_context.PyQt5 import ApplicationContext
 #from matplotlib.colors import BoundaryNorm
 #from matplotlib.ticker import MaxNLocator
 from fitting import Fit
@@ -515,20 +515,26 @@ class MyForm(QMainWindow):
 
     def parameter_plot(self):
         global value_opt
-        if value_opt['dyn_fit'] == 'fitted':
-            Params_Plot(Parameter_list,'eigen')
-        elif value_opt['parameter'] == 'loaded':
-            print('Unfitted parameters. Using from file instead!')
-            Params_Plot(Parameter_from_text,'eigen')
-        else:
-            self.load_parameters_to_text()
-            Params_Plot(Parameter_from_text,'eigen')
+        try:
+            if value_opt['dyn_fit'] == 'fitted':
+                Params_Plot(Parameter_list,'eigen',index_model)
+            elif value_opt['parameter'] == 'loaded':
+                print('Unfitted parameters. Using from file instead!')
+                Params_Plot(Parameter_from_text,'eigen',index_model)
+            else:
+                self.load_parameters_to_text()
+                Params_Plot(Parameter_from_text,'eigen',index_model)
+        except NameError:
+            print('Please select the Lineshape first!!')
 
     def load_parameter_plot(self):
         print('Loading from file!')
-        params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
-        if params_fname[0]:
-            Params_Plot(params_fname,'load')
+        try:
+            params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
+            if params_fname[0]:
+                Params_Plot(params_fname,'load',index_model)
+        except NameError:
+            print('Please select the Lineshape first!!')            
 
     def load_parameters_to_text(self):
         global Parameter_from_text
@@ -702,25 +708,28 @@ class MyForm(QMainWindow):
         value_opt['dyn'] = 'single'
         self.model_type(False)
         if value_opt['data'] == 'loaded':
-            self.set_init_params()  #gets the initial parameters from the GUI
-            result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
-            value_opt['fit'] = 'fitted'
-            self.ui.progressBar.setMaximum(i_max-len(exceptions))
-            #self.ui.label_params_output.setText(self.fit(i).fit_report())
-            plt.ion()   #enable user actions in plot
-            plt.cla()   #plot clean up
-            plt.clf()   #plot clean up
-            plt.plot(Bdata2[j_min:j],Adata2[j_min:j], '-b', label='Experimental data')  #plot original data
-            if index_model == 2:
-                self.ui.label_params_output.setText(result.fit_report())    #print fit report Lorentz
-                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Lorentz')  #plot fit data Lorentz
-            else:
-                self.ui.label_params_output.setText(result.fit_report())    #print fit report Dyson
-                plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Dyson')    #plot fit data Dyson
-            plt.xlabel('Magnetic Field [T]',fontsize=12)
-            plt.ylabel('Amplitude [Arb. U.]',fontsize=12)
-            plt.legend(fontsize=12)
-            plt.show()
+            try:
+                self.set_init_params()  #gets the initial parameters from the GUI
+                result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
+                value_opt['fit'] = 'fitted'
+                self.ui.progressBar.setMaximum(i_max-len(exceptions))
+                #self.ui.label_params_output.setText(self.fit(i).fit_report())
+                plt.ion()   #enable user actions in plot
+                plt.cla()   #plot clean up
+                plt.clf()   #plot clean up
+                plt.plot(Bdata2[j_min:j],Adata2[j_min:j], '-b', label='Experimental data')  #plot original data
+                if index_model == 2:
+                    self.ui.label_params_output.setText(result.fit_report())    #print fit report Lorentz
+                    plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Lorentz')  #plot fit data Lorentz
+                else:
+                    self.ui.label_params_output.setText(result.fit_report())    #print fit report Dyson
+                    plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Dyson')    #plot fit data Dyson
+                plt.xlabel('Magnetic Field [T]',fontsize=12)
+                plt.ylabel('Amplitude [Arb. U.]',fontsize=12)
+                plt.legend(fontsize=12)
+                plt.show()
+            except Exception as e:
+                print(e)
         else:
             self.openFileDialog()
         if index_model == 0:
@@ -803,9 +812,9 @@ class MyForm(QMainWindow):
                 bounds_min = self.ui.Parameter_table.cellWidget(zähler,1).value() # Boundary minimum
                 bounds_max =self.ui.Parameter_table.cellWidget(zähler,2).value() # Boundary maximum
 
-                default_values_L[zähler] = init
-                default_boundaries_L_min[zähler] = bounds_min
-                default_boundaries_L_max[zähler] = bounds_max
+                default_values_L[zähler-2] = init
+                default_boundaries_L_min[zähler-2] = bounds_min
+                default_boundaries_L_max[zähler-2] = bounds_max
 
             init_values = default_linear + default_values_L
             bound_min = default_boundaries_linear_min + default_boundaries_L_min
