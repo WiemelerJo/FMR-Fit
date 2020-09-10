@@ -62,8 +62,6 @@ class Fit(object):
         self.index_model = index_model
         self.__make_params__(fit_num,init_values,bound_min,bound_max)
         self.set_model(fit_num,index_model)
-        
-
 
     def combine(self,fit_num,index_model):
         global combined

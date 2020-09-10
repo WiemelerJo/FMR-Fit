@@ -1,0 +1,79 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      2376,         71]
+NotebookOptionsPosition[      2050,         57]
+NotebookOutlinePosition[      2396,         72]
+CellTagsIndexPosition[      2353,         69]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"results", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{"RandomReal", "[", "]"}], ",", 
+     RowBox[{"{", "10", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"target", "=", 
+    RowBox[{"Rest", "@", "$ScriptCommandLine"}]}], ";"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{
+    "target", "=", 
+     "\"\</home/benjamin/Documents/test/output/results.csv\>\""}], ";"}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{"target", ",", "results"}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Print", "[", 
+  RowBox[{"\"\<target = \>\"", "  ", "<>", " ", "target"}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"Print", "[", "results", "]"}]}], "Input",
+ InitializationCell->True,
+ CellChangeTimes->{{3.808537512703827*^9, 3.8085376408716297`*^9}, {
+  3.8085459269099073`*^9, 3.808545930186841*^9}, {3.808546266537136*^9, 
+  3.808546290580233*^9}, {3.808546362445969*^9, 3.808546397261984*^9}, {
+  3.808546467189015*^9, 3.808546492971883*^9}, {3.808547121847931*^9, 
+  3.8085471446756907`*^9}, {3.808549805338278*^9, 3.808549813141077*^9}, {
+  3.808550111686481*^9, 3.808550121290544*^9}, {3.808550173334687*^9, 
+  3.808550207739442*^9}, {3.808550636874042*^9, 3.808550684131263*^9}, {
+  3.808550756088615*^9, 3.808550762312541*^9}, {3.8085527245124693`*^9, 
+  3.8085527333936505`*^9}},ExpressionUUID->"f68ab9b1-74f4-49c9-ad3e-\
+51b3c03fcc27"]
+},
+WindowSize->{1390, 769},
+WindowMargins->{{Automatic, -163}, {101, Automatic}},
+FrontEndVersion->"12.0 for Microsoft Windows (64-bit) (April 8, 2019)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 1488, 35, 228, "Input",ExpressionUUID->"f68ab9b1-74f4-49c9-ad3e-51b3c03fcc27",
+ InitializationCell->True]
+}
+]
+*)
+

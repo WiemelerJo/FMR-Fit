@@ -14,6 +14,7 @@ from lmfit import Parameter
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction,QFileDialog,QProgressBar,QDoubleSpinBox, QCheckBox
 from PyQt5.QtCore import QThread, pyqtSignal
 from Fitprogramm import *
+from arrays import *
 #from fbs_runtime.application_context.PyQt5 import ApplicationContext
 #from matplotlib.colors import BoundaryNorm
 #from matplotlib.ticker import MaxNLocator
@@ -21,12 +22,6 @@ from fitting import Fit
 #from fitting import Worker
 from parameter_plot import Params_Plot
 
-'''def dyson_func(B, alpha, dB, R, A, slope, offset):
-        return ((4*A*dB**2*(3*alpha*dB-4*alpha*(B-R)**2-8*m.sqrt(3)*dB*(B-R)))/(m.sqrt(3)*(4*(B-R)**2+3*dB**2)**2))+slope*B+offset
-
-def lorentz_func(B,dB, R, A, slope, offset):
-    #return(-(A*(2*(B-dB)))/(m.pi*R**3*((B-dB**2)/(R**2)+1)**2))+slope*B+offset
-    return(-64*A*(B-R)/(9*dB*(1+(B-R)**2)/(dB*m.sqrt(3)/4)**2)**2+slope*B+offset)'''
 
 def define_value_opt():
     global value_opt
@@ -37,6 +32,7 @@ def define_value_opt():
     value_opt['dyn_fit'] = 'unfitted' #dyn_fit_value
     value_opt['parameter'] = 'unloaded' #parameter_value
     value_opt['params_copied'] = False #Value to estimate whether the dyn plot is changeable or not  
+    value_opt['robust'] = False # Using Robust Fitting or not (Robust: Using Method "nelder")
 
 p = 0
 j = 350
@@ -47,36 +43,6 @@ excep_append = []
 exceptions = [] #Array to store excepted lines in the fit
 fit_num = 1
 
-parameter_Table_names_L = ['dB','R','A']
-parameter_table_names_L_final = []
-parameter_Table_names_D = ['alpha','dB','R','A']
-parameter_table_names_D_final = []
-
-#Arrays to set the default values in SpinBox. #For linear: [slope, offset]
-                                             #For L: [dB1, R1, A1, dB2, R2, A2, ...]
-                                             #For D: [alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, ....]
-default_linear = [0.5,1]
-default_values_L = [0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7, 0.03,0.08,7]
-default_values_D = [0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7, 0.0001,0.03,0.08,7]
-
-#Arrays for default Boundaries. For Linear : [slope_min,slope_max, offset_min,offset_max] 
-                               #For L: [dB1_min,dB1_max, R1_min,R1_max, ...]
-                               #For D: [alpha1_min,alpha1_max, dB1_min,dB1_max ...]
-default_boundaries_linear_min = [-5, -5]
-default_boundaries_linear_max = [5, 5]
-default_boundaries_L_min = [0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0, 0.0001,0,0]
-default_boundaries_L_max = [0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15,0.5,0.15,15]
-default_boundaries_D_min = [0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001, 0.0001,0.0001,0.0001,0.0001]
-default_boundaries_D_max = [1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15, 1,0.5,0.15,15]
-
-#Arrays for step size for spinbox Linear: [slope, offset]
-                                 #L: [dB, R, A]
-                                 #D: [alpha,dB, R, A]
-default_stepsize_linear = [0.1, 0.1]
-default_stepsize_L = [0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1, 0.0001,0.01,1]
-default_stepsize_D = [0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1, 0.01,0.0001,0.01,1]
-
-
 class Worker(QThread):
     #This class is responsible for the dynamic fit by creating a so called worker to do the job
     i_signal = pyqtSignal() # signal for the processBar
@@ -84,10 +50,13 @@ class Worker(QThread):
     def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt,i_min,i_max,j,j_min,exceptions):
         QThread.__init__(self)
 
-    def fit(self,l,params_table,model):
+    def fit(self,l,params_table,model,robust):
         Bdata2 = Bdata[l]
         Adata2 = Adata[l]
-        result_dyn = model.fit(Adata2[j_min:j], params_table, B=Bdata2[j_min:j])
+        if robust:
+            result_dyn = model.fit(Adata2[j_min:j], params_table, B=Bdata2[j_min:j],method = 'ampgo') #lbfgsb is also a good alternative or ampgo
+        else:
+            result_dyn = model.fit(Adata2[j_min:j], params_table, B=Bdata2[j_min:j])
         return result_dyn
 
     def run(self):
@@ -105,21 +74,23 @@ class Worker(QThread):
         for name, param in result.params.items():
             names.append('{}'.format(name))  #create an array of names for the header
             temp_paras.append(float(param.value))  #create the first parameters to save into the .dat file
-        temp_paras.append(float(Winkeldata[0][0]))
+        temp_paras.append(float(Winkeldata[0]))
         print(names)
+        #exceptions = self.give_exceptions()
+        print(exceptions)
         Parameter_list = np.zeros(shape=(i_max,len(temp_paras)))
         for l in range(i_min,i_max):
             if l not in exceptions:
                 self.i_signal.emit() # update progressbar
                 temp_paras.clear() # clear temp_paras for each iteration
-                temp_result = self.fit(l,params_table,model) #this is the fit
+                temp_result = self.fit(l,params_table,model,value_opt['robust']) #this is the fit
                 for name, param in temp_result.params.items():
                     temp_paras.append(float(param.value))  
                     params_table[name].set(value=param.value,min=None,max=None)
-                temp_paras.append(float(Winkeldata[l][0]))
+                temp_paras.append(float(Winkeldata[l]))
                 Parameter_list[l] = temp_paras
         now = datetime.now()
-        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='This data was fitted {}  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),exceptions,names))
+        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),index_model,exceptions,names))
         value_opt['dyn_fit'] = 'fitted'
 
 class ColourPlot(QThread):
@@ -150,9 +121,6 @@ class ColourPlot(QThread):
         #------------------------------------------------------------------------
         #Mayavi Plot in 3D (unterstützt OpenGL, ist daher schneller; mehr details)
 
-
-
-
 class MyForm(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -171,47 +139,72 @@ class MyForm(QMainWindow):
         self.ui.min_drop_Bar.valueChanged.connect(self.data_range)
         self.ui.select_datanumber.valueChanged.connect(self.set_datanumber)
         self.ui.Scroll_Bar_dropped_points.valueChanged.connect(self.set_dataslider)
+
+
         self.ui.Dropped_points_edit.editingFinished.connect(self.Exceptions)
-        self.ui.Button_dropped_points.clicked.connect(self.append_dropped_points)
-        self.ui.Dropped_points_edit.textEdited.connect(self.reset_drop)
+
+        self.ui.Button_dropped_points.clicked.connect(self.button_dropped_points)
+
+        #self.ui.Dropped_points_edit.textEdited.connect(self.reset_drop)
+
+
         self.ui.plot_parameter.clicked.connect(self.parameter_plot)
         self.ui.load_params_from_file.clicked.connect(self.load_parameter_plot)
         self.ui.parameter_data_select.valueChanged.connect(self.change_parameter_angle)
-        self.ui.param_change_alpha.valueChanged.connect(self.select_fitted_params)
-        self.ui.param_change_R.valueChanged.connect(self.select_fitted_params)
-        self.ui.param_change_dB.valueChanged.connect(self.select_fitted_params)
-        self.ui.param_change_A.valueChanged.connect(self.select_fitted_params)
-        self.ui.param_change_slope.valueChanged.connect(self.select_fitted_params)
-        self.ui.param_change_offset.valueChanged.connect(self.select_fitted_params)
+        self.ui.checkBox_dynPlot.stateChanged.connect(self.robust_fit)
+        self.ui.comboBox_fit_model.activated.connect(self.make_parameter_table)
         self.show()
 
-    def reset_drop(self):
-        #empties the exception array
-        global excep_append
-        if self.ui.Dropped_points_edit.text() == '':
-            excep_append.clear()
+    def test(self):
+        print('Ja moin')
+
+    def robust_fit(self):
+        global value_opt
+        if self.ui.checkBox_dynPlot.checkState() == 2:
+            value_opt['robust'] = True
+
         else:
-            x = str(self.ui.Dropped_points_edit.text())
-            excep_append = list(map(int, x.split(',')))
+            value_opt['robust'] = False
+
+    '''def reset_drop(self):
+                    #empties the exception array
+                    if self.ui.Dropped_points_edit.text() == '':
+                        self.ui.Dropped_points_edit.setText('')
+                    else:
+                        x = str(self.ui.Dropped_points_edit.text())
+                        excep_append = list(map(int, x.split(',')))
+                        print(excep_append)'''
    
-    def append_dropped_points(self):
+    def button_dropped_points(self):
         #as something is added to the exceptions, this is beeing called
-        global excep_append
-        excep_append.append(str(self.ui.Scroll_Bar_dropped_points.value()))
+        excep_append = self.Exceptions()  #gets text of editLine
+        excep_append.append(str(self.ui.Scroll_Bar_dropped_points.value())) #get value of scrollbar
         text = ','.join(map(str, excep_append))
         self.ui.Dropped_points_edit.setText(str(text))
+        self.Exceptions()
 
     def Exceptions(self):
         # takes the string input from the exception text field inside the GUI and seperates the entries into a list
-        global exceptions
-        global excep_append
-        print('Hallo')
-        x = str(self.ui.Dropped_points_edit.text())
-        exceptions = list(map(int, x.split(',')))
+        x = str(self.ui.Dropped_points_edit.text()) #saves everything that is in the editLine as x
+        if x == '':
+            exceptions = [] #if y is empty excep should also be empty
+        else:
+            exceptions = list(map(int, x.split(','))) #else set excep as everything that is standing in editLine
+        return exceptions
 
     def change_parameter_angle(self):
-        W = self.ui.parameter_data_select.value()
-        self.select_fitted_params(W)
+        '''W = self.ui.parameter_data_select.value()
+                                if W not in exceptions:
+                                    self.select_fitted_params(W)'''
+        try:
+            W_int = self.ui.parameter_data_select.value()
+            W = int(New_W[0][W_int])
+            W_real = New_W[1][W_int]
+            self.ui.label_manual_edit_angle.setText(str(W_real))   
+            self.select_fitted_params(W)
+        except Exception as e:
+            print("Error in change_parameter_angle",e)
+
 
     def set_dataslider(self):
         self.ui.select_datanumber.setValue(int(self.ui.Scroll_Bar_dropped_points.value()))
@@ -260,7 +253,6 @@ class MyForm(QMainWindow):
         #selects the type of function used in the fit
         global index_model
         index_model = self.ui.comboBox_fit_model.currentIndex()
-
 
     def select_fit_number(self):
         #define the number of function that are beeing fitted
@@ -340,8 +332,8 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 3, QCheckBox())
 
                 self.set_default_values()
-        except:
-                print('Error in make_parameter_table')
+        except Exception as e:
+                print('Error in make_parameter_table',e)
                 #Assuming a lorentz func as long as index_model hasnt been set
                 self.ui.Parameter_table.setRowCount(fit_num*3+2)
                 self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values slope
@@ -374,72 +366,86 @@ class MyForm(QMainWindow):
     def set_default_values(self):
         #sets default values into the spinbox according to arrays defined in the beginning
         #it basicly is just a for loop in order to cath every row of the table according to the numbver of lines
-        #try:
-        if index_model == 2:
-            for zahl in range(0,2):
-                self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
+        try:
+            if index_model == 2:
+                for zahl in range(0,2):
+                    self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
 
-                self.ui.Parameter_table.cellWidget(zahl,0).setMinimum(-100)
-                self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-100)
-                self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-100)
+                    self.ui.Parameter_table.cellWidget(zahl,0).setMinimum(-1000)
+                    self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-1000)
+                    self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-1000)
 
-                self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
-                self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
-                self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
+                    self.ui.Parameter_table.cellWidget(zahl,0).setMaximum(default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setMaximum(default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setMaximum(default_maximum_bound_spinbox_linear[zahl])
 
-                self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
-                self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
-                self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
+                    self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
 
-            for zähler in range(0,fit_num*3):
-                self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
 
-                self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_L[zähler])
-                self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_L[zähler])
-                self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_L[zähler]) 
+                for zähler in range(0,fit_num*3):
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
 
-                self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_L[zähler]) # Inital value
-                self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_L_min[zähler]) # Boundary minimum
-                self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_L_max[zähler]) # Boundary maximum
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_L[zähler]) 
 
-        else:
-            for zahl in range(0,2):
-                self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setMaximum(default_maximum_bound_spinbox_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setMaximum(default_maximum_bound_spinbox_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setMaximum(default_maximum_bound_spinbox_L[zähler])
 
-                self.ui.Parameter_table.cellWidget(zahl,0).setMinimum(-100)
-                self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-100)
-                self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-100)
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_L[zähler]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_L_min[zähler]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_L_max[zähler]) # Boundary maximum
 
-                self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
-                self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
-                self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
+            else:
+                for zahl in range(0,2):
+                    self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
 
-                self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
-                self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
-                self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
+                    self.ui.Parameter_table.cellWidget(zahl,0).setMinimum(-1000)
+                    self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-1000)
+                    self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-1000)
 
-            for zähler in range(0,fit_num*4):
-                self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
-                self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zahl,0).setMaximum(default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setMaximum(default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setMaximum(default_maximum_bound_spinbox_linear[zahl])
 
-                self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_D[zähler])
-                self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_D[zähler])
-                self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_D[zähler]) 
+                    self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
 
-                self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_D[zähler]) # Inital value
-                self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_D_min[zähler]) # Boundary minimum
-                self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_D_max[zähler]) # Boundary maximum
-        #except:
-         #   print('Error in set_default_values')
+                    self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
 
+                for zähler in range(0,fit_num*4):
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
 
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_D[zähler]) 
+
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setMaximum(default_maximum_bound_spinbox_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setMaximum(default_maximum_bound_spinbox_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setMaximum(default_maximum_bound_spinbox_D[zähler])
+
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_D[zähler]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_D_min[zähler]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_D_max[zähler]) # Boundary maximum
+        except Exception as e:
+            print("Error in set_default_values:",e)
 
     def openFileDialog(self):
         global value_opt
@@ -474,8 +480,11 @@ class MyForm(QMainWindow):
             D_max = max(D[:,3]) #for old colourplot
 
             Bdata = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize)  #List of sublists, magnetic field
-            Winkeldata = np.split(np.array(D[:,2]),chunksize)   #List of sublists, angle data
+            Winkeldata_raw = np.split(np.array(D[:,2]),chunksize)   #List of sublists, angle data
             Adata = np.split(np.array(D[:,3]),chunksize)    #List of sublists, amplitude data
+            Winkeldata = []
+            for i in range(chunksize):
+                Winkeldata.append(Winkeldata_raw[i][0])
             X = np.split(np.true_divide(np.array(D[:,1]),10),chunksize) #List of sublists, magnetic field, for colour plot
             Y = np.split(np.array(D[:,2]),chunksize)    #List of sublists, angle data, for colour plot
             Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot
@@ -584,6 +593,10 @@ class MyForm(QMainWindow):
 
                     #------------------------------------Hier noch dringend die Labels der SpinBoxen ändern!-----------------------------------------------------------------------------------------------
                 
+
+                #Parameter_Plot_Table
+
+
                 #self.ui.param_change_alpha.setValue(alpha_list[W])
                 #self.ui.param_change_dB.setValue(db_list[W])            
                 #self.ui.param_change_R.setValue(R_list[W])
@@ -608,35 +621,38 @@ class MyForm(QMainWindow):
 
         else:
             if value_opt['data'] == 'loaded':
-                x_temp = Bdata[W]
-                y_temp = Adata[W]
-                x = x_temp[j_min:j]
-                y = y_temp[j_min:j]
+                try:
+                    x_temp = Bdata[W]
+                    y_temp = Adata[W]
+                    x = x_temp[j_min:j]
+                    y = y_temp[j_min:j]
 
-                if value_opt['dyn_fit'] == 'fitted':
-                    Para = np.array(Parameter_list)
-                elif  value_opt['parameter'] == 'loaded':
-                    Para = Parameter_from_text
-                else:
-                    print('Please select a Parameterset!!')
-                    self.load_parameters_to_text()
-                    Para = Parameter_from_text
+                    if value_opt['dyn_fit'] == 'fitted':
+                        Para = np.array(Parameter_list)
+                    elif  value_opt['parameter'] == 'loaded':
+                        Para = Parameter_from_text
+                    else:
+                        print('Please select a Parameterset!!')
+                        self.load_parameters_to_text()
+                        Para = Parameter_from_text
 
-                slope = Para[:,0][W]
-                offset = Para[:,1][W]
+                    slope = Para[:,0][W]
+                    offset = Para[:,1][W]
 
-                Para_dim = Para.shape[1]
-                for i in range(2,Para_dim): #loop that creates the params array for an angle W
-                    params.append(Para[:,i][W])
-                self.plot_fitted_params(x,y,slope,offset,params) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
+                    Para_dim = Para.shape[1]
+                    for i in range(2,Para_dim): #loop that creates the params array for an angle W
+                        params.append(Para[:,i][W])
 
-                '''self.ui.param_change_alpha.setValue(alpha_list[W])
-                                                    self.ui.param_change_dB.setValue(db_list[W])            
-                                                    self.ui.param_change_R.setValue(R_list[W])
-                                                    self.ui.param_change_A.setValue(A_list[W])
-                                                    self.ui.param_change_slope.setValue(slope_list[W])
-                                                    self.ui.param_change_offset.setValue(offset_list[W])'''
+                    self.plot_fitted_params(x,y,slope,offset,params,) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
 
+                    '''self.ui.param_change_alpha.setValue(alpha_list[W])
+                                                        self.ui.param_change_dB.setValue(db_list[W])            
+                                                        self.ui.param_change_R.setValue(R_list[W])
+                                                        self.ui.param_change_A.setValue(A_list[W])
+                                                        self.ui.param_change_slope.setValue(slope_list[W])
+                                                        self.ui.param_change_offset.setValue(offset_list[W])'''
+                except Exception as e:
+                    print("Error in Func: select_fitted_params()",e) 
             else:
                 print('Please select a Dataset first!')
                 self.openFileDialog()
@@ -693,14 +709,18 @@ class MyForm(QMainWindow):
         '''if value_opt['dyn_fit'] == 'fitted':
                                     self.ui.parameter_plot_widget.canvas.ax.plot(x, result.best_fit, label='Best Fit') #Fitted Function'''
         try:
-            plot_func = Functions.functions_value(x, slope, offset, index_model, params) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
-            self.ui.parameter_plot_widget.canvas.ax.plot(x,plot_func,'r--',label='Dyson')
+            plot_func = Functions.functions_value(x, slope, offset, index_model, params,fit_num) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
+            self.ui.parameter_plot_widget.canvas.ax.plot(x,plot_func,'r--',label='Best Fit') # Best Fit
+
+            for i_num in range(1,fit_num + 1):
+                plt_single_func = Functions.single_func(x, slope, offset, index_model, params, i_num)
+                self.ui.parameter_plot_widget.canvas.ax.plot(x,plt_single_func,label='Function'+str(i_num)) #Single lines
+            
             self.ui.parameter_plot_widget.canvas.ax.legend()
             self.ui.parameter_plot_widget.canvas.draw()         
-        except NameError:
+        except Exception as e:
+            print(e)
             print('Please select a Model first!')
-
-
 
     def plot(self):
         global value_opt
@@ -718,6 +738,7 @@ class MyForm(QMainWindow):
                 plt.cla()   #plot clean up
                 plt.clf()   #plot clean up
                 plt.plot(Bdata2[j_min:j],Adata2[j_min:j], '-b', label='Experimental data')  #plot original data
+                self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
                 if index_model == 2:
                     self.ui.label_params_output.setText(result.fit_report())    #print fit report Lorentz
                     plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Lorentz')  #plot fit data Lorentz
@@ -734,6 +755,12 @@ class MyForm(QMainWindow):
             self.openFileDialog()
         if index_model == 0:
             self.ui.label_params_output.setText('Please select a fitting model first')
+
+    def evaluate_min_max(self,Bdata,Adata):
+        ind_min = Bdata[int(np.unravel_index(np.argmin(Adata, axis=None), Adata.shape)[0])]
+        ind_max = Bdata[int(np.unravel_index(np.argmax(Adata, axis=None), Adata.shape)[0])]
+        Bres = ind_max+(ind_min-ind_max)/2 #Asuming a symmetric line
+        self.ui.label_test.setText('Bres from min/max: '+str(Bres))
 
     def plot_data(self):
         #Plots data into a matplotlib canvas created in "pyqtgraph" skript, its the vieport for the measurement
@@ -768,12 +795,24 @@ class MyForm(QMainWindow):
         #gets the filename for saving
         #then starts the worker responsible for dyn fit
         global p
+        global  New_W
         global fileName
+        global exceptions
         p=0
+
+        New_W = [[],[]] #[0] = position, [1] = angle
+        for pos,winkel in enumerate(Winkeldata):
+            if pos not in exceptions:
+                New_W[0].append(pos)
+                New_W[1].append(winkel)
+        New_W = np.asarray(New_W)
+        #self.ui.parameter_data_select.setRange(np.amin(New_W[1]),np.amax(New_W[1]))
+
         options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;Text Files (*.dat)",options=options)
+        #options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self,"Please select the file to save to","","All Files (*);;Text Files (*.dat)",options=options)
         if fileName:
+            exceptions = self.Exceptions()
             self.get_thread = Worker(index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt['dyn'],i_min,i_max,j,j_min,exceptions)
             self.get_thread.start()
             self.get_thread.i_signal.connect(self.update_bar)
@@ -880,6 +919,7 @@ if __name__=="__main__":
     #appctxt = ApplicationContext() #
     define_value_opt()
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
     w = MyForm()
     w.show()
     #exit_code = appctxt.app.exec_()  #
