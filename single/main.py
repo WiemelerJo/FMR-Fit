@@ -228,7 +228,7 @@ class MyForm(QMainWindow):
         global index_model
         index_model = self.ui.comboBox_fit_model.currentIndex()
         if index_model == 1:
-            if Bool == True:
+            if Bool:
                 print('Gaussian deriv. selected')
             dmodel = Model(dyson_func)
         elif index_model == 2:
@@ -352,6 +352,7 @@ class MyForm(QMainWindow):
         global dyn_fit_value
 
         if data_value == 'loaded':
+            print('Hi')
             x_temp = Bdata[W]
             y_temp = Adata[W]
             x = x_temp[j_min:j]

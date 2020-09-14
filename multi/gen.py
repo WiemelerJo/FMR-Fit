@@ -15,5 +15,5 @@ for i in range(1,11):
     string = "def lorentz{0}(B, dB{0}, R{0}, A{0}):\n\treturn(-64*A{0}*(B-R{0})/(9*dB{0}*(1+(B-R{0})**2/(dB{0}*m.sqrt(3)/4)**2)**2))".format(i)
     print(string)
 
-def lorentz1(B, dB1, R1, A1):
-    return (-64*A1*(B-R1)/(9*dB1*(1+(B-R1)**2/(dB1*m.sqrt(3)/4)**2)**2))
+'''def lorentz1(B, dB1, R1, A1):
+    return (-64*A1*(B-R1)/(9*dB1*(1+(B-R1)**2/(dB1*m.sqrt(3)/4)**2)**2))'''
