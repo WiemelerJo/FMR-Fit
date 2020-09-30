@@ -5,15 +5,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math as m
 import Functions
+import ast
+import py2mat
+import time
+
 from datetime import datetime
 from lmfit import Model
 from lmfit import Parameters
-from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel,QMessageBox
 from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker
 from Fitprogramm import *
 from arrays import *
 from fitting import Fit
 from parameter_plot import Params_Plot
+from multiprocessing import Process
+
+# TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
+# TODO: Add the Python Ani-Fit in additional GUI-Page
+# TODO: Using doubleSpinBox for determining the Shift in Ani-Fit
+# TODO: Maybe implement a performance mode using CuPy or MOT Module (CUDA and multiprocess optimized optimzation)
+# TODO: Find working solution for 2D(3D) Contourplot
 
 
 def define_value_opt():
@@ -43,15 +54,28 @@ class Worker(QThread):
     i_signal = pyqtSignal() # signal for the processBar
     error_dynfit_signal = pyqtSignal() # error signal
     def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt,i_min,i_max,j,j_min,exceptions):
+        self.index_model = index_model
+        self.fit_num = fit_num
+        self.Bdata = Bdata
+        self.Adata = Adata
+        self.Winkeldata = Winkeldata
+        self.i = i
+        self.fileName = fileName
+        self.value_opt = value_opt
+        self.i_min = i_min
+        self.i_max = i_max
+        self.j = j
+        self.j_min = j_min
+        self.exceptions = exceptions
         QThread.__init__(self)
 
     def fit(self,l,params_table,model,robust):
-        Bdata2 = Bdata[l]
-        Adata2 = Adata[l]
+        Bdata2 = self.Bdata[l]
+        Adata2 = self.Adata[l]
         if robust:
-            result_dyn = model.fit(Adata2[j_min:j], params_table, B=Bdata2[j_min:j],method = 'ampgo') #lbfgsb is also a good alternative or ampgo
+            result_dyn = model.fit(Adata2[self.j_min:self.j], params_table, B=Bdata2[self.j_min:self.j],method = 'ampgo') #lbfgsb is also a good alternative or ampgo
         else:
-            result_dyn = model.fit(Adata2[j_min:j], params_table, B=Bdata2[j_min:j])
+            result_dyn = model.fit(Adata2[self.j_min:self.j], params_table, B=Bdata2[self.j_min:self.j])
         return result_dyn
 
     def run(self):
@@ -59,8 +83,8 @@ class Worker(QThread):
         global Parameter_list
         names = []
         temp_paras = []
-        params_table = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_param_table(index_model)
-        model = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_model(index_model)
+        params_table = Fit(self.index_model, self.fit_num,Adata2,Bdata2, self.j_min,self.j,init_values,bound_min,bound_max).give_param_table(self.index_model)
+        model = Fit(self.index_model, self.fit_num,Adata2,Bdata2, self.j_min,self.j,init_values,bound_min,bound_max).give_model(self.index_model)
 
         #clean up, just in case
         names.clear()
@@ -69,11 +93,11 @@ class Worker(QThread):
         for name, param in result.params.items():
             names.append('{}'.format(name))  #create an array of names for the header
             temp_paras.append(float(param.value))  #create the first parameters to save into the .dat file
-        temp_paras.append(float(Winkeldata[0]))
+        temp_paras.append(float(self.Winkeldata[0]))
         print(names)
         #exceptions = self.give_exceptions()
-        print(exceptions)
-        Parameter_list = np.zeros(shape=(i_max,len(temp_paras)))
+        print(self.exceptions)
+        Parameter_list = np.zeros(shape=(self.i_max,len(temp_paras)))
         for l in range(i_min,i_max):
             if l not in exceptions:
                 self.i_signal.emit() # update progressbar
@@ -82,10 +106,10 @@ class Worker(QThread):
                 for name, param in temp_result.params.items():
                     temp_paras.append(float(param.value))  
                     params_table[name].set(value=param.value,min=None,max=None)
-                temp_paras.append(float(Winkeldata[l]))
+                temp_paras.append(float(self.Winkeldata[l]))
                 Parameter_list[l] = temp_paras
         now = datetime.now()
-        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),index_model,exceptions,names))
+        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),self.index_model,self.exceptions,names))
         value_opt['dyn_fit'] = 'fitted'
 
 class ColourPlot(QThread):
@@ -143,12 +167,14 @@ class MyForm(QMainWindow):
         self.ui.comboBox_fit_model.activated.connect(self.make_parameter_table)
         self.ui.pushButton.clicked.connect(self.test)
         self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
+        self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
         self.show()
 
     def test(self):
-        global Debug
-        print('Ja moin')
-        Debug = 0
+        try:
+            self.plot_ani_fit()
+        except Exception as e:
+            print(e)
 
     def robust_fit(self):
         global value_opt
@@ -230,7 +256,6 @@ class MyForm(QMainWindow):
         except Exception as e:
             print("Error in change_parameter_angle",e)
 
-
     def set_dataslider(self):
         self.ui.select_datanumber.setValue(int(self.ui.Scroll_Bar_dropped_points.value()))
 
@@ -274,15 +299,20 @@ class MyForm(QMainWindow):
         value_opt['dyn'] = 'dynamic'
         self.saveFileDialog()
 
-    def model_type(self,Bool):
-        #selects the type of function used in the fit
-        global index_model
+    def set_model_type_number(self):
+        #sets the integer number of index_model
         global value_opt
-        index_model = self.ui.comboBox_fit_model.currentIndex()
+        global index_model
         if index_model == 2:
             value_opt['index_model_num'] = 3
         elif index_model == 3:
             value_opt['index_model_num'] = 4
+
+    def model_type(self):
+        # selects the type of function used in the fit
+        global index_model
+        index_model = self.ui.comboBox_fit_model.currentIndex()
+        self.set_model_type_number()
 
     def select_fit_number(self):
         #define the number of function that are beeing fitted
@@ -618,24 +648,60 @@ class MyForm(QMainWindow):
             else:
                 self.load_parameters_to_text()
                 Params_Plot(Parameter_from_text,'eigen',index_model)
-        except NameError:
-            print('Please select the Lineshape first!!')
+        except Exception as e:
+            print('Error in parameter_plot:',e)
+
+    def get_fit_options_from_file(self,fname):
+        global index_model
+        global fit_num
+        global value_opt
+
+        f = open(fname)
+        Title = f.readline()
+
+        header_parts = []
+
+        if Title.split('# ')[-1] == 'FMR-Fit\n':
+            header_parts.append(Title)
+            for i in range(3):
+                header_parts.append(f.readline())
+
+            Lineshape = int(header_parts[1].split('$.')[1].split(' Lineshape')[0])  # Extract lineshape out of params file
+
+            try:
+                # Takes Element 3 of header_parts and converts it into an usable array
+                Dropped_points = np.asarray(ast.literal_eval(header_parts[2].split('[')[1].split(']')[0]))
+            except Exception as e:
+                print('Error trying to get Dropped_Points, assuming Dropedpoints as empty:', e)
+                Droppen_points = None
+
+            # Takes Element 4 of header_parts and converts it into an usable array: ['A','dB','R',....]
+            Params_name = np.asarray(ast.literal_eval(header_parts[3].split('[')[1].split(']')[0]))
+
+            index_model = Lineshape
+            print(value_opt['index_model_num'])
+            self.set_model_type_number()
+            print(value_opt['index_model_num'])
+            fit_num = int((len(Params_name)-2)/value_opt['index_model_num'])
+        else:
+            print('File was not created by this script!')
 
     def load_parameter_plot(self):
         print('Loading from file!')
         try:
-            params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
-            if params_fname[0]:
-                Params_Plot(params_fname,'load',index_model)
-        except NameError:
-            print('Please select the Lineshape first!!')            
+            self.load_parameters_to_text()
+            Params_Plot(Parameter_from_text,'load',index_model)
+        except Exception as e:
+            print('Error in load_parameters_to_text',e)
 
     def load_parameters_to_text(self):
         global Parameter_from_text
         global value_opt
+        #Todo: Remove as much global variables as possible!
         params_fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
         if params_fname[0]:
-            Parameter_from_text = np.loadtxt(params_fname[0],dtype='float',skiprows=1)
+            self.get_fit_options_from_file(params_fname[0])
+            Parameter_from_text = np.loadtxt(params_fname[0],dtype='float',skiprows=0)
         value_opt['parameter'] = 'loaded'
 
     def update_parameter_display(self,params,spinbox_bool):
@@ -680,7 +746,7 @@ class MyForm(QMainWindow):
         self.ui.parameter_plot_widget.canvas.ax.clear()
         self.ui.parameter_plot_widget.canvas.ax.set_xlabel('Magnetic Field [T]')
         self.ui.parameter_plot_widget.canvas.ax.set_ylabel('Amplitude [Arb. U.]')
-        self.ui.parameter_plot_widget.canvas.ax.plot(x, y, color='black', marker='o', label='Experimental data') #Plot experimental Data
+        self.ui.parameter_plot_widget.canvas.ax.scatter(x, y, color='black', marker='o', label='Experimental data') #Plot experimental Data
 
         '''if value_opt['dyn_fit'] == 'fitted':
                                     self.ui.parameter_plot_widget.canvas.ax.plot(x, result.best_fit, label='Best Fit') #Fitted Function'''
@@ -702,7 +768,7 @@ class MyForm(QMainWindow):
         global value_opt
         global result
         value_opt['dyn'] = 'single'
-        self.model_type(False)
+        self.model_type()
         if value_opt['data'] == 'loaded':
             try:
                 self.set_init_params()  #gets the initial parameters from the GUI
@@ -771,11 +837,11 @@ class MyForm(QMainWindow):
         #gets the filename for saving
         #then starts the worker responsible for dyn fit
         global p
-        global  New_W
+        global New_W
         global fileName
-        global exceptions
-        p=0
 
+        p=0
+        exceptions = self.Exceptions()
         New_W = [[],[]] #[0] = position, [1] = angle
         for pos,winkel in enumerate(Winkeldata):
             if pos not in exceptions:
@@ -788,11 +854,88 @@ class MyForm(QMainWindow):
         #options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getSaveFileName(self,"Please select the file to save to","","All Files (*);;Text Files (*.dat)",options=options)
         if fileName:
-            exceptions = self.Exceptions()
             self.get_thread = Worker(index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt['dyn'],i_min,i_max,j,j_min,exceptions)
             self.get_thread.start()
             self.get_thread.i_signal.connect(self.update_bar)
             self.get_thread.error_dynfit_signal.connect(self.error_msg)
+
+    def mathematica_submit(self):
+        #(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,outputPath,BresColumn,WinkelColumn,Shift)
+        F = self.ui.LineEdit_free_E_den.text()
+        Params = "fitParameters = " + self.create_mathematica_array(self.ui.LineEdit_fitted_params.text()) #'fitParameters = {K2p, K2s, K4p, phiu}'
+        StartVal = "startvalues = " + self.create_mathematica_array(self.ui.LineEdit_Start_Val.text()) #'startvalues = {863.25, 261345, 13720.6, 5.0756}'
+        Ranges = self.create_mathematica_array(self.ui.LineEdit_Range.text())  #'{0.5, 0.5, 0.5, 0.5}'
+        Steps = self.create_mathematica_array(self.ui.LineEdit_Steps.text())   #'{0.5, 0.5, 0.5, 0.5}'
+        fixedParams = self.create_mathematica_array(self.ui.LineEdit_fixed_Param.text()) #'{omega, g, M, K4s}'
+        fixedValues = self.create_mathematica_array(self.ui.LineEdit_fixed_values.text()) #'{2 Pi*9.8782*10^9, 2.05, 1.53*10^6, 0}'
+        anglestep = 'Pi/90'
+        iterations = 1
+        BresColumn = 4
+        WinkelColumn = 6
+        Shift = 37 #self.ui.doubleSpinBox
+        #print(Params,StartVal)
+        choice = QMessageBox.question(self, 'Sumbitting!',"This fitting can take a while!\nThe GUI will be unresponsive after submission, are you sure to continue?")
+        try:
+            if choice == QMessageBox.Yes:
+                #p = Process(target=py2mat.submit(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift))
+                self.thread = py2mat.Py2Mat(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift)
+                self.thread.save_path_signal.connect(self.get_output_path)
+                self.thread.start()
+                #py2mat.submit(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift)
+                '''while not self.thread.isFinished():
+                    time.sleep(1)
+                    print(save_path)'''
+            else:
+                print('Submission aborted')
+        except Exception as e:
+            print(e)
+
+    def get_output_path(self,arg):
+        #This function is called from the Py2Mat Worker after the ANi Fit finished. It will emit the Signal "arg",
+        # which is the path to the output folder
+        global save_path
+        save_path = arg
+        self.plot_ani_fit()
+
+    def shift_points(self,array,shift):
+        for i,l in enumerate(array):
+            array[i] += shift
+            if array[i] > 355.0:
+                array[i] -= 360
+        return array
+
+    def plot_ani_fit(self):
+        try:
+            ani_out = np.loadtxt(save_path + 'outputFunktion.dat',dtype='float')
+            Shift = 37  #Temporary Variable
+
+            Angle = np.multiply(ani_out[:,0], 180 / m.pi)
+            B_res = ani_out[:,1]
+
+            if index_model == 2:
+                Angle_exp = self.shift_points(Parameter_list[:,5],Shift)
+                B_res_exp = Parameter_list[:,3]
+            else:
+                Angle_exp = self.shift_points(Parameter_list[:,6],Shift)
+                B_res_exp = Parameter_list[:,4]
+
+            self.ui.Ani_Const_Plot.canvas.ax.clear()
+            self.ui.Ani_Const_Plot.canvas.ax.set_ylabel('Resonance Field [T]')
+            self.ui.Ani_Const_Plot.canvas.ax.set_xlabel('Angle [Deg]')
+
+            self.ui.Ani_Const_Plot.canvas.ax.scatter(Angle_exp, B_res_exp, color='black', marker='o', label='Experimental data') #Plot experimental Data
+            self.ui.Ani_Const_Plot.canvas.ax.plot(Angle, B_res, 'r--', label='Fitted Anisotropy')
+
+            self.ui.Ani_Const_Plot.canvas.ax.legend()
+            self.ui.Ani_Const_Plot.canvas.draw()
+        except Exception as e:
+            print(e)
+
+
+    def create_mathematica_array(self,text):
+        #text is the text given by the lineEdits
+        mat_array = "{" + text + "}"
+        return mat_array
 
     def set_init_params(self):
         #as the name say's
