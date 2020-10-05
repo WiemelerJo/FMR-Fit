@@ -19,6 +19,7 @@ from arrays import *
 from fitting import Fit
 from parameter_plot import Params_Plot
 from multiprocessing import Process
+from ani_tools import *
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
 # TODO: Add the Python Ani-Fit in additional GUI-Page
@@ -40,6 +41,7 @@ def define_value_opt():
     value_opt['params_copied'] = False #Value to estimate whether the dyn plot is changeable or not  
     value_opt['robust'] = False # Using Robust Fitting or not (Robust: Using Method "nelder" or "ampgo")
     value_opt['index_model_num'] = int
+    value_opt['ani_pre_fit'] = True # used in get_shift
 
 p = 0
 j = 350
@@ -170,6 +172,8 @@ class MyForm(QMainWindow):
         self.ui.pushButton.clicked.connect(self.test)
         self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
         self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
+        self.ui.shift_SpinBox.valueChanged.connect(self.get_shift)
+        self.ui.shift_SpinBox_Py.valueChanged.connect(self.get_shift)
         self.show()
 
     def test(self):
@@ -177,6 +181,41 @@ class MyForm(QMainWindow):
             self.plot_ani_fit()
         except Exception as e:
             print(e)
+
+    def get_shift(self,d):
+        # d is returned value from spinbox
+        global value_opt
+        try:
+            if value_opt['ani_pre_fit']:
+                print(d,value_opt['ani_pre_fit'])
+                self.preB_Sim = create_pre_fit(rules)
+                value_opt['ani_pre_fit'] = False
+                self.update_canvas(self.preB_Sim,phi_RANGE_deg)
+                self.changeing_phi = np.copy(phi_RANGE_deg)
+                # call function to generate Sim to find good shift
+            else:
+                # update plot according to shift d,
+                # by calculating new phi_shifted, then plot
+                print('Nüschts')
+                self.changeing_phi = np.copy(phi_RANGE_deg)
+                angle = make_phirange(d,self.changeing_phi,'deg')
+                self.update_canvas(self.preB_Sim, angle)
+        except Exception as e:
+            print('Error in get_shift: ',e)
+
+    def update_canvas(self,data:list,angle:list):
+        #Data is 2D List: data[0] = B_Sim, data[1] = B_Exp
+        self.ui.Ani_Const_Plot.canvas.ax.clear()
+        self.ui.Ani_Const_Plot.canvas.ax.set_ylabel('Resonance Field [T]')
+        self.ui.Ani_Const_Plot.canvas.ax.set_xlabel('Angle [Deg]')
+
+        self.ui.Ani_Const_Plot.canvas.ax.scatter(angle, data[1], color='black', marker='o',
+                                                 label='Experimental data')  # Plot experimental Data
+        self.ui.Ani_Const_Plot.canvas.ax.plot(phi_RANGE_deg, data[0], 'r--', label='B_res Simulation')
+
+        self.ui.Ani_Const_Plot.canvas.ax.legend()
+        self.ui.Ani_Const_Plot.canvas.draw()
+
 
     def robust_fit(self):
         global value_opt

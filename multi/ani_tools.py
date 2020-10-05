@@ -61,7 +61,7 @@ phiU_WERT = 2.15  # 2.12#2.13#
 
 maxBresDelta = 0.01
 
-shift = 0#-26
+shift = -26
 
 # consts Einträge
 consts = np.zeros(8)
@@ -92,12 +92,12 @@ B_inter = interp1d(Winkel, R_raw)  # Interpoliertes B_res, array mit Länge len(
 
 # Freie Energy Formel + Baselgia
 F = M * B * (sin(theta) * sin(thetaB) * cos(phi - phiB) + cos(theta) * cos(thetaB)) - (
-            1 / 2 * mu0 * M ** 2 - K2s) * sin(theta) ** 2 - K2p * sin(theta) ** 2 * cos(
+        1 / 2 * mu0 * M ** 2 - K2s) * sin(theta) ** 2 - K2p * sin(theta) ** 2 * cos(
     phi - phiU) ** 2 - 1 / 2 * K4s * cos(theta) ** 4 - 1 / 8 * K4p * (3 + cos(4 * phi)) * sin(theta) ** 4
 # F = M*B*(sin(theta)*sin(thetaB)*cos(phi-phiB)+cos(theta)*cos(thetaB))-(1/2*mu0*M**2-K2s)*sin(theta)**2-K2p*sin(theta)**2*cos(phi-phiU)**2-1/2*K4s*cos(theta)**4-1/8*K4p*(3+cos(4*phi))*sin(theta)**4
 halb_res = gamma ** 2 / M ** 2 * (
-            F.diff(theta, 2) * (F.diff(phi, 2) / (sin(theta)) ** 2 + cos(theta) / sin(theta) * F.diff(theta)) - (
-                F.diff(theta, phi) / sin(theta) - cos(theta) / sin(theta) * F.diff(phi) / sin(theta)) ** 2)
+        F.diff(theta, 2) * (F.diff(phi, 2) / (sin(theta)) ** 2 + cos(theta) / sin(theta) * F.diff(theta)) - (
+        F.diff(theta, phi) / sin(theta) - cos(theta) / sin(theta) * F.diff(phi) / sin(theta)) ** 2)
 eq_halb_res = Eq(omega ** 2, halb_res)
 # Formel der Resonanzfrequenz B_RES, Lösung [0] ist positive Lösung der Wurzelfunktion
 B_RES = solve(eq_halb_res, B)  # Diese Funktion ist ResField(...) aus Mathematica!
@@ -143,6 +143,31 @@ for i in range(len(phi_shifted_deg)):
     elif phi_shifted_deg[i] < minWinkel:
         phi_shifted_deg[i] += maxWinkel
 
+
+def make_phirange(shift_value: float, phi_array: list, deg: bool):
+    if deg:
+        for l, i in enumerate(phi_array):
+            # print('1.',array[l])
+            phi_array[l] += shift_value
+            # print('2.',array[l])
+
+        for i in range(len(phi_array)):
+            if phi_array[i] > maxWinkel:
+                phi_array[i] -= maxWinkel
+            elif phi_array[i] < minWinkel:
+                phi_array[i] += maxWinkel
+    else:
+        shift_value = shift_value * m.pi / 180
+        for l, i in enumerate(phi_array):
+            phi_array[l] += shift_value
+        for i in range(len(phi_array)):
+            if phi_array[i] > phi_max:
+                phi_array[i] -= phi_max
+            elif phi_array[i] < phi_min:
+                phi_array[i] += phi_max
+    return phi_array
+
+
 def solveAngles(B, phiB, fkt):
     # Minimize Angles Theta, Phi, ThetaB
     # start_Paras for the moment these are constant: [m.pi/2, m.pi, m.pi/2]
@@ -177,6 +202,7 @@ def solveAngles(B, phiB, fkt):
     ##print(result.x[0],result.x[1],result.x[2],"\"Local Minimum\"")
     return result.x[0], result.x[1], result.x[2]
 
+
 def find_shift():
     print("Hi")
 
@@ -186,11 +212,12 @@ def ResFieldNumInp(rules, phi_val):
     B = B_inter(phi_val * 180 / m.pi)
     phiB_val = phi_val
 
-    B_FKT = B_RES.subs({i: l for i, l in rules})   # rules beeing inserted, missing : B, theta, thetaB, phi, phiB
+    B_FKT = B_RES.subs({i: l for i, l in rules})  # rules beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules})  # rules beeing inserted, for minimizing
     Eq_angles = solveAngles(B, phiB_val, FKT)
     result = B_FKT.subs({theta: Eq_angles[0], phi: Eq_angles[1], thetaB: Eq_angles[2], phiB: phiB_val})
     return [float(result), float(Eq_angles[0]), float(Eq_angles[1]), float(Eq_angles[2])]
+
 
 def F_fkt(x, *args):
     # Function of Free Energy Density, that should be minimized
@@ -198,6 +225,7 @@ def F_fkt(x, *args):
     # x are the fitted params
     Fit_fkt = args[2].subs({B: args[0], phiB: args[1], theta: x[0], phi: x[1], thetaB: x[2]})
     return float(Fit_fkt)
+
 
 def Model_Fit_Fkt(phi_real, K2S, K2P, K4S, K4P, PHI_U):
     # is the function used for least square fitting
@@ -210,6 +238,7 @@ def Model_Fit_Fkt(phi_real, K2S, K2P, K4S, K4P, PHI_U):
         c = b.subs({theta: Eq_angles[0][i], phi: Eq_angles[1][i], thetaB: Eq_angles[2][i]})
         fkt.append(float(c))
     return fkt
+
 
 params_Fit = Parameters()
 params_Fit.add_many(
@@ -232,14 +261,15 @@ def update_rules(params_new):
     print('Updated rules:', rules_new)
     return rules_new
 
-def iteration(B_Sim_orig,B_Sim2_orig):
+
+def iteration(B_Sim_orig, B_Sim2_orig):
     global Eq_angles
     B_Sim = B_Sim_orig
     B_Sim2 = B_Sim2_orig
     it_while = 0
     while np.linalg.norm(B_Sim - B_Sim2) > maxBresDelta:
         print('Error too big! Start iterating')
-        if np.array_equal(B_Sim,B_Sim2):
+        if np.array_equal(B_Sim, B_Sim2):
             # check if B_Sim changed
             it_while += 1
             print('Error: Difference between simulated Bres did not change! it_while = ', it_while)
@@ -267,9 +297,19 @@ def iteration(B_Sim_orig,B_Sim2_orig):
         print(np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]))
     return B_Sim2
 
-def init(fit:bool,rules_start):
+def create_pre_fit(rules_start):
     pool = Pool()  # Create pool of threads for multiprocessing
-    func = partial(ResFieldNumInp, rules_start)  # indirectly add more than one functional arguments without *args or **kwargs
+    func = partial(ResFieldNumInp,
+                   rules_start)  # indirectly add more than one functional arguments without *args or **kwargs
+    B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
+    B_Exp = pool.map(B_inter, phi_RANGE_deg)  # Same as above
+    B_Sim = np.asarray(B_Sim)  # convert List to numpy array
+    return B_Sim[:,0],B_Exp
+
+def init(fit: bool, rules_start):
+    pool = Pool()  # Create pool of threads for multiprocessing
+    func = partial(ResFieldNumInp,
+                   rules_start)  # indirectly add more than one functional arguments without *args or **kwargs
     B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
     B_Exp = pool.map(B_inter, phi_shifted_deg)  # Same as above
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
@@ -320,9 +360,9 @@ def init(fit:bool,rules_start):
     plt.legend()
     plt.show()
 
-if __name__ == '__main__':
-    init(False,rules)
 
+'''if __name__ == '__main__':
+    init(False, rules)'''
 
 # Ohne Global Minimum search 8,6 sek.
 # Shgo: 19.2 sec.
