@@ -27,6 +27,8 @@ from multiprocessing import Process
 # TODO: Find working solution for 2D(3D) Contourplot
 
 
+#TODO: Robust Fit mit Multithreading?
+
 def define_value_opt():
     global value_opt
     value_opt = dict()
@@ -99,7 +101,7 @@ class Worker(QThread):
         print(self.exceptions)
         Parameter_list = np.zeros(shape=(self.i_max,len(temp_paras)))
         for l in range(i_min,i_max):
-            if l not in exceptions:
+            if l not in self.exceptions:
                 self.i_signal.emit() # update progressbar
                 temp_paras.clear() # clear temp_paras for each iteration
                 temp_result = self.fit(l,params_table,model,value_opt['robust']) #this is the fit
@@ -297,7 +299,10 @@ class MyForm(QMainWindow):
         #starts the dynamic fitting routine
         global value_opt
         value_opt['dyn'] = 'dynamic'
-        self.saveFileDialog()
+        try:
+            self.saveFileDialog()
+        except Exception as e:
+            print("Error in dyn_Fit: ",e)
 
     def set_model_type_number(self):
         #sets the integer number of index_model
