@@ -78,7 +78,7 @@
                    </font>
                   </property>
                   <property name="text">
-                   <string>Add to dropped points</string>
+                   <string>Add to dropped Spectra</string>
                   </property>
                  </widget>
                 </item>
@@ -108,7 +108,7 @@
                    </font>
                   </property>
                   <property name="text">
-                   <string>Select dataset</string>
+                   <string>Select Spectrum</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -263,7 +263,7 @@
                    </font>
                   </property>
                   <property name="text">
-                   <string>Dropped Points:</string>
+                   <string>Dropped Spectra:</string>
                   </property>
                  </widget>
                 </item>
@@ -273,7 +273,7 @@
                 <item row="3" column="0">
                  <widget class="QPushButton" name="pushButton">
                   <property name="text">
-                   <string>PushButton</string>
+                   <string>Debug_Button</string>
                   </property>
                  </widget>
                 </item>
@@ -519,7 +519,7 @@
                 <item row="1" column="1">
                  <widget class="QLabel" name="label_test">
                   <property name="text">
-                   <string>TextLabel</string>
+                   <string/>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -946,7 +946,7 @@
         </widget>
         <widget class="QWidget" name="anifit_tab">
          <attribute name="title">
-          <string>Anisotropy Constant Fit</string>
+          <string>Anisotropy Fit</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_17">
           <item row="0" column="0">
@@ -1250,7 +1250,354 @@
                  </widget>
                 </item>
                 <item row="6" column="1">
-                 <widget class="QDoubleSpinBox" name="doubleSpinBox">
+                 <widget class="QDoubleSpinBox" name="shift_SpinBox">
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="decimals">
+                   <number>1</number>
+                  </property>
+                  <property name="minimum">
+                   <double>-360.000000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>360.000000000000000</double>
+                  </property>
+                  <property name="singleStep">
+                   <double>0.100000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="PlotWidget" name="Ani_Const_Plot"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="AniFi_Python">
+         <attribute name="title">
+          <string>AniFit-Python</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <item>
+               <layout class="QGridLayout" name="gridLayout_8">
+                <item row="2" column="1">
+                 <widget class="QLineEdit" name="LineEdit_free_E_den_Py">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="toolTip">
+                   <string>Write the Free Energy Density as you would do in Mathematica. This means using F[thetaB_ ,.....]. Also try to avoid special characters like the theta symbol etc.</string>
+                  </property>
+                  <property name="text">
+                   <string>F[B_, thetaB_, phiB_, M_, theta_, phi_] = M*B (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s) Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiu]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p (3 + Cos[4*phi]) Sin[theta]^4</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLabel" name="Label_4">
+                  <property name="font">
+                   <font>
+                    <pointsize>16</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Parameters</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_16">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Free Energy Density F : </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="LineEdit_fitted_params_Py">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="toolTip">
+                   <string>Set the parameters, that you want to fit</string>
+                  </property>
+                  <property name="text">
+                   <string>K2p, K2s, K4p, phiu</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_17">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Fitted Parameter : </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_18">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Fixed Parameter : </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QLineEdit" name="LineEdit_fixed_Param_Py">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="toolTip">
+                   <string>Fixed Parameterst are Parameters that are not fitted</string>
+                  </property>
+                  <property name="text">
+                   <string>omega, g, M, K4s</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="0">
+                 <widget class="QPushButton" name="sumbit_mathematica_2">
+                  <property name="toolTip">
+                   <string>Takes every entry above and sumbits it to Mathematica</string>
+                  </property>
+                  <property name="text">
+                   <string>Submit to Mathematica</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="1">
+                 <widget class="QLineEdit" name="LineEdit_fixed_values_Py">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="toolTip">
+                   <string>Set the values of fixed parameters, set above. Please keep the same order as above! </string>
+                  </property>
+                  <property name="text">
+                   <string>2 Pi*9.8782*10^9, 2.05, 1.53*10^6, 0</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QLabel" name="label_31">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Fixed Values : </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QGridLayout" name="gridLayout_9">
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="LineEdit_Start_Val_Py">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="toolTip">
+                   <string>Select the starting values</string>
+                  </property>
+                  <property name="text">
+                   <string>863.25, 261345, 13720.6, 5.0756</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLabel" name="Label_5">
+                  <property name="font">
+                   <font>
+                    <pointsize>16</pointsize>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Options</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_33">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Range : </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_32">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Start Values : </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QLabel" name="label_34">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Steps : </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="1">
+                 <widget class="QLineEdit" name="LineEdit_Steps_Py">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="toolTip">
+                   <string>Steps additionaly divide the ranges. Therefore, in the given Range change the value with Range*Steps*Value</string>
+                  </property>
+                  <property name="text">
+                   <string>0.5, 0.5, 0.5, 0.5</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="1">
+                 <widget class="QDoubleSpinBox" name="shift_SpinBox_Py">
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="decimals">
+                   <number>1</number>
+                  </property>
+                  <property name="minimum">
+                   <double>-360.000000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>360.000000000000000</double>
+                  </property>
+                  <property name="singleStep">
+                   <double>0.100000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QLineEdit" name="LineEdit_Range_Py">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="toolTip">
+                   <string>Ranges give the range a parameter is allowed to be changed (by the Fit). A Value of 0.5 will result in a change of +-50% of the orignial value</string>
+                  </property>
+                  <property name="text">
+                   <string>0.5, 0.5, 0.5, 0.5</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="0">
+                 <widget class="QLabel" name="label_35">
+                  <property name="font">
+                   <font>
+                    <underline>false</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Shift</string>
+                  </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
                   </property>
@@ -1261,7 +1608,7 @@
              </layout>
             </item>
             <item>
-             <widget class="PlotWidget" name="Ani_Const_Plot"/>
+             <widget class="PlotWidget" name="Ani_Const_Plot_Py"/>
             </item>
            </layout>
           </item>

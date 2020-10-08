@@ -101,7 +101,8 @@ class Worker(QThread):
         print(names)
         #exceptions = self.give_exceptions()
         print(self.exceptions)
-        Parameter_list = np.zeros(shape=(self.i_max,len(temp_paras)))
+        Parameter_list = np.zeros(shape=(self.i_max-len(self.exceptions),len(temp_paras)))
+        iteration = 0
         for l in range(i_min,i_max):
             if l not in self.exceptions:
                 self.i_signal.emit() # update progressbar
@@ -111,7 +112,8 @@ class Worker(QThread):
                     temp_paras.append(float(param.value))  
                     params_table[name].set(value=param.value,min=None,max=None)
                 temp_paras.append(float(self.Winkeldata[l]))
-                Parameter_list[l] = temp_paras
+                Parameter_list[iteration] = temp_paras
+                iteration += 1  #cleaned iteration (iteration with exceptions removed)
         now = datetime.now()
         np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),self.index_model,self.exceptions,names))
         value_opt['dyn_fit'] = 'fitted'
@@ -172,8 +174,11 @@ class MyForm(QMainWindow):
         self.ui.pushButton.clicked.connect(self.test)
         self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
         self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
+        self.ui.sumbit_mathematica_2.clicked.connect(self.python_submit)
         self.ui.shift_SpinBox.valueChanged.connect(self.get_shift)
         self.ui.shift_SpinBox_Py.valueChanged.connect(self.get_shift)
+        self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
+        #self.ui.LineEdit_Start_Val_Py.editingFinished.connect(self.make_preB_sim)
         self.show()
 
     def test(self):
@@ -182,40 +187,66 @@ class MyForm(QMainWindow):
         except Exception as e:
             print(e)
 
+    def make_preB_sim(self):
+        global value_opt
+        self.preB_Sim = self.python_submit(True)
+
+        if value_opt['ani_pre_fit']:
+            value_opt['ani_pre_fit'] = False
+            self.maxWinkel = max(self.preB_Sim[2])
+            self.minWinkel = min(self.preB_Sim[2])
+        shift = self.ui.shift_SpinBox_Py.value()
+        self.get_shift(shift)
+        #preB_Sim: [0] = B_Sim; [1] = B_Exp; [2] = phi_RANGE_deg
+
     def get_shift(self,d):
         # d is returned value from spinbox
         global value_opt
         try:
             if value_opt['ani_pre_fit']:
-                print(d,value_opt['ani_pre_fit'])
-                self.preB_Sim = create_pre_fit(rules)
+                self.ani_fit_angle = False
+                #print(d,value_opt['ani_pre_fit'])
+                self.make_preB_sim()
+                
                 value_opt['ani_pre_fit'] = False
-                self.update_canvas(self.preB_Sim,phi_RANGE_deg)
-                self.changeing_phi = np.copy(phi_RANGE_deg)
+                self.update_canvas(self.preB_Sim,self.preB_Sim[2])
+                self.changeing_phi = np.copy(self.preB_Sim[2])
                 # call function to generate Sim to find good shift
             else:
                 # update plot according to shift d,
                 # by calculating new phi_shifted, then plot
-                print('Nüschts')
-                self.changeing_phi = np.copy(phi_RANGE_deg)
-                angle = make_phirange(d,self.changeing_phi,'deg')
+                self.changeing_phi = np.copy(self.preB_Sim[2])
+                angle = make_phirange(d, self.changeing_phi, 'deg', self.minWinkel, self.maxWinkel)
                 self.update_canvas(self.preB_Sim, angle)
+                self.ani_fit_angle = np.copy(angle)
         except Exception as e:
             print('Error in get_shift: ',e)
 
     def update_canvas(self,data:list,angle:list):
         #Data is 2D List: data[0] = B_Sim, data[1] = B_Exp
+        # Mathematica Canvas
         self.ui.Ani_Const_Plot.canvas.ax.clear()
         self.ui.Ani_Const_Plot.canvas.ax.set_ylabel('Resonance Field [T]')
         self.ui.Ani_Const_Plot.canvas.ax.set_xlabel('Angle [Deg]')
 
         self.ui.Ani_Const_Plot.canvas.ax.scatter(angle, data[1], color='black', marker='o',
                                                  label='Experimental data')  # Plot experimental Data
-        self.ui.Ani_Const_Plot.canvas.ax.plot(phi_RANGE_deg, data[0], 'r--', label='B_res Simulation')
+        self.ui.Ani_Const_Plot.canvas.ax.plot(self.preB_Sim[2], data[0], 'r--', label='B_res Simulation')
 
         self.ui.Ani_Const_Plot.canvas.ax.legend()
         self.ui.Ani_Const_Plot.canvas.draw()
 
+        # Python canvas
+        self.ui.Ani_Const_Plot_Py.canvas.ax.clear()
+        self.ui.Ani_Const_Plot_Py.canvas.ax.set_ylabel('Resonance Field [T]')
+        self.ui.Ani_Const_Plot_Py.canvas.ax.set_xlabel('Angle [Deg]')
+
+        self.ui.Ani_Const_Plot_Py.canvas.ax.scatter(angle, data[1], color='black', marker='o',
+                                                 label='Experimental data')  # Plot experimental Data
+        self.ui.Ani_Const_Plot_Py.canvas.ax.plot(self.preB_Sim[2], data[0], 'r--', label='B_res Simulation')
+
+        self.ui.Ani_Const_Plot_Py.canvas.ax.legend()
+        self.ui.Ani_Const_Plot_Py.canvas.draw()
 
     def robust_fit(self):
         global value_opt
@@ -903,6 +934,74 @@ class MyForm(QMainWindow):
             self.get_thread.i_signal.connect(self.update_bar)
             self.get_thread.error_dynfit_signal.connect(self.error_msg)
 
+    def python_submit(self,*args):
+        # Python AniFit routine
+        #try:
+        # FreeEnergy from GUI has to be converted to Python synatx
+        F = self.ui.LineEdit_free_E_den_Py.text()
+        F = self.convert_freeE_to_py(F) # This F is now in Python Syntax!
+
+        #Now create dicts for fit_Params and fixed_params
+        fit_params = self.ui.LineEdit_fitted_params_Py.text().replace(' ','').split(',')
+        fit_params_value = self.ui.LineEdit_Start_Val_Py.text().replace(' ','').split(',')
+        fit_params_value = [float(i) for i in fit_params_value]
+        ani_fit_params = dict(zip(fit_params,fit_params_value))     #dict of fit params
+
+        fixed_params = self.ui.LineEdit_fixed_Param_Py.text().replace(' ','').split(',')
+        fixed_params_value = self.ui.LineEdit_fixed_values_Py.text().replace(' ','').replace('^','**').replace('Pi','m.pi').split(',')
+        fixed_params_value = [eval(i) for i in fixed_params_value]
+        ani_fixed_params = dict(zip(fixed_params,fixed_params_value))   #dict of fixed params
+
+        anglestep = m.pi / self.ui.spinBox_Anglestep_Py.value()
+        shift = float(self.ui.shift_SpinBox_Py.value())
+
+        print(anglestep,shift)
+        #Then call init_load from ani_tool.py
+
+        if not args[0]:
+            init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True, self.ani_fit_angle)
+        else:
+            result = init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
+            return result
+        #except Exception as e:
+        #    if len(fit_params) != len(fit_params_value):
+        #        print('Length of fit parameters and start values is unequal!')
+        #    elif len(fixed_params) != len(fixed_params_value):
+        #        print('Length of fixed parameters is unequal!')
+        #    print('Error in python_submit: ',e)
+
+
+
+    def convert_freeE_to_py(self,FreeE):
+
+        #Convert FreeE to python syntax
+        #FreeE is string of FreeE from GUI
+
+        #I'm not satisfied with this approach. Open for suggestions, on how to improve this!
+
+        FreeE = FreeE.replace('[', '(')
+        FreeE = FreeE.replace(']', ')')
+        FreeE = FreeE.replace(') ', ')')
+        FreeE = FreeE.replace(' (', '(')
+        FreeE = FreeE.replace('^', '**')
+        FreeE = FreeE.replace('S', 's')
+        FreeE = FreeE.replace(' s', 's')
+        FreeE = FreeE.replace('C', 'c')
+        FreeE = FreeE.replace(' c', 'c')
+        FreeE = FreeE.replace(' - ', '-')
+        FreeE = FreeE.replace('- ', '-')
+        FreeE = FreeE.replace(' -', '-')
+        FreeE = FreeE.replace(' + ', '+')
+        FreeE = FreeE.replace('+ ', '+')
+        FreeE = FreeE.replace(' +', '+')
+        FreeE = FreeE.replace('Theta', 'theta')
+        FreeE = FreeE.replace('Phi', 'phi')
+        FreeE = FreeE.replace('phib', 'phiB')
+        FreeE = FreeE.replace('thetab', 'thetaB')
+        FreeE = FreeE.replace('phiu', 'phiU')
+        FreeE = sympify(FreeE)
+        return FreeE
+
     def mathematica_submit(self):
         #(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,outputPath,BresColumn,WinkelColumn,Shift)
         F = self.ui.LineEdit_free_E_den.text()
@@ -912,11 +1011,11 @@ class MyForm(QMainWindow):
         Steps = self.create_mathematica_array(self.ui.LineEdit_Steps.text())   #'{0.5, 0.5, 0.5, 0.5}'
         fixedParams = self.create_mathematica_array(self.ui.LineEdit_fixed_Param.text()) #'{omega, g, M, K4s}'
         fixedValues = self.create_mathematica_array(self.ui.LineEdit_fixed_values.text()) #'{2 Pi*9.8782*10^9, 2.05, 1.53*10^6, 0}'
-        anglestep = 'Pi/90'
-        iterations = 1
+        anglestep = 'Pi/'+str(self.ui.spinBox_Anglestep.value())
+        iterations = self.ui.spinBox_Iterations.value()
         BresColumn = 4
         WinkelColumn = 6
-        Shift = 37 #self.ui.doubleSpinBox
+        Shift = self.ui.shift_SpinBox.value()
         #print(Params,StartVal)
         choice = QMessageBox.question(self, 'Sumbitting!',"This fitting can take a while!\nThe GUI will be unresponsive after submission, are you sure to continue?")
         try:
