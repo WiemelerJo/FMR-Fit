@@ -959,7 +959,7 @@ class MyForm(QMainWindow):
         #Then call init_load from ani_tool.py
 
         if not args[0]:
-            init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True, self.ani_fit_angle)
+            init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
         else:
             result = init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
             return result
