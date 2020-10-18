@@ -24,9 +24,6 @@ class Worker(object):
         super(Worker, self).__init__()
         self.arg = arg
         
-
-
-
 def shifting(array, shift, deg):
     if deg == 'deg':
         for l, i in enumerate(array):
@@ -60,7 +57,8 @@ f = Symbol('f')
 F = Function('F')
 
 
-def init_load(filename, FreeE, fit_params, fixed_params, shift, anglestep, Fit: bool, Plot: bool, *args):
+def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, *args):
+    #global B_RES
     # filename string,  value, path to parameter.dat file used for fitting
     # FreeE string,  of Free Energy Density
     # fit_params dict => Parameter + start value
@@ -71,15 +69,15 @@ def init_load(filename, FreeE, fit_params, fixed_params, shift, anglestep, Fit: 
     # Plot: bool, same as Fit
 
     # The rest will be passed as *arg
-    # phi_array: array, of angles Phi
-    # phi_array_not_shifted: orig array of phi
+    # phi_array: array, of angles Phi of phi in degrees shifted!
+    # phi_array_not_shifted: orig array 
     # R_raw: array of raw Bres fitted, taken from a file
 
     if args:
         phi_array = args[0]
-        print(filename, FreeE, fit_params, fixed_params, shift, anglestep, phi_array)
+        print(filename, FreeE, fit_params, fixed_params, shifts, anglestep, phi_array)
     else:
-        print(filename, FreeE, fit_params, fixed_params, shift, anglestep,Fit,Plot)
+        print(filename, FreeE, fit_params, fixed_params, shifts, anglestep,Fit,Plot)
     # ------fixed Params--------
     omega = Symbol('omega')
     g = Symbol('g')
@@ -102,7 +100,7 @@ def init_load(filename, FreeE, fit_params, fixed_params, shift, anglestep, Fit: 
 
     maxBresDelta = 0.01  # Also adjustable by gui?
 
-    shift = -shift
+    shift = -shifts
 
     # Add consts to fixed params dict
     fixed_params[mu0] = 4 * m.pi * 10 ** (-7)
@@ -113,11 +111,9 @@ def init_load(filename, FreeE, fit_params, fixed_params, shift, anglestep, Fit: 
     #       ------------------------------------------gamma missing? -----------------------------------------------
 
     # Laden der gefitteten Resonanzpositionen
-    D = np.loadtxt("parameter-IP-19-09-2020.dat", dtype='float', skiprows=0)
+    D = np.loadtxt(filename, dtype='float', skiprows=0)
     R_raw = D[:, 3]
     Winkel = D[:, 5].flatten()
-    Winkel2 = np.copy(Winkel)
-    Winkel2 = shifting(Winkel2, shift, 'deg')
     B_inter = interp1d(Winkel, R_raw)  # Interpoliertes B_res, array mit Länge len(Winkel)
 
     #FreeE = 'B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiu)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2'
@@ -141,6 +137,10 @@ def init_load(filename, FreeE, fit_params, fixed_params, shift, anglestep, Fit: 
     # Create angle arrays
     phi_min = min(Winkel) * m.pi / 180  # define smallest value
     phi_max = max(Winkel) * m.pi / 180  # define biggest value
+
+    Winkel_min = min(Winkel)
+    Winkel_max = max(Winkel)
+
     phi_step = anglestep  # define stepwidth (resolution)
     phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
     phi_RANGE_deg = np.multiply(phi_RANGE, 180 / m.pi)  # convert to degrees
@@ -148,20 +148,61 @@ def init_load(filename, FreeE, fit_params, fixed_params, shift, anglestep, Fit: 
     # phi_array # shifted array from GUI (make_phirange)
 
     # Create Paramters dict() for the leastsq fit
-    params_Fit = Parameters()
-    for name, value in fit_params.items():
-        params_Fit.add(name, value)
-    model = Model(Model_Fit_Fkt)
+    
 
     if Fit:
         #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
-        phi_array = phi_RANGE
-        main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit)
+        phi_array = make_phirange(shift, phi_RANGE_deg, True, Winkel_min, Winkel_max)
+
+        func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
+        func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
+        func_str = create_str_func(func_args)
+        exec(func_str,globals())  # This will create the function give by func_str: "Model_Fit_Fkt"
+
+        # Then create Parameter dict() and model for lmfit
+        params_Fit = Parameters()
+        for name, value in fit_params.items():
+            params_Fit.add(name, value)
+        model = Model(Model_Fit_Fkt)
+
+        main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta)
     else:
         result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg,B_inter, B_RES, F)
         return result
 
-def Model_Fit_Fkt(phi_real, K2s, K2p, K4p, phi_u):
+def create_str_func(func_args):
+    # this function creates a string, that in the later part will be conveted to an expression
+    func = """
+def Model_Fit_Fkt(phi_real, .ß123, **kwargs):
+    
+    
+    fkt = []
+    B_RES = kwargs['B_RES']
+    Eq_angles = kwargs['Eq_angles']
+    #print("Now it comes!:")
+    #print(locals())
+    #print(kwargs)
+
+    Local_dict = locals()
+    Local_dict.pop('kwargs')
+    Local_dict.pop('B_RES')
+    Local_dict.pop('phi_real')
+    Local_dict.pop('fkt')
+    Local_dict.pop('Eq_angles')
+    #print(Local_dict)
+
+    a = B_RES.subs({i: l for i, l in kwargs['fixed_params'].items()})  # Parameter, B and EqAngle missing
+
+    for i, l in enumerate(phi_real):
+        b = a.subs({i: l for i, l in Local_dict.items()})
+        c = b.subs({phiB: l, theta: Eq_angles[0][i], phi: Eq_angles[1][i], thetaB: Eq_angles[2][i]})
+        fkt.append(float(c))
+    return fkt""".replace('.ß123',func_args)
+    return func
+
+
+
+'''def Model_Fit_Fkt(phi_real, K2s, K2p, K4p, phi_u):
     # is the function used for least square fitting
     # inputs are values for parameter
     # outputs array "fkt", an element in fkt is the value of the function at point x=phi_real, so f(x)
@@ -172,10 +213,9 @@ def Model_Fit_Fkt(phi_real, K2s, K2p, K4p, phi_u):
         b = a.subs({phiB: l, K2s: K2S, K2p: K2P, K4s: K4S, K4p: K4P, phiU: PHI_U})
         c = b.subs({theta: Eq_angles[0][i], phi: Eq_angles[1][i], thetaB: Eq_angles[2][i]})
         fkt.append(float(c))
-    return fkt
+    return fkt'''
 
-def iteration(B_Sim_orig, B_Sim2_orig):
-    global Eq_angles
+def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, B_inter, F, maxBresDelta, model, params_Fit, B_Exp, phi_RANGE, fit_params, pool):
     B_Sim = B_Sim_orig
     B_Sim2 = B_Sim2_orig
     it_while = 0
@@ -191,7 +231,7 @@ def iteration(B_Sim_orig, B_Sim2_orig):
         B_Sim = np.copy(B_Sim2)  # To start with the result from previous iteration
         Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
 
-        ani_result = model.fit(B_Exp, params_Fit, phi_real=phi_RANGE)  # Fit
+        ani_result = model.fit(B_Exp, params_Fit, phi_real=phi_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)  # Fit
         print(ani_result.fit_report())
 
         # Refresh the parameter dict()
@@ -200,16 +240,19 @@ def iteration(B_Sim_orig, B_Sim2_orig):
             params_Fit[name].set(value=param.value)
 
         # Refresh rule
-        rule = update_rules(fit_params)
+        rule = update_rules(fit_params, fixed_params)
+
+        B_FKT = str(B_RES.subs({i: l for i, l in rule.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
+        FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing 
 
         # Recalculate EqAngles
-        func = partial(ResFieldNumInp, rule)
+        func = partial(ResFieldNumInp, B_inter, B_FKT, FKT)
         B_Sim2 = pool.map(func, phi_RANGE)
         B_Sim2 = np.asarray(B_Sim2)
 
         # print error between old and new result
         print(np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]))
-    return B_Sim2
+    return B_Sim2,params_Fit
 
 def ResFieldNumInp(B_inter, B_RES, F, phi_val):
     #rule, B_inter, B_RES, F
@@ -240,7 +283,7 @@ def F_fkt(x, *args):
     Fit_fkt = args[2].subs({'B': args[0], 'phiB': args[1], 'theta': x[0], 'phi': x[1], 'thetaB': x[2]})
     return float(Fit_fkt)
 
-def update_rules(params_new):
+def update_rules(params_new, fixed_params):
     # update rules array according to new values inside params_new
     rule_new = {**params_new, **fixed_params}
     print('Updated rule:', rule_new)
@@ -291,7 +334,10 @@ def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     return B_Sim[:, 0], B_Exp, phi_RANGE_deg
 
-def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, model,params_Fit):
+def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params,maxBresDelta):
+    #phi_RANGE is array of rad not shifted
+    #phi_array is aray of deg shifted
+
     pool = Pool()  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
@@ -315,7 +361,7 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
     # 4. calculate error between B_sim1 and B_Sim2, if bigger than maxBresDelta, start iterating
     # 5. Iteration: set B_Sim1 = B_Sim2 and go to step 1. until error is smaller than maxBresDelta
 
-    ani_result = model.fit(B_Exp, params_Fit, phi_real=phi_RANGE)
+    ani_result = model.fit(B_Exp, params_Fit, phi_real=phi_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)
     print(ani_result.fit_report())
 
     # Refresh the parameter dict()
@@ -324,26 +370,48 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
         params_Fit[name].set(value=param.value)
 
     # Refresh rule
-    rule = update_rules(fit_params)
+    rule = update_rules(fit_params, fixed_params)
 
-    func = partial(ResFieldNumInp, rule)
+    B_FKT = str(B_RES.subs({i: l for i, l in rule.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
+    FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing 
+
+    func = partial(ResFieldNumInp, B_inter, B_FKT, FKT)
     B_Sim2 = pool.map(func, phi_RANGE)
     B_Sim2 = np.asarray(B_Sim2)
-    print("Magnituden Unterschied von: ", np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]), ", maxBresDelta: ",
-          maxBresDelta, " bigger than magnitude? ", np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]) > maxBresDelta)
 
-    B_Sim2 = iteration(B_Sim, B_Sim2)
+    delta = np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]) 
+    print("Magnituden Unterschied von: ", delta, ", maxBresDelta: ",
+          maxBresDelta, " bigger than magnitude? ", delta > maxBresDelta)
+
+    if delta > maxBresDelta:
+        # if delta is too big start iterating
+        Sim_result = iteration(B_Sim, B_Sim2, B_RES, fixed_params,B_inter, F,maxBresDelta, model, params_Fit, B_Exp, phi_RANGE, fit_params, pool)
+        # Sim_result is now a list 5D List: 
+        #    [:, 0] = B_Sim
+        #    [:, 1] = Eq_Angle1
+        #    [:, 2] = Eq_Angle2
+        #    [:, 3] = Eq_Angle3
+        #    [:, 5] = best fit params dict
+        B_Sim2 = Sim_result[0]
+        print(Sim_result[1])
 
     if plot:
-        plt.plot(phi_RANGE_deg, B_Sim2[:, 0], '-g', label='Simulation2')
+        phi_deg = pool.map(rad_to_deg, phi_RANGE)
+        plt.cla()
+        plt.clf()
+        plt.plot(phi_deg, B_Sim2[:, 0], '-g', label='Simulation')
         # plt.plot(phi_RANGE_deg, ani_result.best_fit, '-r', label='best fit')
-        plt.plot(phi_RANGE_deg, B_Sim[:, 0], '-g', label='Simulation1')
-        plt.plot(phi_RANGE_deg, B_Exp, '-b', label='Interpolation')
-        plt.scatter(phi_RANGE_deg, B_Exp, label='Experiment')
+        #plt.plot(phi_deg, B_Sim[:, 0], '-g', label='Simulation1')
+        plt.plot(phi_deg, B_Exp, '-b', label='Interpolation')
+        plt.scatter(phi_deg, B_Exp, label='Experiment')
         plt.xlabel('Angle [Degrees]')
         plt.ylabel('B-Field [Arb. Units]')
         plt.legend()
         plt.show()
+
+def rad_to_deg(val):
+    val = val*180/m.pi
+    return val
 
 def make_phirange(shift_value: float, phi_array: list, deg: bool, minWinkel: float, maxWinkel: float):
     if deg:
@@ -375,9 +443,21 @@ def make_phirange(shift_value: float, phi_array: list, deg: bool, minWinkel: flo
 if __name__ == '__main__':
 
     #For debug only
-
+    
     #text = "C:/Users/Jonas/Desktop/test.dat B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2 {'K2p': 863.25, 'K2s': 261345.0, 'K4p': 13720.6, 'phiu': 5.0756} {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0} 0.0 0.03490658503988659 False False"
-    init_load('C:/Users/Jonas/Desktop/test.dat', 'B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiu)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2', {'K2p': 863.25, 'K2s': 261345.0, 'K4p': 13720.6, 'phiu': 5.0756} ,{'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0}, 26.3 ,0.03490658503988659 ,True, False)
+    init_load('C:/Users/Jonas/Desktop/test.dat','B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2', {'K2p': 863.25, 'K2s': 100000.0, 'K4p': 13720.6, 'phiU': 5.0756}, {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0}, 26.0, 0.03490658503988659,True, True,[332, 334, 336, 338, 340, 342, 344, 346, 348, 350, 352, 354, 356,   0,
+   2,   4,   6,   8,  10,  12,  14,  16,  18,  20,  22,  24,  26,  28,
+  30,  32,  34,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,
+  58,  60,  62,  64,  66,  68,  70,  72,  74,  76,  78,  80,  82,  84,
+  86,  88,  90,  92,  94,  96,  98, 100, 102, 104, 106, 108, 110, 112,
+ 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140,
+ 142, 144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 166, 168,
+ 170, 172, 174, 176, 178, 180, 182, 184, 186, 188, 190, 192, 194, 196,
+ 198, 200, 202, 204, 206, 208, 210, 212, 214, 216, 218, 220, 222, 224,
+ 226, 228, 230, 232, 234, 236, 238, 240, 242, 244, 246, 248, 250, 252,
+ 254, 256, 258, 260, 262, 264, 266, 268, 270, 272, 274, 276, 278, 280,
+ 282, 284, 286, 288, 290, 292, 294, 296, 298, 300, 302, 304, 306, 308,
+ 310, 312, 314, 316, 318, 320, 322, 324, 326, 328, 330, 332])
 
 # Ohne Global Minimum search 8,6 sek.
 # Shgo: 19.2 sec.

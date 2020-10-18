@@ -966,7 +966,7 @@
                    <string>Write the Free Energy Density as you would do in Mathematica. This means using F[thetaB_ ,.....]. Also try to avoid special characters like the theta symbol etc.</string>
                   </property>
                   <property name="text">
-                   <string>F[B_, thetaB_, phiB_, M_, theta_, phi_] = M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiu]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
+                   <string>F[B_, thetaB_, phiB_, M_, theta_, phi_] = -M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiu]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -1351,7 +1351,7 @@
                    <string>Write the Free Energy Density as you would do in Mathematica. This means using F[thetaB_ ,.....]. Also try to avoid special characters like the theta symbol etc.</string>
                   </property>
                   <property name="text">
-                   <string>M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiU]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
+                   <string>-M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiU]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
