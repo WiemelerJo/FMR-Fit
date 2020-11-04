@@ -15,6 +15,8 @@ import matplotlib as mp
 mp.use('QT5Agg')
 import matplotlib.pyplot as plt
 import math as m
+import os
+import datetime
 import time
 
 
@@ -74,6 +76,7 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
     # R_raw: array of raw Bres fitted, taken from a file
 
     if args:
+        print('Ja Moin')
         phi_array = args[0]
         print(filename, FreeE, fit_params, fixed_params, shifts, anglestep, phi_array)
     else:
@@ -149,29 +152,50 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     # Create Paramters dict() for the leastsq fit
     
+    try:
+        if Fit:
+            print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
+            end_pfad = init_folder(filename)
+            #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
+            phi_array = make_phirange(shift, phi_RANGE_deg, True, Winkel_min, Winkel_max)
 
-    if Fit:
-        #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
-        phi_array = make_phirange(shift, phi_RANGE_deg, True, Winkel_min, Winkel_max)
+            func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
+            func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
+            func_str = create_str_func(func_args)
+            exec(func_str,globals())  # This will create the function give by func_str: "Model_Fit_Fkt"
 
-        func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
-        func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
-        func_str = create_str_func(func_args)
-        exec(func_str,globals())  # This will create the function give by func_str: "Model_Fit_Fkt"
+            # Then create Parameter dict() and model for lmfit
+            params_Fit = Parameters()
+            for name, value in fit_params.items():
+                params_Fit.add(name, value)
+            model = Model(Model_Fit_Fkt)
 
-        # Then create Parameter dict() and model for lmfit
-        params_Fit = Parameters()
-        for name, value in fit_params.items():
-            params_Fit.add(name, value)
-        model = Model(Model_Fit_Fkt)
+            main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
+        else:
+            print('Creating pre fit')
+            result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg,B_inter, B_RES, F)
+            return result
+    except Exception as e:
+        print('Error in ani_tools.init_load(): ',e)
+        print('Try fitting the spectra first!')
 
-        main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta)
-    else:
-        result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg,B_inter, B_RES, F)
-        return result
+def init_folder(filename):
+    # This function should get the filename string from the main script and then checks if folders are present, if not they will be created
+    #pfad is the path to the folder the user saved his parameters to
+    pfad = os.path.dirname(filename)
+    dat_name = filename.replace(pfad + '/', '').replace('.dat','')
+    dir_path = pfad + '/{}_Anisotropy'.format(dat_name)
+
+    if not os.path.exists(pfad + '/Anisotropy'):
+        print('Folder Anisotropy does not exist')
+        print('Creating /Anisotropy ....')
+        os.mkdir(dir_path)
+    return dir_path + '/'
 
 def create_str_func(func_args):
-    # this function creates a string, that in the later part will be conveted to an expression
+    # this function creates a string, that in the later part will be converted to an expression
+    # It is necessary for taking varying K parameters into account. With this it is possible to create a function with
+    # varying explicit function parameters needed for the Fit
     func = """
 def Model_Fit_Fkt(phi_real, .ß123, **kwargs):
     
@@ -252,7 +276,7 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, B_inter, F, maxBresD
 
         # print error between old and new result
         print(np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]))
-    return B_Sim2,params_Fit
+    return B_Sim2,fit_params
 
 def ResFieldNumInp(B_inter, B_RES, F, phi_val):
     #rule, B_inter, B_RES, F
@@ -334,7 +358,7 @@ def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     return B_Sim[:, 0], B_Exp, phi_RANGE_deg
 
-def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params,maxBresDelta):
+def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad):
     #phi_RANGE is array of rad not shifted
     #phi_array is aray of deg shifted
 
@@ -391,9 +415,22 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
         #    [:, 1] = Eq_Angle1
         #    [:, 2] = Eq_Angle2
         #    [:, 3] = Eq_Angle3
-        #    [:, 5] = best fit params dict
+        #    [1] = best fit params dict
         B_Sim2 = Sim_result[0]
-        print(Sim_result[1])
+
+        # make output file
+        now = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        end_pfad_now = end_pfad + str(now)
+
+        with open(end_pfad_now + '_Ani_Constants.dat','w') as f:
+            for key, val in Sim_result[1].items():
+                print([key, val])
+                f.write('{0}: {1}'.format(key,val))
+                f.write('\n')
+        np.savetxt(end_pfad_now + '_Function.dat', B_Sim2[:,0])
+        Eq_angles = [B_Sim2[:,1],B_Sim2[:,2],B_Sim2[:,3]]
+        np.savetxt(end_pfad_now + '_Eq_Angles.dat', Eq_angles)
+
 
     if plot:
         phi_deg = pool.map(rad_to_deg, phi_RANGE)
@@ -408,6 +445,8 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
         plt.ylabel('B-Field [Arb. Units]')
         plt.legend()
         plt.show()
+
+
 
 def rad_to_deg(val):
     val = val*180/m.pi

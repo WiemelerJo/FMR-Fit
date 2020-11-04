@@ -9,7 +9,7 @@ import ast
 import py2mat
 import time
 
-from datetime import datetime
+import datetime
 from lmfit import Model
 from lmfit import Parameters
 from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel,QMessageBox
@@ -114,7 +114,7 @@ class Worker(QThread):
                 temp_paras.append(float(self.Winkeldata[l]))
                 Parameter_list[iteration] = temp_paras
                 iteration += 1  #cleaned iteration (iteration with exceptions removed)
-        now = datetime.now()
+        now = datetime.datetime.now()
         np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),self.index_model,self.exceptions,names))
         value_opt['dyn_fit'] = 'fitted'
 
@@ -190,11 +190,16 @@ class MyForm(QMainWindow):
     def make_preB_sim(self):
         global value_opt
         self.preB_Sim = self.python_submit(True)
-
+        # if no pre is present, then ani_pre_fit is True
+        # ani_pre_fit determines whether it is the first time fitting or just a shift
         if value_opt['ani_pre_fit']:
             value_opt['ani_pre_fit'] = False
-            self.maxWinkel = max(self.preB_Sim[2])
-            self.minWinkel = min(self.preB_Sim[2])
+            try:
+                self.maxWinkel = max(self.preB_Sim[2])
+                self.minWinkel = min(self.preB_Sim[2])
+            except Exception as e:
+                print('Error in main.make_preB_sim(): ',e)
+                print('Try fitting the spectra first!')
         shift = self.ui.shift_SpinBox_Py.value()
         self.get_shift(shift)
         #preB_Sim: [0] = B_Sim; [1] = B_Exp; [2] = phi_RANGE_deg
@@ -954,15 +959,17 @@ class MyForm(QMainWindow):
 
         anglestep = m.pi / self.ui.spinBox_Anglestep_Py.value()
         shift = float(self.ui.shift_SpinBox_Py.value())
-
-        print(anglestep,shift)
         #Then call init_load from ani_tool.py
 
-        if not args[0]:
-            init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
-        else:
-            result = init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
-            return result
+        try:
+            if not args[0]:
+                init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
+            else:
+                result = init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
+                return result
+        except Exception as e:
+            print('Error in main.python_submit(): ',e)
+            print('Try fitting the spectra first!')
         #except Exception as e:
         #    if len(fit_params) != len(fit_params_value):
         #        print('Length of fit parameters and start values is unequal!')
