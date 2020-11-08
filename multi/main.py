@@ -1,6 +1,6 @@
 import sys
-import matplotlib as mp
-mp.use('QT5Agg')
+import matplotlib as mpl
+mpl.use('QT5Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import math as m
@@ -22,13 +22,8 @@ from multiprocessing import Process
 from ani_tools import *
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
-# TODO: Add the Python Ani-Fit in additional GUI-Page
-# TODO: Using doubleSpinBox for determining the Shift in Ani-Fit
 # TODO: Maybe implement a performance mode using CuPy or MOT Module (CUDA and multiprocess optimized optimzation)
-# TODO: Find working solution for 2D(3D) Contourplot
-
-
-#TODO: Robust Fit mit Multithreading?
+# TODO: Robust Fit mit Multithreading?
 
 def define_value_opt():
     global value_opt
@@ -869,7 +864,7 @@ class MyForm(QMainWindow):
     def plot_in_colour(self):
         global tick_number
         global colormap
-        '''#the most recent colour plotting routine
+        '''#colour plotting routine using mayavi (OpenGL renderer)
         try:
             from mayavi import mlab
             tick_number = self.ui.colour_tick_edit.text() #not needed for mayavi
@@ -882,6 +877,12 @@ class MyForm(QMainWindow):
         except:
             print('Mayavi not isntalled!')'''
 
+        font = {'family': 'DejaVu Sans',
+                'weight': 'bold',
+                'size': '25'
+                }
+        mpl.rc('font', **font)
+
         tick_number = self.ui.colour_tick_edit.text()
         colormap = self.ui.colour_map_edit.text()
         fig, ax = plt.subplots()
@@ -891,6 +892,7 @@ class MyForm(QMainWindow):
         cbar.set_label('Amplitude [Arb. U.]')
         plt.xlabel('Magnetic Field [mT]')
         plt.ylabel('Angle [deg]')
+
         plt.show()
 
 
