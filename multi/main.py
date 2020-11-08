@@ -46,8 +46,8 @@ def define_value_opt():
 p = 0
 j = 350
 j_min = 0
-colormap = 'inferno'
-tick_number = 256 #Max = 10000, bereits 1000 erstellt 200 MB file!
+colormap = 'magma'
+tick_number = 50 #Max = 10000, bereits 1000 erstellt 200 MB file!
 excep_append = []
 exceptions = [] #Array to store excepted lines in the fit
 fit_num = 1
@@ -117,34 +117,6 @@ class Worker(QThread):
         now = datetime.datetime.now()
         np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),self.index_model,self.exceptions,names))
         value_opt['dyn_fit'] = 'fitted'
-
-class ColourPlot(QThread):
-    def __init__(self,X,Y,Z,colormap,tick_number,D_min,D_max,exceptions):
-        QThread.__init__(self)
-        print('Starting')
-
-    def run(self):
-        print('Starting to Plot')
-        print(tick_number)
-        #numrecs = np.size(D,axis=0)
-        '''
-        Alter Plot mit Matplotlib (Langsam und eher schlecht)
-        x = Bdata
-        y = Winkeldata
-        z = Adata
-        mp.ticker.Locator.MAXTICKS = 10000
-        levels = MaxNLocator(nbins=tick_number).tick_values(D_min,D_max)
-        cmap = plt.get_cmap(colormap)
-        cf = plt.contourf(x, y, z, levels=levels,cmap=cmap)
-        cbar = plt.colorbar(cf)
-        MyForm.colour_plot_main(self,cbar)'''
-        '''cbar.ax.get_yaxis().set_ticks([])
-        for j, lab in range(0,numrecs):
-            cbar.ax.text(.5, (2 * j + 1) / 8.0, lab, ha='center', va='center')
-        cbar.ax.get_yaxis().labelpad = 15
-        cbar.ax.set_ylabel('# of contacts', rotation=270)'''
-        #------------------------------------------------------------------------
-        #Mayavi Plot in 3D (unterstützt OpenGL, ist daher schneller; mehr details)
 
 class MyForm(QMainWindow):
     def __init__(self):
@@ -895,19 +867,32 @@ class MyForm(QMainWindow):
         self.ui.plotView.canvas.draw()
 
     def plot_in_colour(self):
-        #the most recent colour plotting routine
-        from mayavi import mlab
         global tick_number
         global colormap
-        tick_number = self.ui.colour_tick_edit.text() #not needed for mayavi
-        colormap = self.ui.colour_map_edit.text()   #can also be changed in mayavi UI
-        mlab.mesh(X,Y,Z, colormap=colormap,extent=[0.4,1.2,90,120,-300,300])
-        mlab.xlabel('Magnetic Field')
-        mlab.ylabel('Angle')
-        mlab.colorbar(title='Amplitude [Arb. Units]')
-        mlab.show()
-        '''self.get_thread2 = ColourPlot(X,Y,Z,colormap,tick_number,D_min,D_max,exceptions)
-        self.get_thread2.start()'''
+        '''#the most recent colour plotting routine
+        try:
+            from mayavi import mlab
+            tick_number = self.ui.colour_tick_edit.text() #not needed for mayavi
+            colormap = self.ui.colour_map_edit.text()   #can also be changed in mayavi UI
+            mlab.mesh(X,Y,Z, colormap=colormap,extent=[0.4,1.2,90,120,-300,300])
+            mlab.xlabel('Magnetic Field')
+            mlab.ylabel('Angle')
+            mlab.colorbar(title='Amplitude [Arb. Units]')
+            mlab.show()
+        except:
+            print('Mayavi not isntalled!')'''
+
+        tick_number = self.ui.colour_tick_edit.text()
+        colormap = self.ui.colour_map_edit.text()
+        fig, ax = plt.subplots()
+        #contour = ax.contourf(X,Y,Z,30,cmap='magma')
+        contour = ax.contourf(X, Y, Z, int(tick_number), cmap=str(colormap))
+        cbar = fig.colorbar(contour)
+        cbar.set_label('Amplitude [Arb. U.]')
+        plt.xlabel('Magnetic Field [mT]')
+        plt.ylabel('Angle [deg]')
+        plt.show()
+
 
     def Exit(self):
         sys.exit()  #Obviously not the start

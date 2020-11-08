@@ -7,6 +7,11 @@ from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy.optimize import shgo, differential_evolution  # activate when using global optimization
 #from pathos.multiprocessing import ProcessingPool as Pool
+
+'''try:
+    from ray.util.multiprocessing import Pool
+except:
+    from multiprocessing import Pool'''
 from multiprocessing import Pool
 from functools import partial
 import numpy as np
@@ -57,7 +62,7 @@ gamma = Symbol('gamma')
 hbar = Symbol('hbar')
 f = Symbol('f')
 F = Function('F')
-
+start = time.time()
 
 def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, *args):
     #global B_RES
@@ -186,7 +191,7 @@ def init_folder(filename):
     dat_name = filename.replace(pfad + '/', '').replace('.dat','')
     dir_path = pfad + '/{}_Anisotropy'.format(dat_name)
 
-    if not os.path.exists(pfad + '/Anisotropy'):
+    if not os.path.exists(dir_path):
         print('Folder Anisotropy does not exist')
         print('Creating /Anisotropy ....')
         os.mkdir(dir_path)
@@ -356,6 +361,7 @@ def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
     B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
     B_Exp = pool.map(B_inter, phi_RANGE_deg)  # Same as above
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
+    pool.close()
     return B_Sim[:, 0], B_Exp, phi_RANGE_deg
 
 def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad):
@@ -430,6 +436,8 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
         np.savetxt(end_pfad_now + '_Function.dat', B_Sim2[:,0])
         Eq_angles = [B_Sim2[:,1],B_Sim2[:,2],B_Sim2[:,3]]
         np.savetxt(end_pfad_now + '_Eq_Angles.dat', Eq_angles)
+    end = time.time() - start
+    print('It took',end)
 
 
     if plot:
@@ -484,7 +492,7 @@ if __name__ == '__main__':
     #For debug only
     
     #text = "C:/Users/Jonas/Desktop/test.dat B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2 {'K2p': 863.25, 'K2s': 261345.0, 'K4p': 13720.6, 'phiu': 5.0756} {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0} 0.0 0.03490658503988659 False False"
-    init_load('C:/Users/Jonas/Desktop/test.dat','B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2', {'K2p': 863.25, 'K2s': 100000.0, 'K4p': 13720.6, 'phiU': 5.0756}, {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0}, 26.0, 0.03490658503988659,True, True,[332, 334, 336, 338, 340, 342, 344, 346, 348, 350, 352, 354, 356,   0,
+    init_load('C:/Users/Jonas/Desktop/test.dat','-B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2', {'K2p': 863.25, 'K2s': 100000.0, 'K4p': 13720.6, 'phiU': 5.0756}, {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0}, 29.0, 0.03490658503988659,True, True,[332, 334, 336, 338, 340, 342, 344, 346, 348, 350, 352, 354, 356,   0,
    2,   4,   6,   8,  10,  12,  14,  16,  18,  20,  22,  24,  26,  28,
   30,  32,  34,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,
   58,  60,  62,  64,  66,  68,  70,  72,  74,  76,  78,  80,  82,  84,
