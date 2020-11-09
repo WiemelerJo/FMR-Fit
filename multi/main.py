@@ -8,6 +8,7 @@ import Functions
 import ast
 import py2mat
 import time
+import multiprocessing as multip
 
 import datetime
 from lmfit import Model
@@ -1173,6 +1174,7 @@ class MyForm(QMainWindow):
 
 if __name__=="__main__":
     #appctxt = ApplicationContext() #
+    mutlip.set_start_method("spawn")
     define_value_opt()
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
