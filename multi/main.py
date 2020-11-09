@@ -1174,7 +1174,7 @@ class MyForm(QMainWindow):
 
 if __name__=="__main__":
     #appctxt = ApplicationContext() #
-    mutlip.set_start_method("spawn")
+    multip.set_start_method("spawn")
     define_value_opt()
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

@@ -24,26 +24,6 @@ import os
 import datetime
 import time
 
-
-class Worker(object):
-    """docstring for Worker"""
-    def __init__(self, arg):
-        super(Worker, self).__init__()
-        self.arg = arg
-        
-def shifting(array, shift, deg):
-    if deg == 'deg':
-        for l, i in enumerate(array):
-            # print('1.',array[l])
-            array[l] += shift
-            # print('2.',array[l])
-        return array
-    else:
-        shift = shift * m.pi / 180
-        for l, i in enumerate(array):
-            array[l] += shift
-        return array
-
 omega = Symbol('omega')
 g = Symbol('g')
 M = Symbol('M')
@@ -62,7 +42,26 @@ gamma = Symbol('gamma')
 hbar = Symbol('hbar')
 f = Symbol('f')
 F = Function('F')
-start = time.time()
+
+
+def get_fit_options_from_file(fname):
+    global index_model
+    global fit_num
+    global value_opt
+
+    with open(fname) as f:
+        header_parts = []
+        Title = f.readline()
+
+        if Title.split('# ')[-1] == 'FMR-Fit\n':
+            header_parts.append(Title)
+            header_parts.append(f.readline())
+        # print(header_parts[2])
+
+        Lineshape = int(header_parts[1].split('$.')[1].split(' Lineshape')[0])  # Extract lineshape out of params file
+        # If Lineshape = 2 its Lorentz
+        # If Lineshape = 3 its Dyson
+    return Lineshape
 
 def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, *args):
     #global B_RES
@@ -116,12 +115,22 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
     fixed_params[hbar] = (6.62606957 * 10 ** (-34)) / (2 * m.pi)
     #gamma = g*mub/hbar 
     fixed_params[gamma] = fixed_params['g'] * fixed_params[mub] / fixed_params[hbar]
-    #       ------------------------------------------gamma missing? -----------------------------------------------
 
-    # Laden der gefitteten Resonanzpositionen
-    D = np.loadtxt(filename, dtype='float', skiprows=0)
-    R_raw = D[:, 3]
-    Winkel = D[:, 5].flatten()
+    # Load fitted Params and determine Lineshape
+
+    Lineshape = get_fit_options_from_file(filename)
+    D = np.loadtxt(filename, dtype='float', skiprows=0) # Data
+    if Lineshape == 2: #Lorentz
+        R_raw = D[:, 3]
+        Winkel = D[:, 5].flatten()
+    elif Lineshape == 3: #Dyson
+        print("Dyson")
+        R_raw = D[:, 4]
+        Winkel = D[:, 6].flatten()
+    else: # Rest (not implemented yet)
+        print("Please use either Lorentz or Dyson shape!")
+
+    
     B_inter = interp1d(Winkel, R_raw)  # Interpoliertes B_res, array mit Länge len(Winkel)
 
     #FreeE = 'B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiu)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2'
@@ -157,32 +166,32 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     # Create Paramters dict() for the leastsq fit
     
-    try:
-        if Fit:
-            print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
-            end_pfad = init_folder(filename)
-            #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
-            phi_array = make_phirange(shift, phi_RANGE_deg, True, Winkel_min, Winkel_max)
+    '''try:'''
+    if Fit:
+        print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
+        end_pfad = init_folder(filename)
+        #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
+        phi_array = make_phirange(shift, phi_RANGE_deg, True, Winkel_min, Winkel_max)
 
-            func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
-            func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
-            func_str = create_str_func(func_args)
-            exec(func_str,globals())  # This will create the function give by func_str: "Model_Fit_Fkt"
+        func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
+        func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
+        func_str = create_str_func(func_args)
+        exec(func_str,globals())  # This will create the function give by func_str: "Model_Fit_Fkt"
 
-            # Then create Parameter dict() and model for lmfit
-            params_Fit = Parameters()
-            for name, value in fit_params.items():
-                params_Fit.add(name, value)
-            model = Model(Model_Fit_Fkt)
+        # Then create Parameter dict() and model for lmfit
+        params_Fit = Parameters()
+        for name, value in fit_params.items():
+            params_Fit.add(name, value)
+        model = Model(Model_Fit_Fkt)
 
-            main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
-        else:
-            print('Creating pre fit')
-            result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg,B_inter, B_RES, F)
-            return result
-    except Exception as e:
-        print('Error in ani_tools.init_load(): ',e)
-        print('Try fitting the spectra first!')
+        main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
+    else:
+        print('Creating pre fit')
+        result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg,B_inter, B_RES, F)
+        return result
+    '''except Exception as e:
+                    print('Error in ani_tools.init_load(): ',e)
+                    print('Try fitting the spectra first!')'''
 
 def init_folder(filename):
     # This function should get the filename string from the main script and then checks if folders are present, if not they will be created
@@ -367,7 +376,8 @@ def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
 def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad):
     #phi_RANGE is array of rad not shifted
     #phi_array is aray of deg shifted
-
+    start = time.time()
+    
     pool = Pool()  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
