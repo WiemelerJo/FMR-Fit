@@ -715,9 +715,9 @@ class MyForm(QMainWindow):
             '''X = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize) #List of sublists, magnetic field, for colour plot
             Y = np.split(np.array(D[:,2]),chunksize)    #List of sublists, angle data, for colour plot
             Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot'''
-            X = D[:,1].reshape(72,1024)
-            Y = D[:,2].reshape(72,1024)
-            Z = D[:,3].reshape(72,1024)
+            #X = D[:,1].reshape(72,1024)
+            #Y = D[:,2].reshape(72,1024)
+            #Z = D[:,3].reshape(72,1024)
 
             if int(self.ui.select_datanumber.text()) > len(Adata)-1: #catches errors, slider for datanumber
                 i = len(Adata)-1
