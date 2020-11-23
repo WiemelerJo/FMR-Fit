@@ -190,7 +190,7 @@ class MyForm(QMainWindow):
         self.ui.checkBox_dynPlot.stateChanged.connect(self.robust_fit)
         self.ui.comboBox_fit_model.activated.connect(self.make_parameter_table)
 
-        #self.ui.pushButton.clicked.connect(self.doit)
+        self.ui.pushButton.clicked.connect(self.doit)
 
         self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
         self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
@@ -200,7 +200,7 @@ class MyForm(QMainWindow):
         self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
 
 
-        #self.ui.GradWidget.sigGradientChanged.connect(self.update_cmap)
+        self.ui.GradWidget.sigGradientChanged.connect(self.update_cmap)
         #self.ui.LineEdit_Start_Val_Py.editingFinished.connect(self.make_preB_sim)
         self.show()
 
@@ -1076,6 +1076,7 @@ class MyForm(QMainWindow):
         return FreeE
 
     def mathematica_submit(self):
+        global index_model
         #(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,outputPath,BresColumn,WinkelColumn,Shift)
         F = self.ui.LineEdit_free_E_den.text()
         Params = "fitParameters = " + self.create_mathematica_array(self.ui.LineEdit_fitted_params.text()) #'fitParameters = {K2p, K2s, K4p, phiu}'
@@ -1086,8 +1087,13 @@ class MyForm(QMainWindow):
         fixedValues = self.create_mathematica_array(self.ui.LineEdit_fixed_values.text()) #'{2 Pi*9.8782*10^9, 2.05, 1.53*10^6, 0}'
         anglestep = 'Pi/'+str(self.ui.spinBox_Anglestep.value())
         iterations = self.ui.spinBox_Iterations.value()
-        BresColumn = 4
-        WinkelColumn = 6
+
+        if index_model == 2:    #Lorentz
+            BresColumn = 4
+            WinkelColumn = 6
+        elif index_model == 3:      #Dyson
+            BresColumn = 5
+            WinkelColumn = 7
         Shift = self.ui.shift_SpinBox.value()
         #print(Params,StartVal)
         choice = QMessageBox.question(self, 'Sumbitting!',"This fitting can take a while!\nThe GUI will be unresponsive after submission, are you sure to continue?")
