@@ -1186,6 +1186,9 @@
                 </item>
                 <item row="6" column="1">
                  <widget class="QDoubleSpinBox" name="shift_SpinBox">
+                  <property name="locale">
+                   <locale language="English" country="UnitedKingdom"/>
+                  </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
                   </property>
@@ -1524,6 +1527,9 @@
                 </item>
                 <item row="4" column="1">
                  <widget class="QDoubleSpinBox" name="shift_SpinBox_Py">
+                  <property name="locale">
+                   <locale language="English" country="UnitedKingdom"/>
+                  </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
                   </property>
