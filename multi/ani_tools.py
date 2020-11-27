@@ -374,8 +374,7 @@ def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
     pool = Pool(1)  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
-    FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing                
-    print(phi_RANGE)
+    FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
     func = partial(ResFieldNumInp, B_inter, B_FKT, FKT) # indirectly add more than one functional arguments without *args or **kwargs
     B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
 
@@ -394,7 +393,6 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing  
 
-    print(phi_array)
     func = partial(ResFieldNumInp, B_inter, B_FKT, FKT)  # indirectly add more than one functional arguments without *args or **kwargs
     B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
 
