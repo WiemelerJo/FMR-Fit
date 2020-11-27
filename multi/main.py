@@ -253,7 +253,7 @@ class MyForm(QMainWindow):
                 # update plot according to shift d,
                 # by calculating new phi_shifted, then plot
                 self.changeing_phi = np.copy(self.preB_Sim[2])
-                angle = make_phirange(d, self.changeing_phi, 'deg', self.minWinkel, self.maxWinkel)
+                angle = make_phirange(d, self.changeing_phi, False, self.minWinkel, self.maxWinkel)
                 self.update_canvas(self.preB_Sim, angle)
                 self.ani_fit_angle = np.copy(angle)
         except Exception as e:

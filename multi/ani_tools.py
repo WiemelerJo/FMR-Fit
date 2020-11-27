@@ -481,30 +481,27 @@ def rad_to_deg(val):
     val = val*180/m.pi
     return val
 
-def make_phirange(shift_value: float, phi_array: list, deg: bool, minWinkel: float, maxWinkel: float):
-    if deg:
+def make_phirange(shift_value: float, phi_array: list, circ: bool, minWinkel: float, maxWinkel: float):
+    #if deg:
+    if circ: # Check if angluar dependence is from 0-360 deg -> Circle
         delta_winkel = maxWinkel - minWinkel
-        for l, i in enumerate(phi_array):
-            # print('1.',array[l])
+        for l, i in enumerate(phi_array):   # shift array by value: shift_value
             phi_array[l] += shift_value
-            # print('2.',array[l])
 
-        for i in range(len(phi_array)):
-            if phi_array[i] > maxWinkel:
-                phi_array[i] -= delta_winkel
-            elif phi_array[i] < minWinkel:
-                phi_array[i] += delta_winkel
-    else:
-        #Not used at the moment
-        shift_value = shift_value * m.pi / 180
-        for l, i in enumerate(phi_array):
+             # Check if phi value is over or under the limit of 0.0 - 360.0 degrees
+            if phi_array[l] > maxWinkel:
+                phi_array[l] -= delta_winkel
+            elif phi_array[l] < minWinkel:
+                phi_array[l] += delta_winkel
+
+    else:   # Angular dependences without 360 degrees need to be handled differently
+        for l, i in enumerate(phi_array):   # shift array by value: shift_value
             phi_array[l] += shift_value
-        for i in range(len(phi_array)):
-            if phi_array[i] > phi_max:
-                phi_array[i] -= phi_max
-            elif phi_array[i] < phi_min:
-                phi_array[i] += phi_max
-    return phi_array
+            if phi_array[l] > 359.99:
+                phi_array[l] -= 360.0
+            elif phi_array[l] < 0.0:
+                phi_array[l] += 360.0
+
 
 
 
