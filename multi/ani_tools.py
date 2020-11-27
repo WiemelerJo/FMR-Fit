@@ -316,8 +316,7 @@ def ResFieldNumInp(B_inter, B_RES, F, phi_val):
     B_FKT = sympify(B_RES)
 
     # takes EqAngles and solves B_RES using interpolated datal
-    
-    B = B_inter(phi_val * 180 / m.pi)
+    B = B_inter(round(phi_val * 180 / m.pi,2))
     #B_FKT = B_RES.subs({i: l for i, l in rule.items()})  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     #FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing
     Eq_angles = solveAngles(B, phiB_val, FKT)
@@ -372,13 +371,14 @@ def solveAngles(B, phiB, fkt):
     return result.x[0], result.x[1], result.x[2]
 
 def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
-    pool = Pool(10)  # Create pool of threads for multiprocessing
+    pool = Pool(1)  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing                
-
+    print(phi_RANGE)
     func = partial(ResFieldNumInp, B_inter, B_FKT, FKT) # indirectly add more than one functional arguments without *args or **kwargs
     B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
+
     B_Exp = pool.map(B_inter, phi_RANGE_deg)  # Same as above
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     pool.close()
@@ -394,9 +394,10 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing  
 
+    print(phi_array)
     func = partial(ResFieldNumInp, B_inter, B_FKT, FKT)  # indirectly add more than one functional arguments without *args or **kwargs
     B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
-    print(phi_array)
+
     B_Exp = pool.map(B_inter, phi_array)  # Same as above
 
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
