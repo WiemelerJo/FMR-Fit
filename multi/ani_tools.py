@@ -166,32 +166,33 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     # Create Paramters dict() for the leastsq fit
     
-    '''try:'''
-    if Fit:
-        print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
-        end_pfad = init_folder(filename)
-        #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
-        phi_array = make_phirange(shift, phi_RANGE_deg, True, Winkel_min, Winkel_max)
+    try:
+        if Fit:
+            print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
+            end_pfad = init_folder(filename)
+            #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
+            print(Winkel_max,Winkel_min)
+            phi_array = make_phirange(shift, phi_RANGE_deg, True, Winkel_min, Winkel_max)
 
-        func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
-        func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
-        func_str = create_str_func(func_args)
-        exec(func_str,globals())  # This will create the function give by func_str: "Model_Fit_Fkt"
+            func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
+            func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
+            func_str = create_str_func(func_args)
+            exec(func_str,globals())  # This will create the function give by func_str: "Model_Fit_Fkt"
 
-        # Then create Parameter dict() and model for lmfit
-        params_Fit = Parameters()
-        for name, value in fit_params.items():
-            params_Fit.add(name, value)
-        model = Model(Model_Fit_Fkt)
+            # Then create Parameter dict() and model for lmfit
+            params_Fit = Parameters()
+            for name, value in fit_params.items():
+                params_Fit.add(name, value)
+            model = Model(Model_Fit_Fkt)
 
-        main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
-    else:
-        print('Creating pre fit')
-        result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg,B_inter, B_RES, F)
-        return result
-    '''except Exception as e:
-                    print('Error in ani_tools.init_load(): ',e)
-                    print('Try fitting the spectra first!')'''
+            main_loop(Plot, rule, phi_RANGE, phi_array, B_inter, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
+        else:
+            print('Creating pre fit')
+            result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg,B_inter, B_RES, F)
+            return result
+    except Exception as e:
+        print('Error in ani_tools.init_load(): ',e)
+        print('Try fitting the spectra first!')
 
 def init_folder(filename):
     # This function should get the filename string from the main script and then checks if folders are present, if not they will be created
@@ -258,13 +259,16 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, B_inter, F, maxBresD
     B_Sim2 = B_Sim2_orig
     it_while = 0
     while np.linalg.norm(B_Sim - B_Sim2) > maxBresDelta:
-        print('Error too big! Start iterating')
+        #B_Sim = []
+        #B_Sim2 = []
 
-        if np.array_equal(B_Sim, B_Sim2):  # Check if both arrays are equal (if there is a change)
+        print('Error too big! Start iterating; Iteration: ',it_while)
+
+        '''if np.array_equal(B_Sim, B_Sim2):  # Check if both arrays are equal (if there is a change)
             it_while += 1  # if it hasn't changed add 1 to it_while
             print('Error: Difference between simulated Bres did not change! it_while = ', it_while)
             if it_while == 5:
-                break  # stop iterating if B_Sim and B_Sim2 are 5 times equal
+                break  # stop iterating if B_Sim and B_Sim2 are 5 times equal'''
 
         B_Sim = np.copy(B_Sim2)  # To start with the result from previous iteration
         Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
@@ -290,6 +294,13 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, B_inter, F, maxBresD
 
         # print error between old and new result
         print(np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]))
+
+        if it_while > 1:   # End statement if algorithm is iterating too often
+            print("Stop Iteration, Iter_Count is too high")
+            break
+        else:
+            it_while += 1
+
     return B_Sim2,fit_params
 
 def ResFieldNumInp(B_inter, B_RES, F, phi_val):
@@ -361,7 +372,7 @@ def solveAngles(B, phiB, fkt):
     return result.x[0], result.x[1], result.x[2]
 
 def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
-    pool = Pool()  # Create pool of threads for multiprocessing
+    pool = Pool(10)  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing                
@@ -378,14 +389,16 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
     #phi_array is aray of deg shifted
     start = time.time()
     
-    pool = Pool()  # Create pool of threads for multiprocessing
+    pool = Pool(10)  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing  
 
     func = partial(ResFieldNumInp, B_inter, B_FKT, FKT)  # indirectly add more than one functional arguments without *args or **kwargs
     B_Sim = pool.map(func, phi_RANGE)  # Now this function can be mapped to the pool using an array phi_RANGE
+    print(phi_array)
     B_Exp = pool.map(B_inter, phi_array)  # Same as above
+
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
 
@@ -449,7 +462,6 @@ def main_loop(plot: bool, rules_start, phi_RANGE, phi_array, B_inter, B_RES, F, 
     end = time.time() - start
     print('It took',end)
 
-
     if plot:
         phi_deg = pool.map(rad_to_deg, phi_RANGE)
         plt.cla()
@@ -472,6 +484,7 @@ def rad_to_deg(val):
 
 def make_phirange(shift_value: float, phi_array: list, deg: bool, minWinkel: float, maxWinkel: float):
     if deg:
+        delta_winkel = maxWinkel - minWinkel
         for l, i in enumerate(phi_array):
             # print('1.',array[l])
             phi_array[l] += shift_value
@@ -479,9 +492,9 @@ def make_phirange(shift_value: float, phi_array: list, deg: bool, minWinkel: flo
 
         for i in range(len(phi_array)):
             if phi_array[i] > maxWinkel:
-                phi_array[i] -= maxWinkel
+                phi_array[i] -= delta_winkel
             elif phi_array[i] < minWinkel:
-                phi_array[i] += maxWinkel
+                phi_array[i] += delta_winkel
     else:
         #Not used at the moment
         shift_value = shift_value * m.pi / 180
