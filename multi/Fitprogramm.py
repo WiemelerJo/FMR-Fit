@@ -359,9 +359,9 @@ class Ui_MainWindow(object):
         self.colour_tick_edit.setAlignment(QtCore.Qt.AlignCenter)
         self.colour_tick_edit.setObjectName("colour_tick_edit")
         self.formLayout_3.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.colour_tick_edit)
-        self.GradWidget = GradWidget(self.plotting_tab)
-        self.GradWidget.setObjectName("GradWidget")
-        self.formLayout_3.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.GradWidget)
+        self.Button_angu_view = QtWidgets.QPushButton(self.plotting_tab)
+        self.Button_angu_view.setObjectName("Button_angu_view")
+        self.formLayout_3.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.Button_angu_view)
         self.horizontalLayout.addLayout(self.formLayout_3)
         self.formLayout_4 = QtWidgets.QFormLayout()
         self.formLayout_4.setObjectName("formLayout_4")
@@ -859,7 +859,8 @@ class Ui_MainWindow(object):
         self.label_5.setText(_translate("MainWindow", "Not fully  implementet"))
         self.colour_button.setText(_translate("MainWindow", "Plot in 2D colour"))
         self.label_21.setText(_translate("MainWindow", "Colour ticks (Integer)"))
-        self.colour_tick_edit.setText(_translate("MainWindow", "256"))
+        self.colour_tick_edit.setText(_translate("MainWindow", "50"))
+        self.Button_angu_view.setText(_translate("MainWindow", "View Angular Dependence"))
         self.plot_parameter.setText(_translate("MainWindow", "Plot parameter"))
         self.load_params_from_file.setText(_translate("MainWindow", "Load parameters from file"))
         self.label_25.setText(_translate("MainWindow", "Parameters"))
@@ -932,4 +933,4 @@ class Ui_MainWindow(object):
         self.actionSave.setText(_translate("MainWindow", "Save"))
         self.actionSave.setShortcut(_translate("MainWindow", "Ctrl+S"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
-from CustomWidgets import GradWidget, PlotWidget
+from CustomWidgets import PlotWidget

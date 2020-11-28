@@ -15,14 +15,15 @@ import datetime
 from lmfit import Model
 from lmfit import Parameters
 from matplotlib.colors import ListedColormap
-from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel,QMessageBox, QWidget, QGridLayout, QVBoxLayout
-from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker, QSize
+from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox
+from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker
 from Fitprogramm import *
 from arrays import *
 from fitting import Fit
 from parameter_plot import Params_Plot
 from multiprocessing import Process
 from ani_tools import *
+from CustomWidgets import Popup_View
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
 # TODO: Maybe implement a performance mode using CuPy or MOT Module (CUDA and multiprocess optimized optimzation)
@@ -117,53 +118,6 @@ class Worker(QThread):
         value_opt['dyn_fit'] = 'fitted'
 
 
-class MyPopup(QWidget):
-    def __init__(self,*args):
-        super().__init__()
-
-        X = np.asarray(args[0])
-        Y = np.asarray(args[1])
-        Z = np.asarray(args[2])
-
-
-        layout = QGridLayout()
-
-        pg.setConfigOptions(antialias=True)
-        imv = pg.ImageView()
-        img = pg.gaussianFilter(np.random.normal(size=(200, 200)), (5, 5)) * 20 + 100
-        img = img[np.newaxis, :, :]
-
-        decay = np.exp(-np.linspace(0, 0.3, 100))[:, np.newaxis, np.newaxis]
-        data = np.random.normal(size=(100, 200, 200))
-        data += img * decay
-        data += 2
-
-        sig = np.zeros(data.shape[0])
-        sig[30:] += np.exp(-np.linspace(1, 10, 70))
-        sig[40:] += np.exp(-np.linspace(1, 10, 60))
-        sig[70:] += np.exp(-np.linspace(1, 10, 30))
-        sig = sig[:, np.newaxis, np.newaxis] * 3
-        data[:, 50:60, 30:40] += sig
-
-
-        data = np.array(Z)
-        print(data.shape)
-        #imv.setImage(data, xvals=np.linspace(1., 3., data.shape[0]))
-        imv.setImage(data, xvals=Z)
-        colors = [
-            (0, 0, 0),
-            (4, 5, 61),
-            (84, 42, 55),
-            (15, 87, 60),
-            (208, 17, 141),
-            (255, 255, 255)
-        ]
-        cmap = pg.ColorMap(pos=np.linspace(0.0, 1.0, 6), color=colors)
-
-        imv.setColorMap(cmap)
-        layout.addWidget(imv, 0, 1, 3, 1)
-        self.setLayout(layout)
-
 class MyForm(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -190,7 +144,8 @@ class MyForm(QMainWindow):
         self.ui.checkBox_dynPlot.stateChanged.connect(self.robust_fit)
         self.ui.comboBox_fit_model.activated.connect(self.make_parameter_table)
 
-        self.ui.pushButton.clicked.connect(self.doit)
+        self.ui.pushButton.clicked.connect(self.test)
+        self.ui.Button_angu_view.clicked.connect(self.doit)
 
         self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
         self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
@@ -198,26 +153,19 @@ class MyForm(QMainWindow):
         self.ui.shift_SpinBox.valueChanged.connect(self.get_shift)
         self.ui.shift_SpinBox_Py.valueChanged.connect(self.get_shift)
         self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
-
-
-        self.ui.GradWidget.sigGradientChanged.connect(self.update_cmap)
-        #self.ui.LineEdit_Start_Val_Py.editingFinished.connect(self.make_preB_sim)
         self.show()
 
     def test(self):
         print("Debug Funktion")
-        color = self.ui.GradWidget.get_colormap()
-        print(color)
-        #self.doit()
 
     def doit(self):
         print("Opening a new window...")
         #if self.w is None:
-        self.w = MyPopup(X,Y,Z)
+
+        self.w = Popup_View(Z,self.H_range,self.WinkelMax)
         self.w.setWindowTitle("Colourplot")
         self.w.setGeometry(0, 0, 1280, 720)
         self.w.show()
-
 
     def make_preB_sim(self):
         global value_opt
@@ -699,12 +647,13 @@ class MyForm(QMainWindow):
             counts1 = counts[1]
             n = counts1[0]
             chunksize = int(len(D[:,0])/n)  #set chunk size for example 1024,2048,4096
+
             self.ui.Drop_Scalebar.setMaximum(n-1)   #sets the maximum of the scroll bar for dropped points
             i = 0   # laufvariable = 0
             i_min = 0
             i_max = int(chunksize)
-            D_min = min(D[:,3]) #for old colourplot
-            D_max = max(D[:,3]) #for old colourplot
+            #D_min = min(D[:,3]) #for old colourplot
+            #D_max = max(D[:,3]) #for old colourplot
 
             Bdata = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize)  #List of sublists, magnetic field
             Winkeldata_raw = np.split(np.array(D[:,2]),chunksize)   #List of sublists, angle data
@@ -712,12 +661,16 @@ class MyForm(QMainWindow):
             Winkeldata = []
             for i in range(chunksize):
                 Winkeldata.append(Winkeldata_raw[i][0])
-            '''X = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize) #List of sublists, magnetic field, for colour plot
+            X = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize) #List of sublists, magnetic field, for colour plot
             Y = np.split(np.array(D[:,2]),chunksize)    #List of sublists, angle data, for colour plot
-            Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot'''
+            Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot
             #X = D[:,1].reshape(72,1024)
             #Y = D[:,2].reshape(72,1024)
             #Z = D[:,3].reshape(72,1024)
+
+            self.H_range = max(Bdata[0]) * 1000 # Value in mT
+            print(self.H_range)
+            self.WinkelMax = max(D[:, 2])
 
             if int(self.ui.select_datanumber.text()) > len(Adata)-1: #catches errors, slider for datanumber
                 i = len(Adata)-1
@@ -953,27 +906,15 @@ class MyForm(QMainWindow):
                 }
         mpl.rc('font', **font)
 
-        self.tick_number = self.ui.colour_tick_edit.text()
-        cmap = self.ui.GradWidget.get_colormap()
+        tick_number = self.ui.colour_tick_edit.text()
 
-        colormap = ListedColormap(cmap.getLookupTable(mode='float'))
-        self.color_fig, self.color_ax = plt.subplots()
-        #contour = ax.contourf(X,Y,Z,30,cmap='magma')
-        colour_contour = self.color_ax.contourf(X, Y, Z, int(self.tick_number), cmap=colormap)
-        colour_cbar = self.color_fig.colorbar(colour_contour)
+        fig, ax = plt.subplots()
+        contour = ax.contourf(X,Y,Z,tick_number,cmap='magma')
         colour_cbar.set_label('Amplitude [Arb. U.]')
         plt.xlabel('Magnetic Field [mT]')
         plt.ylabel('Angle [deg]')
 
         plt.show()
-
-    def update_cmap(self):
-        cmap = self.ui.GradWidget.get_colormap()
-        colormap = ListedColormap(cmap.getLookupTable(mode='float'))
-        self.color_ax.contourf(X, Y, Z, int(self.tick_number), cmap=colormap)
-        self.color_fig.canvas.update()
-        print('Howe')
-
 
     def Exit(self):
         sys.exit()  #Obviously not the start

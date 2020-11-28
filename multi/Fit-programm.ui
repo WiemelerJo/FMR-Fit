@@ -715,7 +715,7 @@
                 <item row="3" column="1">
                  <widget class="QLineEdit" name="colour_tick_edit">
                   <property name="text">
-                   <string>256</string>
+                   <string>50</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -723,7 +723,11 @@
                  </widget>
                 </item>
                 <item row="4" column="1">
-                 <widget class="GradWidget" name="GradWidget"/>
+                 <widget class="QPushButton" name="Button_angu_view">
+                  <property name="text">
+                   <string>View Angular Dependence</string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </item>
@@ -1673,11 +1677,6 @@
  <customwidgets>
   <customwidget>
    <class>PlotWidget</class>
-   <extends>QGraphicsView</extends>
-   <header>CustomWidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>GradWidget</class>
    <extends>QGraphicsView</extends>
    <header>CustomWidgets</header>
   </customwidget>
