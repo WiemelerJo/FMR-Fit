@@ -127,8 +127,10 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
         print("Dyson")
         R_raw = D[:, 4]
         Winkel = D[:, 6].flatten()
-    else: # Rest (not implemented yet)
+    else: # Rest (not implemented yet), assume Dyson
         print("Please use either Lorentz or Dyson shape!")
+        R_raw = D[:, 4]
+        Winkel = D[:, 6].flatten()
 
     
     B_inter = interp1d(Winkel, R_raw)  # Interpoliertes B_res, array mit Länge len(Winkel)
