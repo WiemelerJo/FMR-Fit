@@ -44,6 +44,7 @@ class GradWidget(QtWidgets.QWidget):
         print(self.w.colorMap())
 
 class Popup_View(QtWidgets.QWidget):
+    #Standalone Widget; Displayed in popup window
     def __init__(self,*args):
         super().__init__()
 
@@ -97,7 +98,7 @@ class Popup_View(QtWidgets.QWidget):
         i, j = pos.y(), pos.x()
         i = int(np.clip(i, 0, self.Z.shape[0] - 1))
         j = int(np.clip(j, 0, self.Z.shape[1] - 1))
-        val = self.Z[i, j]
+        val = self.Z[j][i]
         ppos = self.img.mapToParent(pos)
         x, y = ppos.x(), ppos.y()
         self.label.setText("Pos (Field,Angle): %0.1f, %0.1f     Amplitude: %g" % (x, y, val))

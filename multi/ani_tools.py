@@ -371,7 +371,7 @@ def solveAngles(B, phiB, fkt):
     return result.x[0], result.x[1], result.x[2]
 
 def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, B_inter, B_RES, F):
-    pool = Pool(1)  # Create pool of threads for multiprocessing
+    pool = Pool(10)  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
@@ -483,8 +483,8 @@ def rad_to_deg(val):
 
 def make_phirange(shift_value: float, phi_array: list, circ: bool, minWinkel: float, maxWinkel: float):
     #if deg:
-    if circ: # Check if angluar dependence is from 0-360 deg -> Circle
-        delta_winkel = maxWinkel - minWinkel
+    delta_winkel = maxWinkel - minWinkel
+    if delta_winkel >= 350: # Check if angluar dependence is from 0-360 deg -> Circle
         for l, i in enumerate(phi_array):   # shift array by value: shift_value
             phi_array[l] += shift_value
 
@@ -501,6 +501,7 @@ def make_phirange(shift_value: float, phi_array: list, circ: bool, minWinkel: fl
                 phi_array[l] -= 360.0
             elif phi_array[l] < 0.0:
                 phi_array[l] += 360.0
+    return phi_array
 
 
 

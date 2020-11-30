@@ -173,7 +173,7 @@ class MyForm(QMainWindow):
         # if no pre is present, then ani_pre_fit is True
         # ani_pre_fit determines whether it is the first time fitting or just a shift
         if value_opt['ani_pre_fit']:
-            value_opt['ani_pre_fit'] = False
+            #value_opt['ani_pre_fit'] = False
             try:
                 self.maxWinkel = max(self.preB_Sim[2])
                 self.minWinkel = min(self.preB_Sim[2])
@@ -187,25 +187,24 @@ class MyForm(QMainWindow):
     def get_shift(self,d):
         # d is returned value from spinbox
         global value_opt
-        try:
-            if value_opt['ani_pre_fit']:
-                self.ani_fit_angle = False
-                #print(d,value_opt['ani_pre_fit'])
-                self.make_preB_sim()
-                
-                value_opt['ani_pre_fit'] = False
-                self.update_canvas(self.preB_Sim,self.preB_Sim[2])
-                self.changeing_phi = np.copy(self.preB_Sim[2])
-                # call function to generate Sim to find good shift
-            else:
-                # update plot according to shift d,
-                # by calculating new phi_shifted, then plot
-                self.changeing_phi = np.copy(self.preB_Sim[2])
-                angle = make_phirange(d, self.changeing_phi, False, self.minWinkel, self.maxWinkel)
-                self.update_canvas(self.preB_Sim, angle)
-                self.ani_fit_angle = np.copy(angle)
-        except Exception as e:
-            print('Error in get_shift: ',e)
+        #try:
+        if value_opt['ani_pre_fit']:
+            self.ani_fit_angle = False
+            #print(d,value_opt['ani_pre_fit'])
+            #self.make_preB_sim()
+            self.update_canvas(self.preB_Sim,self.preB_Sim[2])
+            self.changeing_phi = np.copy(self.preB_Sim[2])
+            value_opt['ani_pre_fit'] = False
+            # call function to generate Sim to find good shift
+        else:
+            # update plot according to shift d,
+            # by calculating new phi_shifted, then plot
+            self.changeing_phi = np.copy(self.preB_Sim[2])
+            angle = make_phirange(d, self.changeing_phi, True, self.minWinkel, self.maxWinkel)
+            self.update_canvas(self.preB_Sim, angle)
+            self.ani_fit_angle = np.copy(angle)
+        #except Exception as e:
+        #    print('Error in get_shift: ',e)
 
     def update_canvas(self,data:list,angle:list):
         #Data is 2D List: data[0] = B_Sim, data[1] = B_Exp
@@ -213,6 +212,8 @@ class MyForm(QMainWindow):
         self.ui.Ani_Const_Plot.canvas.ax.clear()
         self.ui.Ani_Const_Plot.canvas.ax.set_ylabel('Resonance Field [T]')
         self.ui.Ani_Const_Plot.canvas.ax.set_xlabel('Angle [Deg]')
+
+        #print(angle)
 
         self.ui.Ani_Const_Plot.canvas.ax.scatter(angle, data[1], color='black', marker='o',
                                                  label='Experimental data')  # Plot experimental Data
@@ -669,6 +670,7 @@ class MyForm(QMainWindow):
             #Z = D[:,3].reshape(72,1024)
 
             self.H_range = max(Bdata[0]) * 1000 # Value in mT
+            #self.H_range = max(Bdata[0])
             print(self.H_range)
             self.WinkelMax = max(D[:, 2])
 
