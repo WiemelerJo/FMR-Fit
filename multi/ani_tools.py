@@ -157,22 +157,28 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     Winkel_min = min(Winkel) # its in deg; Orignial data
     Winkel_max = max(Winkel) # its in deg; Orignial data
-
-    phi_min = (Winkel_min + shift) * m.pi / 180  # define smallest value
-    phi_max = (Winkel_max + shift) * m.pi / 180  # define biggest value
     phi_step = anglestep  # define stepwidth (resolution)
-
-    phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
     phi_RANGE_deg = np.arange(Winkel_min,Winkel_max,phi_step*180/m.pi)  # Phi Array in degress NOT shifted
-
     reference_data = B_inter(phi_RANGE_deg) # Interpolate Data from experiment with array steps set by programm
     # Now the idea is, we have an array (B_inter_data_array) of real world data, which is shifted in +- direction,
     # we therefore need to shift this.
     # This reference_data is not shifted, the shift is introduced in phi_RANGE. The lmfit routine then uses
     # the information of the shifted angles to map/fit the interpolated data.
 
+
+
     #try:
     if Fit:
+        phi_min = (Winkel_min + shift) * m.pi / 180  # define smallest value; shifted
+        phi_max = (Winkel_max + shift) * m.pi / 180  # define biggest value; shifted
+        phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
+
+        # Then limit the array so that it doesnt exceed 0-360 degrees
+        for i, l in enumerate(phi_RANGE):
+            if l >= 359.99 * m.pi / 180:
+                phi_RANGE[i] -= 360.0 * m.pi / 180
+            elif l <= 0.0:
+                phi_RANGE[i] += 360.0 * m.pi / 180
         print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
         end_pfad = init_folder(filename)
         #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
@@ -189,13 +195,16 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
         model = Model(Model_Fit_Fkt)
 
         main_loop(Plot, rule, phi_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
-    else:
+    else:   # Pre Fit
+        phi_min = Winkel_min * m.pi / 180  # define smallest value; shifted
+        phi_max = Winkel_max * m.pi / 180  # define biggest value; shifted
+        phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
+
         print('Creating pre fit')
         result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg, reference_data, B_RES, F)
         return result
     #except Exception as e:
     #    print('Error in ani_tools.init_load(): ',e)
-    #    print('Try fitting the spectra first!')
 
 def init_folder(filename):
     # This function should get the filename string from the main script and then checks if folders are present, if not they will be created
@@ -275,7 +284,7 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
         # print error between old and new result
         print(np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]))
 
-        if it_while > 1:   # End statement if algorithm is iterating too often
+        if it_while > 10:   # End statement if algorithm is iterating too often
             print("Stop Iteration, Iter_Count is too high")
             break
         else:
