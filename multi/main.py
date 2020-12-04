@@ -10,20 +10,22 @@ import py2mat
 import time
 import multiprocessing as multip
 import pyqtgraph as pg
-
 import datetime
+
 from lmfit import Model
 from lmfit import Parameters
 from matplotlib.colors import ListedColormap
 from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox
 from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker
 from Fitprogramm import *
-from arrays import *
+#from arrays import *
 from fitting import Fit
 from parameter_plot import Params_Plot
 from multiprocessing import Process
 from ani_tools import *
 from CustomWidgets import Popup_View
+from func_gen import Gen_Lorentz, Gen_Dyson
+from array_gen import *
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
 # TODO: Maybe implement a performance mode using CuPy or MOT Module (CUDA and multiprocess optimized optimzation)
@@ -49,14 +51,14 @@ colormap = 'magma'
 tick_number = 50 #Max = 10000, bereits 1000 erstellt 200 MB file!
 excep_append = []
 exceptions = [] #Array to store excepted lines in the fit
-fit_num = 1
+#fit_num = 1
 Debug = 0
 
 class Worker(QThread):
     #This class is responsible for the dynamic fit by creating a so called worker to do the job
     i_signal = pyqtSignal() # signal for the processBar
     error_dynfit_signal = pyqtSignal() # error signal
-    def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt,i_min,i_max,j,j_min,exceptions):
+    def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt,i_min,i_max,j,j_min,exceptions,init_values):
         self.index_model = index_model
         self.fit_num = fit_num
         self.Bdata = Bdata
@@ -70,6 +72,7 @@ class Worker(QThread):
         self.j = j
         self.j_min = j_min
         self.exceptions = exceptions
+        self.init_values = init_values
         QThread.__init__(self)
 
     def fit(self,l,params_table,model,robust):
@@ -86,8 +89,9 @@ class Worker(QThread):
         global Parameter_list
         names = []
         temp_paras = []
-        params_table = Fit(self.index_model, self.fit_num,Adata2,Bdata2, self.j_min,self.j,init_values,bound_min,bound_max).give_param_table(self.index_model)
-        model = Fit(self.index_model, self.fit_num,Adata2,Bdata2, self.j_min,self.j,init_values,bound_min,bound_max).give_model(self.index_model)
+        Fit_obj = Fit(self.index_model, self.fit_num,Adata2,Bdata2, self.j_min,self.j,self.init_values,bound_min,bound_max)
+        params_table = Fit_obj.give_param_table(self.index_model)
+        model = Fit_obj.give_model()
 
         #clean up, just in case
         names.clear()
@@ -129,7 +133,6 @@ class MyForm(QMainWindow):
         self.ui.Button_Plot.clicked.connect(self.plot)
         self.ui.Button_set_fit_params.clicked.connect(self.set_fit_params)
         self.ui.comboBox_fit_model.currentIndexChanged.connect(self.model_type)
-        self.ui.comboBox_Fit_num.currentIndexChanged.connect(self.select_fit_number)
         self.ui.Button_dyn_fit.clicked.connect(self.dyn_fit)
         self.ui.colour_button.clicked.connect(self.plot_in_colour)
         self.ui.Drop_Scalebar.valueChanged.connect(self.data_range)
@@ -153,10 +156,17 @@ class MyForm(QMainWindow):
         self.ui.shift_SpinBox.valueChanged.connect(self.get_shift)
         self.ui.shift_SpinBox_Py.valueChanged.connect(self.get_shift)
         self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
+        self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
+
+        self.fit_num = 1
+        self.sanity = True
+
         self.show()
 
     def test(self):
         print("Debug Funktion")
+        test = Gen_Lorentz(10)
+        print(test.get_str())
 
     def doit(self):
         print("Opening a new window...")
@@ -279,7 +289,7 @@ class MyForm(QMainWindow):
             # The bad thing now is, that there is no differentiation between user_event and machine_event,
             # therefore if the script changes the values to display the next angle,
             # the .connect() function will be called len(params) times, which has a min of 5 times with up to 42 times.
-            for i in range(0,fit_num*value_opt['index_model_num']+2):
+            for i in range(0,self.fit_num*value_opt['index_model_num']+2):
                 self.ui.Parameter_Plot_Table.cellWidget(i, 0).blockSignals(True)
             W_int = self.ui.parameter_data_select.value()
             W = int(New_W[0][W_int])
@@ -309,7 +319,7 @@ class MyForm(QMainWindow):
             self.update_parameter_display(params,False)
             self.plot_fitted_params(W,params)
 
-            for i in range(0,fit_num*value_opt['index_model_num']+2):
+            for i in range(0,self.fit_num*value_opt['index_model_num']+2):
                 self.ui.Parameter_Plot_Table.cellWidget(i, 0).blockSignals(False)
         except Exception as e:
             print("Error in change_parameter_angle",e)
@@ -375,10 +385,25 @@ class MyForm(QMainWindow):
         index_model = self.ui.comboBox_fit_model.currentIndex()
         self.set_model_type_number()
 
-    def select_fit_number(self):
-        #define the number of function that are beeing fitted
-        global fit_num
-        fit_num = self.ui.comboBox_Fit_num.currentIndex()
+    def select_fit_number(self,d):
+        # define the number of function that are beeing fitted
+        # Parameter d is value of the SpinBoxand is passed when SpinBox calls this function
+        self.fit_num = d
+        if self.sanity:
+            if d >= 10:
+                choice = QMessageBox.question(self, 'Sanity Check',
+                                              "You are about to create " + str(d) + " Fit functions!\n" +
+                                              "Was it your intention, or do you want to see your Computer burn?!\n " +
+                                              "Continue?")
+                if choice == 65536: # False
+                    print(choice)
+                    print('Reset Fit_Num')
+                    self.d = 1
+                    self.ui.spinBox_fit_num.setValue(1)
+                else: # True
+                    self.sanity = False
+
+
         self.make_parameter_table()
 
     def make_parameter_table(self):
@@ -396,8 +421,8 @@ class MyForm(QMainWindow):
         try:
             if index_model == 2:
                 #table for lorentz (Fitting)
-                self.ui.Parameter_table.setRowCount(fit_num*3+2)
-                self.ui.Parameter_Plot_Table.setRowCount(fit_num * 3 + 2)
+                self.ui.Parameter_table.setRowCount(self.fit_num*3+2)
+                self.ui.Parameter_Plot_Table.setRowCount(self.fit_num * 3 + 2)
                 self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values slope
                 self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
                 self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
@@ -416,14 +441,14 @@ class MyForm(QMainWindow):
                 parameter_table_names_L_final.append('slope')
                 parameter_table_names_L_final.append('offset')   
 
-                for index in range(1,fit_num+1):
+                for index in range(1,self.fit_num+1):
                     for list_index in parameter_Table_names_L:
                         parameter_table_names_L_final.append(list_index+str(index))
 
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_L_final)
                 self.ui.Parameter_Plot_Table.setVerticalHeaderLabels(parameter_table_names_L_final)
 
-                for zähler in range(0,fit_num*3):
+                for zähler in range(0,self.fit_num*3):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox()) # initial_values
                     self.ui.Parameter_table.setCellWidget(zähler+2, 1, QDoubleSpinBox()) # bound_min
                     self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox()) # bound_max
@@ -437,8 +462,8 @@ class MyForm(QMainWindow):
 
             else:
                 #table for dyson (at the moment!) (Fitting)
-                self.ui.Parameter_table.setRowCount(fit_num*4+2)
-                self.ui.Parameter_Plot_Table.setRowCount(fit_num * 4 + 2)
+                self.ui.Parameter_table.setRowCount(self.fit_num*4+2)
+                self.ui.Parameter_Plot_Table.setRowCount(self.fit_num * 4 + 2)
                 self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values
                 self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
                 self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
@@ -457,14 +482,14 @@ class MyForm(QMainWindow):
                 parameter_table_names_D_final.append('slope')
                 parameter_table_names_D_final.append('offset')  
 
-                for index in range(1,fit_num+1):
+                for index in range(1,self.fit_num+1):
                     for list_index in parameter_Table_names_D:
                         parameter_table_names_D_final.append(list_index+str(index))
 
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_D_final)
                 self.ui.Parameter_Plot_Table.setVerticalHeaderLabels(parameter_table_names_D_final)
 
-                for zähler in range(0,fit_num*4):
+                for zähler in range(0,self.fit_num*4):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox())
                     self.ui.Parameter_table.setCellWidget(zähler+2, 1, QDoubleSpinBox())
                     self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox())
@@ -479,7 +504,7 @@ class MyForm(QMainWindow):
         except Exception as e:
                 print('Error in make_parameter_table',e)
                 #Assuming a lorentz func as long as index_model hasnt been set
-                self.ui.Parameter_table.setRowCount(fit_num*3+2)
+                self.ui.Parameter_table.setRowCount(self.fit_num*3+2)
                 self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values slope
                 self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
                 self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
@@ -493,13 +518,13 @@ class MyForm(QMainWindow):
                 parameter_table_names_L_final.append('slope')
                 parameter_table_names_L_final.append('offset')   
 
-                for index in range(1,fit_num+1):
+                for index in range(1,self.fit_num+1):
                     for list_index in parameter_Table_names_L:
                         parameter_table_names_L_final.append(list_index+str(index))
 
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_L_final)
 
-                for zähler in range(0,fit_num*3):
+                for zähler in range(0,self.fit_num*3):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox()) # initial_values
                     self.ui.Parameter_table.setCellWidget(zähler+2, 1, QDoubleSpinBox()) # bound_min
                     self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox()) # bound_max
@@ -508,11 +533,17 @@ class MyForm(QMainWindow):
                 self.set_default_values()
 
     def set_default_values(self):
-        #sets default values into the spinbox according to arrays defined in the beginning
-        #it basicly is just a for loop in order to cath every row of the table according to the numbver of lines
+        # sets default values into the spinbox according to arrays defined in the beginning
+        # its basicly is just a for loop in order to catch every row of the table according to the number of lines
         try:
-            if index_model == 2:
-                for zahl in range(0,2):
+            incr = self.ui.spinBox_incr.value()
+            if incr > 0 :
+                self.Arrays = Gen_array(self.fit_num, increase=True, increment=incr)
+            else:
+                self.Arrays = Gen_array(self.fit_num)
+
+            if index_model == 2:    #Lorentz
+                for zahl in range(0,2): # Linear Funktion, goto next for loop, for lorentz parameters
                     self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
@@ -521,54 +552,54 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-1000)
                     self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-1000)
 
-                    self.ui.Parameter_table.cellWidget(zahl,0).setMaximum(default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,1).setMaximum(default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,2).setMaximum(default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
 
-                    self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
+                    self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
 
-                    self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
-                    self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
-                    self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
+                    self.ui.Parameter_table.cellWidget(zahl,0).setValue(self.Arrays.default_linear[zahl]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zahl,1).setValue(self.Arrays.default_boundaries_linear_min[zahl]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zahl,2).setValue(self.Arrays.default_boundaries_linear_max[zahl]) # Boundary maximum
 
                     #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
                     self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setDecimals(4)
                     self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMinimum(-1000)
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMaximum(default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
+                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
+                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setValue(self.Arrays.default_linear[zahl]) # Inital value
 
                     self.ui.Parameter_Plot_Table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params) #different approach to connect a signal to the spinbox
 
 
-                for zähler in range(0,fit_num*3):
+                for zähler in range(0,self.fit_num*3): # for loop for Lorentz parameters
                     self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
 
-                    self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_L[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_L[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_L[zähler]) 
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(self.Arrays.default_stepsize_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(self.Arrays.default_stepsize_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(self.Arrays.default_stepsize_L[zähler])
 
-                    self.ui.Parameter_table.cellWidget(zähler+2,0).setMaximum(default_maximum_bound_spinbox_L[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,1).setMaximum(default_maximum_bound_spinbox_L[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,2).setMaximum(default_maximum_bound_spinbox_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setMaximum(self.Arrays.default_maximum_bound_spinbox_L[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setMaximum(self.Arrays.default_maximum_bound_spinbox_L[zähler])
 
-                    self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_L[zähler]) # Inital value
-                    self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_L_min[zähler]) # Boundary minimum
-                    self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_L_max[zähler]) # Boundary maximum
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_L[zähler]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(self.Arrays.default_boundaries_L_min[zähler]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(self.Arrays.default_boundaries_L_max[zähler]) # Boundary maximum
 
                     #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
                     self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setDecimals(4)
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setMaximum(default_maximum_bound_spinbox_L[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_L[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setValue(default_values_L[zähler]) # Inital value
+                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_L[zähler])
+                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setSingleStep(self.Arrays.default_stepsize_L[zähler])
+                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_L[zähler]) # Inital value
                     self.ui.Parameter_Plot_Table.cellWidget(zähler+2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
 
-            else:
-                for zahl in range(0,2):
+            else:   # Dyson
+                for zahl in range(0,2): # Linear Funktion
                     self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zahl,2).setDecimals(4)
@@ -577,48 +608,48 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zahl,1).setMinimum(-1000)
                     self.ui.Parameter_table.cellWidget(zahl,2).setMinimum(-1000)
 
-                    self.ui.Parameter_table.cellWidget(zahl,0).setMaximum(default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,1).setMaximum(default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,2).setMaximum(default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
 
-                    self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(default_stepsize_linear[zahl])
-                    self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(default_stepsize_linear[zahl]) 
+                    self.ui.Parameter_table.cellWidget(zahl,0).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,1).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
+                    self.ui.Parameter_table.cellWidget(zahl,2).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
 
-                    self.ui.Parameter_table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
-                    self.ui.Parameter_table.cellWidget(zahl,1).setValue(default_boundaries_linear_min[zahl]) # Boundary minimum
-                    self.ui.Parameter_table.cellWidget(zahl,2).setValue(default_boundaries_linear_max[zahl]) # Boundary maximum
+                    self.ui.Parameter_table.cellWidget(zahl,0).setValue(self.Arrays.default_linear[zahl]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zahl,1).setValue(self.Arrays.default_boundaries_linear_min[zahl]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zahl,2).setValue(self.Arrays.default_boundaries_linear_max[zahl]) # Boundary maximum
 
                     #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
                     self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setDecimals(4)
                     self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMinimum(-1000)
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMaximum(default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setSingleStep(default_stepsize_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setValue(default_linear[zahl]) # Inital value
+                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
+                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
+                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setValue(self.Arrays.default_linear[zahl]) # Inital value
                     self.ui.Parameter_Plot_Table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
 
-                for zähler in range(0,fit_num*4):
+                for zähler in range(0,self.fit_num*4):  # for loop for Dyson Parameter
                     self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zähler+2,1).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zähler+2,2).setDecimals(4)
 
-                    self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_D[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(default_stepsize_D[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(default_stepsize_D[zähler]) 
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setSingleStep(self.Arrays.default_stepsize_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setSingleStep(self.Arrays.default_stepsize_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setSingleStep(self.Arrays.default_stepsize_D[zähler])
 
-                    self.ui.Parameter_table.cellWidget(zähler+2,0).setMaximum(default_maximum_bound_spinbox_D[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,1).setMaximum(default_maximum_bound_spinbox_D[zähler])
-                    self.ui.Parameter_table.cellWidget(zähler+2,2).setMaximum(default_maximum_bound_spinbox_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setMaximum(self.Arrays.default_maximum_bound_spinbox_D[zähler])
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setMaximum(self.Arrays.default_maximum_bound_spinbox_D[zähler])
 
-                    self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(default_values_D[zähler]) # Inital value
-                    self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(default_boundaries_D_min[zähler]) # Boundary minimum
-                    self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(default_boundaries_D_max[zähler]) # Boundary maximum
+                    self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_D[zähler]) # Inital value
+                    self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(self.Arrays.default_boundaries_D_min[zähler]) # Boundary minimum
+                    self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(self.Arrays.default_boundaries_D_max[zähler]) # Boundary maximum
 
                     #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
                     self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setDecimals(4)
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setMaximum(default_maximum_bound_spinbox_D[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setSingleStep(default_stepsize_D[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setValue(default_values_D[zähler])
+                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_D[zähler])
+                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setSingleStep(self.Arrays.default_stepsize_D[zähler])
+                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_D[zähler])
                     self.ui.Parameter_Plot_Table.cellWidget(zähler + 2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
         except Exception as e:
             print("Error in set_default_values:",e)
@@ -720,11 +751,10 @@ class MyForm(QMainWindow):
                 self.load_parameters_to_text()
                 Params_Plot(Parameter_from_text,'eigen',index_model)
         except Exception as e:
-            print('Error in parameter_plot:',e)
+            print('Error in parameter_plot: ',e)
 
     def get_fit_options_from_file(self,fname):
         global index_model
-        global fit_num
         global value_opt
 
         f = open(fname)
@@ -743,7 +773,7 @@ class MyForm(QMainWindow):
                 # Takes Element 3 of header_parts and converts it into an usable array
                 Dropped_points = np.asarray(ast.literal_eval(header_parts[2].split('[')[1].split(']')[0]))
             except Exception as e:
-                print('Error trying to get Dropped_Points, assuming Dropedpoints as empty:', e)
+                print('Error trying to get Dropped_Points, assuming Droppedpoints as empty:', e)
                 Droppen_points = None
 
             # Takes Element 4 of header_parts and converts it into an usable array: ['A','dB','R',....]
@@ -753,7 +783,7 @@ class MyForm(QMainWindow):
             print(value_opt['index_model_num'])
             self.set_model_type_number()
             print(value_opt['index_model_num'])
-            fit_num = int((len(Params_name)-2)/value_opt['index_model_num'])
+            self.fit_num = int((len(Params_name)-2)/value_opt['index_model_num'])
         else:
             print('File was not created by this script!')
 
@@ -777,7 +807,7 @@ class MyForm(QMainWindow):
 
     def update_parameter_display(self,params,spinbox_bool):
         if not spinbox_bool:
-            for zaehler in range(0, fit_num * value_opt['index_model_num']+2):
+            for zaehler in range(0, self.fit_num * value_opt['index_model_num']+2):
                 self.ui.Parameter_Plot_Table.cellWidget(zaehler, 0).setValue(params[zaehler])
 
     def update_current_params(self):
@@ -786,7 +816,7 @@ class MyForm(QMainWindow):
         params = []
         multiplikator = value_opt['index_model_num']
         #Params array with slope and offset inside!! So : [slope,offset,....]
-        for zaehler in range(0, fit_num * multiplikator+2):
+        for zaehler in range(0, self.fit_num * multiplikator+2):
             params.append(self.ui.Parameter_Plot_Table.cellWidget(zaehler, 0).value())
         params.append(W_real)
         self.plot_fitted_params(W,params)
@@ -822,17 +852,17 @@ class MyForm(QMainWindow):
         '''if value_opt['dyn_fit'] == 'fitted':
                                     self.ui.parameter_plot_widget.canvas.ax.plot(x, result.best_fit, label='Best Fit') #Fitted Function'''
         try:
-            plot_func = Functions.functions_value(x, slope, offset, index_model, params,fit_num) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
+            plot_func = Functions.functions_value(x, slope, offset, index_model, params,self.fit_num) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
             self.ui.parameter_plot_widget.canvas.ax.plot(x,plot_func,'r--',label='Best Fit') # Best Fit
 
-            for i_num in range(1,fit_num + 1):
+            for i_num in range(1,self.fit_num + 1):
                 plt_single_func = Functions.single_func(x, slope, offset, index_model, params, i_num)
                 self.ui.parameter_plot_widget.canvas.ax.plot(x,plt_single_func,label='Function'+str(i_num)) #Single lines
 
             self.ui.parameter_plot_widget.canvas.ax.legend()
             self.ui.parameter_plot_widget.canvas.draw()
         except Exception as e:
-            print(e)
+            print('Error in main.plot_fitted_params: ',e)
             print('Please select a Model first!')
 
     def plot(self):
@@ -843,7 +873,8 @@ class MyForm(QMainWindow):
         if value_opt['data'] == 'loaded':
             try:
                 self.set_init_params()  #gets the initial parameters from the GUI
-                result = Fit(index_model, fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
+                print(len(self.init_values))
+                result = Fit(index_model, self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
                 value_opt['fit'] = 'fitted'
                 self.ui.progressBar.setMaximum(i_max-len(exceptions))
                 #self.ui.label_params_output.setText(self.fit(i).fit_report())
@@ -863,7 +894,7 @@ class MyForm(QMainWindow):
                 plt.legend(fontsize=12)
                 plt.show()
             except Exception as e:
-                print(e)
+                print('Error in main.plot: ',e)
         else:
             self.openFileDialog()
         if index_model == 0:
@@ -943,7 +974,7 @@ class MyForm(QMainWindow):
         #options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getSaveFileName(self,"Please select the file to save to","","All Files (*);;Text Files (*.dat)",options=options)
         if fileName:
-            self.get_thread = Worker(index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt['dyn'],i_min,i_max,j,j_min,exceptions)
+            self.get_thread = Worker(index_model,self.fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt['dyn'],i_min,i_max,j,j_min,exceptions,self.init_values)
             self.get_thread.start()
             self.get_thread.i_signal.connect(self.update_bar)
             self.get_thread.error_dynfit_signal.connect(self.error_msg)
@@ -978,7 +1009,7 @@ class MyForm(QMainWindow):
                 return result
         except Exception as e:
             print('Error in main.python_submit(): ',e)
-            print('Try fitting the spectra first!')
+            #print('Try fitting the spectra first!')
         #except Exception as e:
         #    if len(fit_params) != len(fit_params_value):
         #        print('Length of fit parameters and start values is unequal!')
@@ -1053,7 +1084,7 @@ class MyForm(QMainWindow):
             else:
                 print('Submission aborted')
         except Exception as e:
-            print(e)
+            print('Error in main.mathematica_submit: ',e)
 
     def get_output_path(self,arg):
         #This function is called from the Py2Mat Worker after the ANi Fit finished. It will emit the Signal "arg",
@@ -1094,7 +1125,7 @@ class MyForm(QMainWindow):
             self.ui.Ani_Const_Plot.canvas.ax.legend()
             self.ui.Ani_Const_Plot.canvas.draw()
         except Exception as e:
-            print(e)
+            print('Error in main.plot_ani_fit: ',e)
 
 
     def create_mathematica_array(self,text):
@@ -1106,7 +1137,6 @@ class MyForm(QMainWindow):
         #as the name say's
         global params
         global i
-        global init_values
         global bound_min
         global bound_max
         '''
@@ -1126,22 +1156,22 @@ class MyForm(QMainWindow):
                 bounds_min_lin = self.ui.Parameter_table.cellWidget(zahl,1).value() # Boundary minimum linear
                 bounds_max_lin = self.ui.Parameter_table.cellWidget(zahl,2).value() # Boundary maximum linear
 
-                default_linear[zahl] = init_lin
-                default_boundaries_linear_min[zahl] = bounds_min_lin
-                default_boundaries_linear_max[zahl] = bounds_max_lin
+                self.Arrays.default_linear[zahl] = init_lin
+                self.Arrays.default_boundaries_linear_min[zahl] = bounds_min_lin
+                self.Arrays.default_boundaries_linear_max[zahl] = bounds_max_lin
 
-            for zähler in range(2,fit_num*3+2):
+            for zähler in range(2,self.fit_num*3+2):
                 init = self.ui.Parameter_table.cellWidget(zähler,0).value() # Inital value
                 bounds_min = self.ui.Parameter_table.cellWidget(zähler,1).value() # Boundary minimum
                 bounds_max =self.ui.Parameter_table.cellWidget(zähler,2).value() # Boundary maximum
 
-                default_values_L[zähler-2] = init
-                default_boundaries_L_min[zähler-2] = bounds_min
-                default_boundaries_L_max[zähler-2] = bounds_max
+                self.Arrays.default_values_L[zähler-2] = init
+                self.Arrays.default_boundaries_L_min[zähler-2] = bounds_min
+                self.Arrays.default_boundaries_L_max[zähler-2] = bounds_max
 
-            init_values = default_linear + default_values_L
-            bound_min = default_boundaries_linear_min + default_boundaries_L_min
-            bound_max = default_boundaries_linear_max + default_boundaries_L_max
+            self.init_values = np.append(self.Arrays.default_linear, self.Arrays.default_values_L)
+            bound_min = np.append(self.Arrays.default_boundaries_linear_min, self.Arrays.default_boundaries_L_min)
+            bound_max = np.append(self.Arrays.default_boundaries_linear_max, self.Arrays.default_boundaries_L_max)
 
         else:
             for zahl in range(0,2):
@@ -1149,22 +1179,22 @@ class MyForm(QMainWindow):
                 bounds_min_lin = self.ui.Parameter_table.cellWidget(zahl,1).value() # Boundary minimum linear
                 bounds_max_lin = self.ui.Parameter_table.cellWidget(zahl,2).value() # Boundary maximum linear
 
-                default_linear[zahl] = init_lin
-                default_boundaries_linear_min[zahl] = bounds_min_lin
-                default_boundaries_linear_max[zahl] = bounds_max_lin
+                self.Arrays.default_linear[zahl] = init_lin
+                self.Arrays.default_boundaries_linear_min[zahl] = bounds_min_lin
+                self.Arrays.default_boundaries_linear_max[zahl] = bounds_max_lin
 
-            for zähler in range(2,fit_num*4+2):
+            for zähler in range(2,self.fit_num*4+2):
                 init = self.ui.Parameter_table.cellWidget(zähler,0).value() # Inital value
                 bounds_min = self.ui.Parameter_table.cellWidget(zähler,1).value() # Boundary minimum
                 bounds_max = self.ui.Parameter_table.cellWidget(zähler,2).value() # Boundary maximum
 
-                default_values_D[zähler-2] = init
-                default_boundaries_D_min[zähler-2] = bounds_min
-                default_boundaries_D_max[zähler-2] = bounds_max
+                self.Arrays.default_values_D[zähler-2] = init
+                self.Arrays.default_boundaries_D_min[zähler-2] = bounds_min
+                self.Arrays.default_boundaries_D_max[zähler-2] = bounds_max
 
-            init_values = default_linear + default_values_D
-            bound_min = default_boundaries_linear_min + default_boundaries_D_min
-            bound_max = default_boundaries_linear_max + default_boundaries_D_max
+            self.init_values = np.append(self.Arrays.default_linear, self.Arrays.default_values_D)
+            bound_min = np.append(self.Arrays.default_boundaries_linear_min, self.Arrays.default_boundaries_D_min)
+            bound_max = np.append(self.Arrays.default_boundaries_linear_max, self.Arrays.default_boundaries_D_max)
 
         self.ui.label_show_init_params.setText('Parameter set!')
 
@@ -1177,14 +1207,11 @@ class MyForm(QMainWindow):
     def set_fit_params(self):
         #reading names is adviced
         global temp_paras
-        global default_values_D
-        global default_values_L
-        global default_linear
         if value_opt['fit'] == 'fitted':
             if index_model == 2:
-                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz
+                temp_paras = Fit(index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz
             else:
-                temp_paras = Fit(index_model,fit_num,Adata2,Bdata2, j_min,j,init_values,bound_min,bound_max).give_params(fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Dyson
+                temp_paras = Fit(index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Dyson
             self.refresh_inital_parameter() #Well ... guess what it does
         else:
             self.plot() #....
@@ -1192,10 +1219,10 @@ class MyForm(QMainWindow):
     def refresh_inital_parameter(self):
         # Oh hey still here?
         if index_model == 2:
-            for zähler in range(0,fit_num*3+2):
+            for zähler in range(0,self.fit_num*3+2):
                 self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
         else:
-            for zähler in range(0,fit_num*4+2):
+            for zähler in range(0,self.fit_num*4+2):
                 self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
 
 
