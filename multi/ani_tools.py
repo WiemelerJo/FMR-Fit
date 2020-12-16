@@ -24,10 +24,11 @@ import os
 import datetime
 import time
 
+# Create Symbols for symengine to symbolically solve equations
+
 omega = Symbol('omega')
 g = Symbol('g')
 M = Symbol('M')
-K4s = Symbol('K4s')
 
 # ------const Params(always present)--------
 mu0 = Symbol('mu0')
@@ -85,27 +86,8 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
         print(filename, FreeE, fit_params, fixed_params, shifts, anglestep, phi_array)
     else:
         print(filename, FreeE, fit_params, fixed_params, shifts, anglestep,Fit,Plot)
-    # ------fixed Params--------
-    omega = Symbol('omega')
-    g = Symbol('g')
-    M = Symbol('M')
-    K4s = Symbol('K4s') # -----------------------------------------------------------------change that, K4s does not belong to fixed params (hardcoded!!)!!!!!!-------------------------------------------------------
 
-    # ------const Params(always present)--------
-    mu0 = Symbol('mu0')
-    mub = Symbol('mub')
-    B = Symbol('B')
-    phi = Symbol('phi')
-    theta = Symbol('theta')
-    thetaB = Symbol('thetaB')
-    phiB = Symbol('phiB')
-    gamma = Symbol('gamma')
-    # w = Symbol('w')
-    hbar = Symbol('hbar')
-    f = Symbol('f')
-    F = Function('F')
-
-    maxBresDelta = 0.01  # Also adjustable by gui?
+    maxBresDelta = 0.001  # Also adjustable by gui?
 
     shift = shifts
 
@@ -165,8 +147,6 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
     # This reference_data is not shifted, the shift is introduced in phi_RANGE. The lmfit routine then uses
     # the information of the shifted angles to map/fit the interpolated data.
 
-
-
     #try:
     if Fit:
         phi_min = (Winkel_min + shift) * m.pi / 180  # define smallest value; shifted
@@ -181,7 +161,7 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
                 phi_RANGE[i] += 360.0 * m.pi / 180
         print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
         end_pfad = init_folder(filename)
-        #plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
+
 
         func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
         func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
@@ -194,6 +174,7 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
             params_Fit.add(name, value)
         model = Model(Model_Fit_Fkt)
 
+        # plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
         main_loop(Plot, rule, phi_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
     else:   # Pre Fit
         phi_min = Winkel_min * m.pi / 180  # define smallest value; shifted
@@ -255,10 +236,9 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
     B_Sim = B_Sim_orig
     B_Sim2 = B_Sim2_orig
     it_while = 0
-    while np.linalg.norm(B_Sim - B_Sim2) > maxBresDelta:
+    while np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]) > maxBresDelta:
 
         print('Error too big! Start iterating; Iteration: ',it_while)
-
         B_Sim = np.copy(B_Sim2)  # To start with the result from previous iteration
         Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
 
@@ -284,7 +264,7 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
         # print error between old and new result
         print(np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]))
 
-        if it_while > 10:   # End statement if algorithm is iterating too often
+        if it_while > 5:   # End statement if algorithm is iterating too often
             print("Stop Iteration, Iter_Count is too high")
             break
         else:
@@ -351,7 +331,8 @@ def solveAngles(B, phiB, fkt):
     Bounds = [(0, 2 * m.pi), (0, 2 * m.pi), (0, 2 * m.pi)]
     start_paras = np.asarray([m.pi / 2, m.pi, m.pi / 2])
     result = minimize(F_fkt, start_paras, args=(B, phiB, fkt), method='L-BFGS-B',
-                      bounds=Bounds)  # alternatively a global search can be performed using shgo or differential_evolution, look up scipy Docs.
+                      bounds=Bounds)
+    # alternatively a global search can be performed using shgo or differential_evolution, look up scipy Docs.
     # result = shgo(F_fkt,Bounds, args=(B,phiB,fkt))  #Works as fast as local search (maybe even faster), but produces weird artifacts in plot!?
     # result = dual_annealing(F_fkt,Bounds, args=(B,phiB,fkt))   # Finds nice solution but takes years to compute one array with Anglestep = m.pi/40
     #result = differential_evolution(F_fkt,Bounds, args=(B,phiB,fkt)) #slower than shgo, but also nice solution
@@ -359,7 +340,7 @@ def solveAngles(B, phiB, fkt):
     return result.x[0], result.x[1], result.x[2]
 
 def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, reference_data, B_RES, F):
-    pool = Pool(10)  # Create pool of threads for multiprocessing
+    pool = Pool()  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
@@ -374,7 +355,7 @@ def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, mode
     #phi_array is aray of deg shifted
     start = time.time()
     
-    pool = Pool(10)  # Create pool of threads for multiprocessing
+    pool = Pool()  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
@@ -499,7 +480,7 @@ if __name__ == '__main__':
     #For debug only
     
     #text = "C:/Users/Jonas/Desktop/test.dat B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2 {'K2p': 863.25, 'K2s': 261345.0, 'K4p': 13720.6, 'phiu': 5.0756} {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0} 0.0 0.03490658503988659 False False"
-    init_load('C:/Users/Jonas/Desktop/test.dat','-B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2', {'K2p': 863.25, 'K2s': 100000.0, 'K4p': 13720.6, 'phiU': 5.0756}, {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0}, 37.0, 0.03490658503988659,True, True,[332, 334, 336, 338, 340, 342, 344, 346, 348, 350, 352, 354, 356,   0,
+    init_load('C:/Users/Jonas/Desktop/test.dat','-B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiU)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2', {'K2p': 863.25, 'K2s': 100000.0, 'K4p': 13720.6, 'phiU': 5.0756}, {'omega': 62066561101.381386, 'g': 2.05, 'M': 1530000.0, 'K4s': 0}, 37.5, 0.03490658503988659,True, True,[332, 334, 336, 338, 340, 342, 344, 346, 348, 350, 352, 354, 356,   0,
    2,   4,   6,   8,  10,  12,  14,  16,  18,  20,  22,  24,  26,  28,
   30,  32,  34,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,
   58,  60,  62,  64,  66,  68,  70,  72,  74,  76,  78,  80,  82,  84,

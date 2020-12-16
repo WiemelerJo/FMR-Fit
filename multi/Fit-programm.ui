@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1330</width>
-    <height>974</height>
+    <width>1282</width>
+    <height>907</height>
    </rect>
   </property>
   <property name="font">
@@ -19,44 +19,1055 @@
    <string>Python FMR Fit</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_18">
-    <item row="1" column="0">
-     <layout class="QGridLayout" name="gridLayout_6">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetNoConstraint</enum>
+   <layout class="QGridLayout" name="gridLayout_6">
+    <item row="0" column="0" rowspan="2" colspan="2">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="font">
+       <font>
+        <family>Arial</family>
+       </font>
       </property>
-      <item row="0" column="0">
-       <widget class="QTabWidget" name="tabWidget">
-        <property name="font">
-         <font>
-          <family>Arial</family>
-         </font>
-        </property>
-        <property name="contextMenuPolicy">
-         <enum>Qt::DefaultContextMenu</enum>
-        </property>
-        <property name="currentIndex">
-         <number>0</number>
-        </property>
-        <property name="elideMode">
-         <enum>Qt::ElideNone</enum>
-        </property>
-        <property name="documentMode">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="Fit_tab">
-         <attribute name="title">
-          <string>Fit</string>
-         </attribute>
-         <layout class="QGridLayout" name="gridLayout_14">
-          <item row="2" column="2">
-           <layout class="QHBoxLayout" name="horizontalLayout_7">
+      <property name="contextMenuPolicy">
+       <enum>Qt::DefaultContextMenu</enum>
+      </property>
+      <property name="currentIndex">
+       <number>4</number>
+      </property>
+      <property name="elideMode">
+       <enum>Qt::ElideNone</enum>
+      </property>
+      <property name="documentMode">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="Fit_tab">
+       <attribute name="title">
+        <string>Fit</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_10">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_params_output">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>399</width>
+            <height>539</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Arial</family>
+           </font>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="plotting_tab">
+       <attribute name="title">
+        <string>Plotting</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_15">
+        <item row="0" column="0" rowspan="2">
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
-             <layout class="QFormLayout" name="formLayout">
-              <item row="0" column="0" colspan="2">
+             <layout class="QFormLayout" name="formLayout_3">
+              <item row="1" column="1">
+               <widget class="QLabel" name="label_24">
+                <property name="font">
+                 <font>
+                  <pointsize>16</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                  <underline>true</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Contour Colour Plot</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QPushButton" name="Button_angu_view">
+                <property name="text">
+                 <string>View Angular Dependence</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QFormLayout" name="formLayout_4">
+              <item row="6" column="0" colspan="2">
+               <widget class="QPushButton" name="plot_parameter">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Plot parameter</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QPushButton" name="load_params_from_file">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Load parameters from file</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="label_25">
+                <property name="font">
+                 <font>
+                  <pointsize>16</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                  <underline>true</underline>
+                 </font>
+                </property>
+                <property name="whatsThis">
+                 <string extracomment="Plots parameters either from a file or directly from the Dyn-Fit "/>
+                </property>
+                <property name="text">
+                 <string>Parameters</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLabel" name="label_8">
+                <property name="text">
+                 <string>Loads Parameters from a selectable file</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QLabel" name="label_6">
+                <property name="text">
+                 <string>Plots Parameters, either from Dynamic Fit or from loaded Data</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QFormLayout" name="formLayout_2">
+            <item row="2" column="1">
+             <widget class="QLabel" name="label_3">
+              <property name="font">
+               <font>
+                <pointsize>16</pointsize>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Manual Adjustments</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="1">
+             <widget class="QLabel" name="label_26">
+              <property name="text">
+               <string>Select the angle index:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="1">
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QSpinBox" name="parameter_data_select">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="prefix">
+                 <string>Index of Spectrum: </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_9">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Angle:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_manual_edit_angle">
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="Button_manual_save">
+                <property name="text">
+                 <string>Save adjusted Parameters</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="11" column="1">
+             <widget class="QCheckBox" name="checkBox_change_values">
+              <property name="text">
+               <string>Change values</string>
+              </property>
+             </widget>
+            </item>
+            <item row="13" column="1">
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="PlotWidget" name="parameter_plot_widget">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>500</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QTableWidget" name="Parameter_Plot_Table">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>200</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>250</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <column>
+                 <property name="text">
+                  <string>Value</string>
+                 </property>
+                </column>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="anifit_tab">
+       <attribute name="title">
+        <string>Anisotropy Fit</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_17">
+        <item row="0" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <layout class="QGridLayout" name="gridLayout_3">
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="LineEdit_free_E_den">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Write the Free Energy Density as you would do in Mathematica. This means using F[thetaB_ ,.....]. Also try to avoid special characters like the theta symbol etc.</string>
+                </property>
+                <property name="text">
+                 <string>F[B_, thetaB_, phiB_, M_, theta_, phi_] = -M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiu]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_13">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Free Energy Density F : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="Label_2">
+                <property name="font">
+                 <font>
+                  <pointsize>16</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Parameters</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_14">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Fitted Parameter : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_15">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Fixed Parameter : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="LineEdit_fixed_Param">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Fixed Parameterst are Parameters that are not fitted</string>
+                </property>
+                <property name="text">
+                 <string>omega, g, M, K4s</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QPushButton" name="sumbit_mathematica">
+                <property name="toolTip">
+                 <string>Takes every entry above and sumbits it to Mathematica</string>
+                </property>
+                <property name="text">
+                 <string>Submit to Mathematica</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="LineEdit_fitted_params">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Set the parameters, that you want to fit</string>
+                </property>
+                <property name="text">
+                 <string>K2p, K2s, K4p, phiu</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_28">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Fixed Values : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="LineEdit_fixed_values">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Set the values of fixed parameters, set above. Please keep the same order as above! </string>
+                </property>
+                <property name="text">
+                 <string>2*Pi*9.8782*10^9, 2.05, 1.53*10^6, 0</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_27">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Range : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="LineEdit_Steps">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Steps additionaly divide the ranges. Therefore, in the given Range change the value with Range*Steps*Value</string>
+                </property>
+                <property name="text">
+                 <string>0.5, 0.5, 0.5, 0.5</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_29">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Steps : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_19">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Start Values : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="Label_3">
+                <property name="font">
+                 <font>
+                  <pointsize>16</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Options</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QDoubleSpinBox" name="shift_SpinBox">
+                <property name="locale">
+                 <locale language="English" country="UnitedKingdom"/>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="decimals">
+                 <number>1</number>
+                </property>
+                <property name="minimum">
+                 <double>-360.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>360.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.100000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="LineEdit_Range">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Ranges give the range a parameter is allowed to be changed (by the Fit). A Value of 0.5 will result in a change of +-50% of the orignial value</string>
+                </property>
+                <property name="text">
+                 <string>0.5, 0.5, 0.5, 0.5</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="label_30">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Shift :</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="LineEdit_Start_Val">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Select the starting values</string>
+                </property>
+                <property name="text">
+                 <string>863.25, 261345, 13720.6, 5.0756</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>Anglestep :</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
+                <item>
+                 <widget class="QSpinBox" name="spinBox_Anglestep">
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                  <property name="maximum">
+                   <number>720</number>
+                  </property>
+                  <property name="value">
+                   <number>90</number>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_10">
+                  <property name="text">
+                   <string>Iterations :</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="spinBox_Iterations">
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                  <property name="maximum">
+                   <number>100</number>
+                  </property>
+                  <property name="value">
+                   <number>5</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="PlotWidget" name="Ani_Const_Plot"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="AniFi_Python">
+       <attribute name="title">
+        <string>AniFit-Python</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <layout class="QGridLayout" name="gridLayout_8">
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="LineEdit_free_E_den_Py">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Write the Free Energy Density as you would do in Mathematica. This means using F[thetaB_ ,.....]. Also try to avoid special characters like the theta symbol etc.</string>
+                </property>
+                <property name="text">
+                 <string>-M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiU]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="Label_4">
+                <property name="font">
+                 <font>
+                  <pointsize>16</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Parameters</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_16">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Free Energy Density F : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="LineEdit_fitted_params_Py">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Set the parameters, that you want to fit</string>
+                </property>
+                <property name="text">
+                 <string>K2p, K2s, K4p, phiU</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_17">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Fitted Parameter : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_18">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Fixed Parameter : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="LineEdit_fixed_Param_Py">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Fixed Parameterst are Parameters that are not fitted</string>
+                </property>
+                <property name="text">
+                 <string>omega, g, M, K4s</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QPushButton" name="sumbit_mathematica_2">
+                <property name="toolTip">
+                 <string>Takes every entry above and sumbits it to Mathematica</string>
+                </property>
+                <property name="text">
+                 <string>Submit to Python</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="LineEdit_fixed_values_Py">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Set the values of fixed parameters, set above. Please keep the same order as above! </string>
+                </property>
+                <property name="text">
+                 <string>2*Pi*9.8782*10^9, 2.05, 1.53*10^6, 0</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_31">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Fixed Values : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QGridLayout" name="gridLayout_9">
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="LineEdit_Start_Val_Py">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="toolTip">
+                 <string>Select the starting values</string>
+                </property>
+                <property name="text">
+                 <string>863.25, 261345, 13720.6, 5.0756</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_35">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Shift :</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QDoubleSpinBox" name="shift_SpinBox_Py">
+                <property name="locale">
+                 <locale language="English" country="UnitedKingdom"/>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="decimals">
+                 <number>1</number>
+                </property>
+                <property name="minimum">
+                 <double>-360.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>360.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.100000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QSpinBox" name="spinBox_Anglestep_Py">
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>720</number>
+                </property>
+                <property name="value">
+                 <number>90</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_32">
+                <property name="font">
+                 <font>
+                  <underline>false</underline>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Start Values : </string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="Label_5">
+                <property name="font">
+                 <font>
+                  <pointsize>16</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Options</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_11">
+                <property name="text">
+                 <string>Anglestep :</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QPushButton" name="preview_button_Py">
+                <property name="text">
+                 <string>Run Preview</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="PlotWidget" name="Ani_Const_Plot_Py"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Page</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <item>
+             <widget class="Plot_pyqtgraph" name="Plot_Indi_View">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="1">
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <item>
+               <widget class="QDoubleSpinBox" name="spinBox_increment">
+                <property name="font">
+                 <font>
+                  <pointsize>10</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="locale">
+                 <locale language="English" country="UnitedKingdom"/>
+                </property>
+                <property name="prefix">
+                 <string>Value Stepsize: </string>
+                </property>
+                <property name="decimals">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <double>1000.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item>
                <layout class="QGridLayout" name="gridLayout">
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="font">
                    <font>
                     <family>Arial</family>
@@ -70,55 +1081,22 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="3">
-                 <widget class="QPushButton" name="Button_dropped_points">
+                <item row="5" column="1">
+                 <widget class="QProgressBar" name="progressBar">
                   <property name="font">
                    <font>
                     <family>Arial</family>
                    </font>
                   </property>
-                  <property name="text">
-                   <string>Add to dropped Spectra</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="label_20">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                    <underline>true</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Amount of functions</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="label_4">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                    <underline>true</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Select Spectrum</string>
+                  <property name="value">
+                   <number>0</number>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
                   </property>
-                  <property name="margin">
-                   <number>0</number>
-                  </property>
                  </widget>
                 </item>
-                <item row="2" column="2">
+                <item row="2" column="3">
                  <widget class="QScrollBar" name="Scroll_Bar_dropped_points">
                   <property name="font">
                    <font>
@@ -130,7 +1108,38 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="0">
+                <item row="5" column="0">
+                 <widget class="QPushButton" name="Button_dyn_fit">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Dynamic Fit</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QPushButton" name="Button_Plot">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Fit</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="3">
+                 <widget class="QPushButton" name="pushButton">
+                  <property name="text">
+                   <string>Debug_Button</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
                  <widget class="QComboBox" name="comboBox_fit_model">
                   <property name="maximumSize">
                    <size>
@@ -170,16 +1179,7 @@
                   </item>
                  </widget>
                 </item>
-                <item row="3" column="2">
-                 <widget class="QLineEdit" name="Dropped_points_edit">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
+                <item row="3" column="0">
                  <widget class="QLabel" name="label_23">
                   <property name="font">
                    <font>
@@ -194,15 +1194,112 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="2">
-                 <widget class="QSpinBox" name="select_datanumber"/>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QPushButton" name="pushButton">
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_4">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                    <underline>true</underline>
+                   </font>
+                  </property>
                   <property name="text">
-                   <string>Debug_Button</string>
+                   <string>Select Spectrum</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                  <property name="margin">
+                   <number>0</number>
                   </property>
                  </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_20">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                    <underline>true</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Amount of functions</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="3">
+                 <widget class="QDoubleSpinBox" name="spinBox_incr">
+                  <property name="locale">
+                   <locale language="English" country="UnitedKingdom"/>
+                  </property>
+                  <property name="prefix">
+                   <string>Use Increment: </string>
+                  </property>
+                  <property name="decimals">
+                   <number>5</number>
+                  </property>
+                  <property name="maximum">
+                   <double>1.000000000000000</double>
+                  </property>
+                  <property name="singleStep">
+                   <double>0.001000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="Dropped_points_edit">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="3">
+                 <widget class="QCheckBox" name="checkBox_dynPlot">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Robust Fit? (Much Slower! But better at finding global minima)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="3">
+                 <widget class="QPushButton" name="Button_dropped_points">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Add to dropped Spectra</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QLabel" name="label_test">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QSpinBox" name="select_datanumber"/>
                 </item>
                 <item row="1" column="1">
                  <widget class="QSpinBox" name="spinBox_fit_num">
@@ -220,1378 +1317,124 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
-                 <widget class="QDoubleSpinBox" name="spinBox_incr">
-                  <property name="prefix">
-                   <string>Use Increment: </string>
-                  </property>
-                  <property name="decimals">
-                   <number>5</number>
-                  </property>
-                  <property name="maximum">
-                   <double>1.000000000000000</double>
-                  </property>
-                  <property name="singleStep">
-                   <double>0.001000000000000</double>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item row="1" column="0" colspan="2">
-               <spacer name="verticalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="2" column="1">
-               <widget class="QTableWidget" name="Parameter_table">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>481</width>
-                  <height>500</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>810</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Arial</family>
-                 </font>
-                </property>
-                <property name="locale">
-                 <locale language="C" country="AnyCountry"/>
-                </property>
-                <property name="dragDropMode">
-                 <enum>QAbstractItemView::DropOnly</enum>
-                </property>
-                <property name="alternatingRowColors">
-                 <bool>true</bool>
-                </property>
-                <property name="showGrid">
-                 <bool>true</bool>
-                </property>
-                <property name="rowCount">
-                 <number>0</number>
-                </property>
-                <attribute name="horizontalHeaderDefaultSectionSize">
-                 <number>200</number>
-                </attribute>
-                <attribute name="horizontalHeaderMinimumSectionSize">
-                 <number>120</number>
-                </attribute>
-                <attribute name="verticalHeaderDefaultSectionSize">
-                 <number>40</number>
-                </attribute>
-                <column>
-                 <property name="text">
-                  <string>Inital Value</string>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Arial</family>
-                   <pointsize>10</pointsize>
-                   <underline>true</underline>
-                  </font>
-                 </property>
-                 <property name="textAlignment">
-                  <set>AlignCenter</set>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Minimum Boundary</string>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Arial</family>
-                   <pointsize>10</pointsize>
-                   <underline>true</underline>
-                  </font>
-                 </property>
-                 <property name="textAlignment">
-                  <set>AlignCenter</set>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Maximum Boundary</string>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Arial</family>
-                   <pointsize>10</pointsize>
-                   <underline>true</underline>
-                  </font>
-                 </property>
-                 <property name="textAlignment">
-                  <set>AlignCenter</set>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Ignore</string>
-                 </property>
-                 <property name="textAlignment">
-                  <set>AlignCenter</set>
-                 </property>
-                </column>
-               </widget>
-              </item>
-              <item row="3" column="0" colspan="2">
-               <layout class="QGridLayout" name="gridLayout_7">
-                <item row="0" column="0">
-                 <widget class="QPushButton" name="Button_Plot">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Plot</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QPushButton" name="Button_set_fit_params">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Set initial parameters to fit parameters</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_show_load">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="frameShape">
-                   <enum>QFrame::Box</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="label_show_init_params">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="frameShape">
-                   <enum>QFrame::Box</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item row="4" column="0" colspan="2">
-               <layout class="QGridLayout" name="gridLayout_5">
-                <item row="0" column="0">
-                 <widget class="QPushButton" name="Button_dyn_fit">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Dynamic Fit</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QProgressBar" name="progressBar">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="value">
-                   <number>0</number>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QCheckBox" name="checkBox_dynPlot">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Robust Fit? (Much Slower! But better at finding global minima)</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
+                <item row="5" column="2">
                  <widget class="QLabel" name="label_7">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
                   </property>
                   <property name="text">
                    <string/>
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_test">
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
                </layout>
               </item>
              </layout>
             </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_2">
-              <item>
-               <layout class="QGridLayout" name="gridLayout_11">
-                <item row="1" column="0">
-                 <widget class="QLabel" name="min_drop_value">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QScrollBar" name="min_drop_Bar">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QScrollBar" name="Drop_Scalebar">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="maximum">
-                   <number>1023</number>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QLabel" name="Drop_label">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="PlotWidget" name="plotView">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>750</width>
-                    <height>250</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>1500</width>
-                    <height>500</height>
-                   </size>
-                  </property>
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_params_output">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>399</width>
-                  <height>539</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Arial</family>
-                 </font>
-                </property>
-                <property name="autoFillBackground">
-                 <bool>false</bool>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-               </widget>
-              </item>
-             </layout>
+            <item row="0" column="0">
+             <widget class="QTableWidget" name="Parameter_table">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>600</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <family>Arial</family>
+               </font>
+              </property>
+              <property name="locale">
+               <locale language="C" country="AnyCountry"/>
+              </property>
+              <property name="dragDropMode">
+               <enum>QAbstractItemView::DropOnly</enum>
+              </property>
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+              <property name="showGrid">
+               <bool>true</bool>
+              </property>
+              <property name="rowCount">
+               <number>0</number>
+              </property>
+              <column>
+               <property name="text">
+                <string>Inital Value</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Arial</family>
+                 <pointsize>10</pointsize>
+                 <underline>true</underline>
+                </font>
+               </property>
+               <property name="textAlignment">
+                <set>AlignCenter</set>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Min Boundary</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Arial</family>
+                 <pointsize>10</pointsize>
+                 <underline>true</underline>
+                </font>
+               </property>
+               <property name="textAlignment">
+                <set>AlignCenter</set>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Max Boundary</string>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Arial</family>
+                 <pointsize>10</pointsize>
+                 <underline>true</underline>
+                </font>
+               </property>
+               <property name="textAlignment">
+                <set>AlignCenter</set>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Ignore</string>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
+                 <underline>true</underline>
+                </font>
+               </property>
+               <property name="textAlignment">
+                <set>AlignCenter</set>
+               </property>
+              </column>
+             </widget>
             </item>
            </layout>
           </item>
          </layout>
-        </widget>
-        <widget class="QWidget" name="plotting_tab">
-         <attribute name="title">
-          <string>Plotting</string>
-         </attribute>
-         <layout class="QGridLayout" name="gridLayout_15">
-          <item row="0" column="0" rowspan="2">
-           <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <layout class="QFormLayout" name="formLayout_3">
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_24">
-                  <property name="font">
-                   <font>
-                    <pointsize>16</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                    <underline>true</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Contour Colour Plot</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_5">
-                  <property name="text">
-                   <string>Not fully  implementet</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QPushButton" name="colour_button">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Plot in 2D colour</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_21">
-                  <property name="text">
-                   <string>Colour ticks (Integer)</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="colour_tick_edit">
-                  <property name="text">
-                   <string>50</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QPushButton" name="Button_angu_view">
-                  <property name="text">
-                   <string>View Angular Dependence</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QFormLayout" name="formLayout_4">
-                <item row="6" column="0" colspan="2">
-                 <widget class="QPushButton" name="plot_parameter">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Plot parameter</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0" colspan="2">
-                 <widget class="QPushButton" name="load_params_from_file">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Load parameters from file</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="label_25">
-                  <property name="font">
-                   <font>
-                    <pointsize>16</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                    <underline>true</underline>
-                   </font>
-                  </property>
-                  <property name="whatsThis">
-                   <string extracomment="Plots parameters either from a file or directly from the Dyn-Fit "/>
-                  </property>
-                  <property name="text">
-                   <string>Parameters</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                  <property name="wordWrap">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QLabel" name="label_8">
-                  <property name="text">
-                   <string>Loads Parameters from a selectable file</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="7" column="1">
-                 <widget class="QLabel" name="label_6">
-                  <property name="text">
-                   <string>Plots Parameters, either from Dynamic Fit or from loaded Data</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QFormLayout" name="formLayout_2">
-              <item row="2" column="1">
-               <widget class="QLabel" name="label_3">
-                <property name="font">
-                 <font>
-                  <pointsize>16</pointsize>
-                  <weight>75</weight>
-                  <bold>true</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Manual Adjustments</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="9" column="1">
-               <widget class="QLabel" name="label_26">
-                <property name="text">
-                 <string>Select the angle index:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="10" column="1">
-               <layout class="QHBoxLayout" name="horizontalLayout_3">
-                <item>
-                 <widget class="QSpinBox" name="parameter_data_select">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="prefix">
-                   <string>Index of Spectrum: </string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_9">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Angle:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_manual_edit_angle">
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="Button_manual_save">
-                  <property name="text">
-                   <string>Save adjusted Parameters</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item row="11" column="1">
-               <widget class="QCheckBox" name="checkBox_change_values">
-                <property name="text">
-                 <string>Change values</string>
-                </property>
-               </widget>
-              </item>
-              <item row="13" column="1">
-               <layout class="QHBoxLayout" name="horizontalLayout_2">
-                <item>
-                 <widget class="PlotWidget" name="parameter_plot_widget">
-                  <property name="enabled">
-                   <bool>true</bool>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>0</width>
-                    <height>500</height>
-                   </size>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QTableWidget" name="Parameter_Plot_Table">
-                  <property name="enabled">
-                   <bool>true</bool>
-                  </property>
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>200</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>250</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <column>
-                   <property name="text">
-                    <string>Value</string>
-                   </property>
-                  </column>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="anifit_tab">
-         <attribute name="title">
-          <string>Anisotropy Fit</string>
-         </attribute>
-         <layout class="QGridLayout" name="gridLayout_17">
-          <item row="0" column="0">
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <item>
-               <layout class="QGridLayout" name="gridLayout_3">
-                <item row="2" column="1">
-                 <widget class="QLineEdit" name="LineEdit_free_E_den">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Write the Free Energy Density as you would do in Mathematica. This means using F[thetaB_ ,.....]. Also try to avoid special characters like the theta symbol etc.</string>
-                  </property>
-                  <property name="text">
-                   <string>F[B_, thetaB_, phiB_, M_, theta_, phi_] = -M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiu]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_13">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Free Energy Density F : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="Label_2">
-                  <property name="font">
-                   <font>
-                    <pointsize>16</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Parameters</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_14">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fitted Parameter : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="0">
-                 <widget class="QLabel" name="label_15">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fixed Parameter : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QLineEdit" name="LineEdit_fixed_Param">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Fixed Parameterst are Parameters that are not fitted</string>
-                  </property>
-                  <property name="text">
-                   <string>omega, g, M, K4s</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="7" column="0">
-                 <widget class="QPushButton" name="sumbit_mathematica">
-                  <property name="toolTip">
-                   <string>Takes every entry above and sumbits it to Mathematica</string>
-                  </property>
-                  <property name="text">
-                   <string>Submit to Mathematica</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="LineEdit_fitted_params">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Set the parameters, that you want to fit</string>
-                  </property>
-                  <property name="text">
-                   <string>K2p, K2s, K4p, phiu</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="0">
-                 <widget class="QLabel" name="label_28">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fixed Values : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QLineEdit" name="LineEdit_fixed_values">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Set the values of fixed parameters, set above. Please keep the same order as above! </string>
-                  </property>
-                  <property name="text">
-                   <string>2*Pi*9.8782*10^9, 2.05, 1.53*10^6, 0</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QGridLayout" name="gridLayout_4">
-                <item row="4" column="0">
-                 <widget class="QLabel" name="label_27">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Range : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QLineEdit" name="LineEdit_Steps">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Steps additionaly divide the ranges. Therefore, in the given Range change the value with Range*Steps*Value</string>
-                  </property>
-                  <property name="text">
-                   <string>0.5, 0.5, 0.5, 0.5</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="0">
-                 <widget class="QLabel" name="label_29">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Steps : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_19">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Start Values : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="Label_3">
-                  <property name="font">
-                   <font>
-                    <pointsize>16</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Options</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="1">
-                 <widget class="QDoubleSpinBox" name="shift_SpinBox">
-                  <property name="locale">
-                   <locale language="English" country="UnitedKingdom"/>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                  <property name="decimals">
-                   <number>1</number>
-                  </property>
-                  <property name="minimum">
-                   <double>-360.000000000000000</double>
-                  </property>
-                  <property name="maximum">
-                   <double>360.000000000000000</double>
-                  </property>
-                  <property name="singleStep">
-                   <double>0.100000000000000</double>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QLineEdit" name="LineEdit_Range">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Ranges give the range a parameter is allowed to be changed (by the Fit). A Value of 0.5 will result in a change of +-50% of the orignial value</string>
-                  </property>
-                  <property name="text">
-                   <string>0.5, 0.5, 0.5, 0.5</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="0">
-                 <widget class="QLabel" name="label_30">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Shift :</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="LineEdit_Start_Val">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Select the starting values</string>
-                  </property>
-                  <property name="text">
-                   <string>863.25, 261345, 13720.6, 5.0756</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="7" column="0">
-                 <widget class="QLabel" name="label">
-                  <property name="text">
-                   <string>Anglestep :</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="7" column="1">
-                 <layout class="QHBoxLayout" name="horizontalLayout_8">
-                  <item>
-                   <widget class="QSpinBox" name="spinBox_Anglestep">
-                    <property name="minimum">
-                     <number>1</number>
-                    </property>
-                    <property name="maximum">
-                     <number>720</number>
-                    </property>
-                    <property name="value">
-                     <number>90</number>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QLabel" name="label_10">
-                    <property name="text">
-                     <string>Iterations :</string>
-                    </property>
-                    <property name="alignment">
-                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QSpinBox" name="spinBox_Iterations">
-                    <property name="minimum">
-                     <number>1</number>
-                    </property>
-                    <property name="maximum">
-                     <number>100</number>
-                    </property>
-                    <property name="value">
-                     <number>5</number>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="PlotWidget" name="Ani_Const_Plot"/>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="AniFi_Python">
-         <attribute name="title">
-          <string>AniFit-Python</string>
-         </attribute>
-         <layout class="QHBoxLayout" name="horizontalLayout_6">
-          <item>
-           <layout class="QVBoxLayout" name="verticalLayout_4">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
-              <item>
-               <layout class="QGridLayout" name="gridLayout_8">
-                <item row="2" column="1">
-                 <widget class="QLineEdit" name="LineEdit_free_E_den_Py">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Write the Free Energy Density as you would do in Mathematica. This means using F[thetaB_ ,.....]. Also try to avoid special characters like the theta symbol etc.</string>
-                  </property>
-                  <property name="text">
-                   <string>-M*B* (Sin[theta]*Sin[thetaB]*Cos[phi - phiB] + Cos[theta]*Cos[thetaB]) - (1/2*mu0*M^2 - K2s)* Sin[theta]^2 - K2p*Sin[theta]^2*Cos[phi - phiU]^2 - 1/2*K4s*Cos[theta]^4 - 1/8*K4p* (3 + Cos[4*phi])* Sin[theta]^4</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="Label_4">
-                  <property name="font">
-                   <font>
-                    <pointsize>16</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Parameters</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_16">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Free Energy Density F : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="LineEdit_fitted_params_Py">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Set the parameters, that you want to fit</string>
-                  </property>
-                  <property name="text">
-                   <string>K2p, K2s, K4p, phiU</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_17">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fitted Parameter : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="0">
-                 <widget class="QLabel" name="label_18">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fixed Parameter : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QLineEdit" name="LineEdit_fixed_Param_Py">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Fixed Parameterst are Parameters that are not fitted</string>
-                  </property>
-                  <property name="text">
-                   <string>omega, g, M, K4s</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="0">
-                 <widget class="QPushButton" name="sumbit_mathematica_2">
-                  <property name="toolTip">
-                   <string>Takes every entry above and sumbits it to Mathematica</string>
-                  </property>
-                  <property name="text">
-                   <string>Submit to Python</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QLineEdit" name="LineEdit_fixed_values_Py">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Set the values of fixed parameters, set above. Please keep the same order as above! </string>
-                  </property>
-                  <property name="text">
-                   <string>2*Pi*9.8782*10^9, 2.05, 1.53*10^6, 0</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="0">
-                 <widget class="QLabel" name="label_31">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fixed Values : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QGridLayout" name="gridLayout_9">
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="LineEdit_Start_Val_Py">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="toolTip">
-                   <string>Select the starting values</string>
-                  </property>
-                  <property name="text">
-                   <string>863.25, 261345, 13720.6, 5.0756</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="0">
-                 <widget class="QLabel" name="label_35">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Shift :</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QDoubleSpinBox" name="shift_SpinBox_Py">
-                  <property name="locale">
-                   <locale language="English" country="UnitedKingdom"/>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                  <property name="decimals">
-                   <number>1</number>
-                  </property>
-                  <property name="minimum">
-                   <double>-360.000000000000000</double>
-                  </property>
-                  <property name="maximum">
-                   <double>360.000000000000000</double>
-                  </property>
-                  <property name="singleStep">
-                   <double>0.100000000000000</double>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QSpinBox" name="spinBox_Anglestep_Py">
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>720</number>
-                  </property>
-                  <property name="value">
-                   <number>90</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_32">
-                  <property name="font">
-                   <font>
-                    <underline>false</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Start Values : </string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLabel" name="Label_5">
-                  <property name="font">
-                   <font>
-                    <pointsize>16</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Options</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="0">
-                 <widget class="QLabel" name="label_11">
-                  <property name="text">
-                   <string>Anglestep :</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="0">
-                 <widget class="QPushButton" name="preview_button_Py">
-                  <property name="text">
-                   <string>Run Preview</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="PlotWidget" name="Ani_Const_Plot_Py"/>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </widget>
-      </item>
-     </layout>
+        </item>
+       </layout>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -1600,7 +1443,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1330</width>
+     <width>1282</width>
      <height>21</height>
     </rect>
    </property>
@@ -1639,6 +1482,11 @@
  <customwidgets>
   <customwidget>
    <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>CustomWidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>Plot_pyqtgraph</class>
    <extends>QGraphicsView</extends>
    <header>CustomWidgets</header>
   </customwidget>

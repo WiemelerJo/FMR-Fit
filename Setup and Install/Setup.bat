@@ -8,3 +8,5 @@ pip install symengine
 pip install lmfit
 pip install pyqtgraph
 pip install pathos
+
+pause

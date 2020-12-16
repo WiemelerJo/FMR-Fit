@@ -17,6 +17,7 @@ from lmfit import Parameters
 from matplotlib.colors import ListedColormap
 from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox
 from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker
+from PyQt5.Qt import Qt
 from Fitprogramm import *
 #from arrays import *
 from fitting import Fit
@@ -26,6 +27,7 @@ from ani_tools import *
 from CustomWidgets import Popup_View
 from func_gen import Gen_Lorentz, Gen_Dyson
 from array_gen import *
+
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
 # TODO: Maybe implement a performance mode using CuPy or MOT Module (CUDA and multiprocess optimized optimzation)
@@ -131,12 +133,9 @@ class MyForm(QMainWindow):
         self.ui.actionSave.triggered.connect(self.saveFileDialog)
         self.ui.actionExit.triggered.connect(self.Exit)
         self.ui.Button_Plot.clicked.connect(self.plot)
-        self.ui.Button_set_fit_params.clicked.connect(self.set_fit_params)
+
         self.ui.comboBox_fit_model.currentIndexChanged.connect(self.model_type)
         self.ui.Button_dyn_fit.clicked.connect(self.dyn_fit)
-        self.ui.colour_button.clicked.connect(self.plot_in_colour)
-        self.ui.Drop_Scalebar.valueChanged.connect(self.data_range)
-        self.ui.min_drop_Bar.valueChanged.connect(self.data_range)
         self.ui.select_datanumber.valueChanged.connect(self.set_datanumber)
         self.ui.Scroll_Bar_dropped_points.valueChanged.connect(self.set_dataslider)
         self.ui.Dropped_points_edit.editingFinished.connect(self.Exceptions)
@@ -159,6 +158,7 @@ class MyForm(QMainWindow):
         self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
 
         self.fit_num = 1
+        self.increment = 0.001
         self.sanity = True
 
         self.show()
@@ -176,6 +176,46 @@ class MyForm(QMainWindow):
         self.w.setWindowTitle("Colourplot")
         self.w.setGeometry(0, 0, 1280, 720)
         self.w.show()
+
+    def wheelEvent(self, event):
+        modifiers = QApplication.keyboardModifiers()
+        if modifiers == Qt.ControlModifier:
+            angle_delta = event.angleDelta().y()
+            # print('Wheel', angle_delta)
+            if angle_delta > 0:
+                # Positiver Step
+                step = 1
+                self.increment *= 10
+            else:
+                # Negativer Step
+                step = -1
+                self.increment /= 10
+
+            if self.increment > 1000.0:
+                self.increment = 1000.0
+            elif self.increment < 1e-05:
+                self.increment = 1e-05
+
+            self.ui.spinBox_increment.setValue(self.increment)
+            self.set_increment()
+            print(step, self.increment)
+
+    def set_increment(self):
+        try:
+            if index_model == 2:
+                print(self.increment)
+                for zähler in range(0,self.fit_num*3+2):
+                    self.ui.Parameter_table.cellWidget(zähler, 0).setSingleStep(self.increment)
+                    self.ui.Parameter_table.cellWidget(zähler, 1).setSingleStep(self.increment)
+                    self.ui.Parameter_table.cellWidget(zähler, 2).setSingleStep(self.increment)
+            elif index_model == 3:
+                for zähler in range(0,self.fit_num*4+2):
+                    self.ui.Parameter_table.cellWidget(zähler, 0).setSingleStep(self.increment)
+                    self.ui.Parameter_table.cellWidget(zähler, 1).setSingleStep(self.increment)
+                    self.ui.Parameter_table.cellWidget(zähler, 2).setSingleStep(self.increment)
+                    self.ui.Parameter_table.cellWidget(zähler, 3).setSingleStep(self.increment)
+        except:
+            return 0
 
     def make_preB_sim(self):
         global value_opt
@@ -264,7 +304,7 @@ class MyForm(QMainWindow):
     def button_dropped_points(self):
         #as something is added to the exceptions, this is beeing called
         excep_append = self.Exceptions()  #gets text of editLine
-        excep_append.append(str(self.ui.Scroll_Bar_dropped_points.value())) #get value of scrollbar
+        excep_append.append(str(self.ui.select_datanumber.value())) #get value of scrollbar
         text = ','.join(map(str, excep_append))
         self.ui.Dropped_points_edit.setText(str(text))
         self.Exceptions()
@@ -284,7 +324,7 @@ class MyForm(QMainWindow):
         global W_real
         params = []
         try:
-            #Temporarily block every signal from the Spinboxes. There is the Problem,
+            # Temporarily block every signal from the Spinboxes. There is the Problem,
             # that everytime the value from these spinboxes is changed a signal is emited.
             # The bad thing now is, that there is no differentiation between user_event and machine_event,
             # therefore if the script changes the values to display the next angle,
@@ -680,7 +720,6 @@ class MyForm(QMainWindow):
             n = counts1[0]
             chunksize = int(len(D[:,0])/n)  #set chunk size for example 1024,2048,4096
 
-            self.ui.Drop_Scalebar.setMaximum(n-1)   #sets the maximum of the scroll bar for dropped points
             i = 0   # laufvariable = 0
             i_min = 0
             i_max = int(chunksize)
@@ -704,36 +743,32 @@ class MyForm(QMainWindow):
             #self.H_range = max(Bdata[0])
             print(self.H_range)
             self.WinkelMax = max(D[:, 2])
+            self.B_min = min(D[:,1])/10000 # in Tesla
+            self.B_max = max(D[:,1])/10000
+            self.B_ratio = (n-1)/self.B_max
 
-            if int(self.ui.select_datanumber.text()) > len(Adata)-1: #catches errors, slider for datanumber
-                i = len(Adata)-1
-                self.ui.select_datanumber.setText(str(i))
-            else:
-                i = int(self.ui.select_datanumber.text())
+            try:
+                if int(self.ui.select_datanumber.text()) > len(Adata)-1: #catches errors, slider for datanumber
+                    i = len(Adata)-1
+                    self.ui.select_datanumber.setText(str(i))
+                else:
+                    i = int(self.ui.select_datanumber.text())
+            except:
+                print("Weird Bug, I know, just look at the first Tab while loading data :D")
+
+
+            # B_min bis B_max
+
+
+            self.ui.Plot_Indi_View.lr.setBounds([round(self.B_min),self.B_max]) # Set Range Boundaries for linearregionitem
+
             self.ui.select_datanumber.setMaximum(i_max)
-            self.ui.label_show_load.setText('Data loaded!')
             self.ui.progressBar.setMaximum(i_max)
             self.ui.Scroll_Bar_dropped_points.setMaximum(i_max)
             self.ui.parameter_data_select.setMaximum(i_max)
             value_opt['data'] = 'loaded'
             self.set_datanumber()
-    
-    def data_range(self):
-        global j
-        global j_min
-        global Bdata2
-        global Adata2
-        if value_opt['data'] == 'loaded':
-            '''Bdata2 = Bdata[i]
-            Adata2 = Adata[i]'''
-            j = self.ui.Drop_Scalebar.value()
-            j_min = self.ui.min_drop_Bar.value()
-            self.ui.min_drop_Bar.setMaximum(j) 
-            self.ui.Drop_label.setText(str(j))
-            self.ui.min_drop_value.setText(str(j_min))
-            self.plot_data()
-        else:
-            self.openFileDialog()
+            self.dyn_params_table = [[],[]] # New Parameter Table: [0] is angle, [1] corresponding fitted params
         
     def error_msg(self):
         self.ui.label_params_output.setText('No data fitted yet!')
@@ -839,6 +874,7 @@ class MyForm(QMainWindow):
     def plot_fitted_params(self,W,params):
         global Debug
         Debug = 0
+        j_min, j = self.get_fit_region()
         x = Bdata[W][j_min:j]
         y = Adata[W][j_min:j]
         slope = params[0]
@@ -872,27 +908,21 @@ class MyForm(QMainWindow):
         self.model_type()
         if value_opt['data'] == 'loaded':
             try:
+                j_min,j = self.get_fit_region() # get fit region
                 self.set_init_params()  #gets the initial parameters from the GUI
-                print(len(self.init_values))
                 result = Fit(index_model, self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
                 value_opt['fit'] = 'fitted'
                 self.ui.progressBar.setMaximum(i_max-len(exceptions))
-                #self.ui.label_params_output.setText(self.fit(i).fit_report())
-                plt.ion()   #enable user actions in plot
-                plt.cla()   #plot clean up
-                plt.clf()   #plot clean up
-                plt.plot(Bdata2[j_min:j],Adata2[j_min:j], '-b', label='Experimental data')  #plot original data
                 self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
-                if index_model == 2:
-                    self.ui.label_params_output.setText(result.fit_report())    #print fit report Lorentz
-                    plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Lorentz')  #plot fit data Lorentz
-                else:
-                    self.ui.label_params_output.setText(result.fit_report())    #print fit report Dyson
-                    plt.plot(Bdata2[j_min:j],result.best_fit, 'r--', label='Best fit Dyson')    #plot fit data Dyson
-                plt.xlabel('Magnetic Field [T]',fontsize=12)
-                plt.ylabel('Amplitude [Arb. U.]',fontsize=12)
-                plt.legend(fontsize=12)
-                plt.show()
+                self.ui.label_params_output.setText(result.fit_report()) # Print Fit Report
+                self.set_fit_params()
+
+                if index_model == 2: # Lorentz
+                    self.plot_data(result.best_fit, 'Best fit Lorentz')
+                else:  # Dyson
+                    self.plot_data(result.best_fit, 'Best fit Dyson')
+                #print(result.fit_report())
+                #print(result.best_values)
             except Exception as e:
                 print('Error in main.plot: ',e)
         else:
@@ -904,50 +934,37 @@ class MyForm(QMainWindow):
         ind_min = Bdata[int(np.unravel_index(np.argmin(Adata, axis=None), Adata.shape)[0])]
         ind_max = Bdata[int(np.unravel_index(np.argmax(Adata, axis=None), Adata.shape)[0])]
         Bres = ind_max+(ind_min-ind_max)/2 #Asuming a symmetric line
-        self.ui.label_test.setText('Bres from min/max: '+str(Bres))
+        self.ui.label_test.setText('Bres from min/max: ' + str(Bres))
 
-    def plot_data(self):
-        #Plots data into a matplotlib canvas created in "pyqtgraph" skript, its the vieport for the measurement
-        self.ui.plotView.canvas.ax.clear()
+    def get_fit_region(self):
+        region = self.ui.Plot_Indi_View.lr.getRegion()
+
+
+        return int(float(region[0]) * self.B_ratio), int(float(region[1]) * self.B_ratio)
+
+    def plot_data(self,*args):
+        # Plots data into a matplotlib canvas created in "pyqtgraph" skript, its the viewport for the measurement
+        # args[0] = best_fit
+        # args[1] = label name
+
+        j_min, j = self.get_fit_region()
+
         x=Bdata2[j_min:j]
         y=Adata2[j_min:j]
-        self.ui.plotView.canvas.ax.set_xlabel('Magnetic Field [T]')
-        self.ui.plotView.canvas.ax.set_ylabel('Amplitude [Arb. U.]')
-        self.ui.plotView.canvas.ax.plot(x, y)
-        self.ui.plotView.canvas.draw()
 
-    def plot_in_colour(self):
-        global tick_number
-        global colormap
-        global color_fig, color_ax, colour_contour, colour_cbar
-        '''#colour plotting routine using mayavi (OpenGL renderer)
-        try:
-            from mayavi import mlab
-            tick_number = self.ui.colour_tick_edit.text() #not needed for mayavi
-            colormap = self.ui.colour_map_edit.text()   #can also be changed in mayavi UI
-            mlab.mesh(X,Y,Z, colormap=colormap,extent=[0.4,1.2,90,120,-300,300])
-            mlab.xlabel('Magnetic Field')
-            mlab.ylabel('Angle')
-            mlab.colorbar(title='Amplitude [Arb. Units]')
-            mlab.show()
-        except:
-            print('Mayavi not isntalled!')'''
+        self.ui.Plot_Indi_View.plt.clear()  # Delete previous data
+        self.ui.Plot_Indi_View.plt_range.clear() # Delete previous data
 
-        font = {'family': 'DejaVu Sans',
-                'weight': 'bold',
-                'size': '25'
-                }
-        mpl.rc('font', **font)
+        self.ui.Plot_Indi_View.plt.plot(Bdata2, Adata2,name='Experiment', pen=(255,255,255))    # Plot Experiment data
+        self.ui.Plot_Indi_View.plt_range.plot(Bdata2, Adata2, pen=(255,255,255))
+        self.ui.Plot_Indi_View.plt.addItem(self.ui.Plot_Indi_View.lr) # Plot Linear Range Select Item
 
-        tick_number = self.ui.colour_tick_edit.text()
+        if args:
+            #self.data_plot.setData(x, args[0], name=args[1], pen=(255,0,0))
+            #self.data_plot_range.setData(x,  args[0], pen=(255,0,0))
 
-        fig, ax = plt.subplots()
-        contour = ax.contourf(X,Y,Z,tick_number,cmap='magma')
-        colour_cbar.set_label('Amplitude [Arb. U.]')
-        plt.xlabel('Magnetic Field [mT]')
-        plt.ylabel('Angle [deg]')
-
-        plt.show()
+            self.ui.Plot_Indi_View.plt.plot(x, args[0], name=args[1], pen=(255,0,0)) # Plot Fit data
+            self.ui.Plot_Indi_View.plt_range.plot(x,  args[0], pen=(255,0,0)) # Plot Fit data
 
     def Exit(self):
         sys.exit()  #Obviously not the start
@@ -961,6 +978,7 @@ class MyForm(QMainWindow):
         global fileName
 
         p=0
+        j_min, j = self.get_fit_region()
         exceptions = self.Exceptions()
         New_W = [[],[]] #[0] = position, [1] = angle
         for pos,winkel in enumerate(Winkeldata):
@@ -1196,8 +1214,6 @@ class MyForm(QMainWindow):
             bound_min = np.append(self.Arrays.default_boundaries_linear_min, self.Arrays.default_boundaries_D_min)
             bound_max = np.append(self.Arrays.default_boundaries_linear_max, self.Arrays.default_boundaries_D_max)
 
-        self.ui.label_show_init_params.setText('Parameter set!')
-
         if int(self.ui.select_datanumber.text()) > len(Adata)-1:
             i = len(Adata)-1
             self.ui.select_datanumber.setText(str(i))
@@ -1205,8 +1221,8 @@ class MyForm(QMainWindow):
             i = int(self.ui.select_datanumber.text())
 
     def set_fit_params(self):
-        #reading names is adviced
         global temp_paras
+        j_min, j = self.get_fit_region()
         if value_opt['fit'] == 'fitted':
             if index_model == 2:
                 temp_paras = Fit(index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz

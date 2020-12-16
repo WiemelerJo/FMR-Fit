@@ -26,6 +26,40 @@ class PlotWidget(QtWidgets.QWidget):
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
 
+class Plot_pyqtgraph(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)  # Inherit from QWidget
+        self.vbl = QtWidgets.QVBoxLayout()
+        self.win = pg.GraphicsLayoutWidget()
+        self.lr = pg.LinearRegionItem([0.01,0.15])
+        self.lr.setZValue(-1)
+        self.plt = self.win.addPlot()
+        self.plt_range = self.win.addPlot()
+        self.plt.addItem(self.lr)
+
+        self.plt.setLabel('left',"Amplitude (Arb. Units)")  # Y-Axis
+        self.plt.setLabel('bottom',"Magnetic Field", units='T') # X-Axis
+        self.plt.showGrid(True,True) # Show Grid
+
+        self.plt_range.setLabel('left', "Amplitude (Arb. Units)")  # Y-Axis
+        self.plt_range.setLabel('bottom', "Magnetic Field", units='T')  # X-Axis
+        self.plt_range.showGrid(True, True)  # Show Grid
+
+        self.lr.sigRegionChanged.connect(self.updatePlot)
+        self.plt_range.sigXRangeChanged.connect(self.updateRegion)
+        self.updatePlot()
+
+        self.plt.addLegend()
+        self.vbl.addWidget(self.win)
+        self.setLayout(self.vbl)
+
+
+    def updatePlot(self):
+        self.plt_range.setXRange(*self.lr.getRegion(), padding=0)
+
+    def updateRegion(self):
+        self.lr.setRegion(self.plt_range.getViewBox().viewRange()[0])
+
 class GradWidget(QtWidgets.QWidget):
     sigGradientChanged = QtCore.Signal(object)
     def __init__(self, parent=None):
