@@ -198,7 +198,7 @@ class MyForm(QMainWindow):
 
             self.ui.spinBox_increment.setValue(self.increment)
             self.set_increment()
-            print(step, self.increment)
+            #print(step, self.increment)
 
     def set_increment(self):
         try:
@@ -380,9 +380,10 @@ class MyForm(QMainWindow):
                 self.ui.select_datanumber.setValue(int(i))
             else:
                 i = int(self.ui.select_datanumber.value())
+            self.i = i
             Bdata2 = Bdata[i]
             Adata2 = Adata[i]
-            self.plot_data()
+            self.plot_data(i)
         else:
             self.openFileDialog()
 
@@ -767,9 +768,13 @@ class MyForm(QMainWindow):
             self.ui.Scroll_Bar_dropped_points.setMaximum(i_max)
             self.ui.parameter_data_select.setMaximum(i_max)
             value_opt['data'] = 'loaded'
+            self.dyn_params_table = [[], []]  # New Parameter Table: [0] is angle, [1] corresponding fitted params
+            for i in range(i_max):
+                self.dyn_params_table[0].append(i)
+                self.dyn_params_table[1].append(None)
             self.set_datanumber()
-            self.dyn_params_table = [[],[]] # New Parameter Table: [0] is angle, [1] corresponding fitted params
-        
+
+
     def error_msg(self):
         self.ui.label_params_output.setText('No data fitted yet!')
         print('Fehler irgendwo, bestimmt im dyn fit')
@@ -916,11 +921,12 @@ class MyForm(QMainWindow):
                 self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
                 self.ui.label_params_output.setText(result.fit_report()) # Print Fit Report
                 self.set_fit_params()
+                self.add_params_to_table(self.i,index_model,self.fit_num,[ param for name, param in result.params.items()])
 
                 if index_model == 2: # Lorentz
-                    self.plot_data(result.best_fit, 'Best fit Lorentz')
+                    self.plot_data(self.i,result.best_fit, 'Best fit Lorentz')
                 else:  # Dyson
-                    self.plot_data(result.best_fit, 'Best fit Dyson')
+                    self.plot_data(self.i,result.best_fit, 'Best fit Dyson')
                 #print(result.fit_report())
                 #print(result.best_values)
             except Exception as e:
@@ -938,19 +944,21 @@ class MyForm(QMainWindow):
 
     def get_fit_region(self):
         region = self.ui.Plot_Indi_View.lr.getRegion()
-
-
         return int(float(region[0]) * self.B_ratio), int(float(region[1]) * self.B_ratio)
 
-    def plot_data(self,*args):
+    def add_params_to_table(self, angle_index, function_index, function_number, params):
+        # angle: int; function_number == index_model: int; function_number == fit_num: int; params: dict
+        self.dyn_params_table[1][angle_index] = [function_index,function_number]
+        for i in params:
+            self.dyn_params_table[1][angle_index].append(i)
+
+    def plot_data(self,angle_index,*args):
         # Plots data into a matplotlib canvas created in "pyqtgraph" skript, its the viewport for the measurement
+
         # args[0] = best_fit
         # args[1] = label name
 
         j_min, j = self.get_fit_region()
-
-        x=Bdata2[j_min:j]
-        y=Adata2[j_min:j]
 
         self.ui.Plot_Indi_View.plt.clear()  # Delete previous data
         self.ui.Plot_Indi_View.plt_range.clear() # Delete previous data
@@ -959,12 +967,48 @@ class MyForm(QMainWindow):
         self.ui.Plot_Indi_View.plt_range.plot(Bdata2, Adata2, pen=(255,255,255))
         self.ui.Plot_Indi_View.plt.addItem(self.ui.Plot_Indi_View.lr) # Plot Linear Range Select Item
 
-        if args:
-            #self.data_plot.setData(x, args[0], name=args[1], pen=(255,0,0))
-            #self.data_plot_range.setData(x,  args[0], pen=(255,0,0))
+        if not self.dyn_params_table[1][angle_index] == None:
+            try:
+                self.set_params_to_table() # Sets the Parameters from dyn_params_table to table
 
-            self.ui.Plot_Indi_View.plt.plot(x, args[0], name=args[1], pen=(255,0,0)) # Plot Fit data
-            self.ui.Plot_Indi_View.plt_range.plot(x,  args[0], pen=(255,0,0)) # Plot Fit data
+
+                # --------------------------self.dyn_params_table[1][angle_index] Structure:----------------------------
+                        # This is a List mixed with dict:
+                              # raw = self.dyn_params_table[1][angle_index]
+                              # raw[0] = index_model ====> The Function that has been used e.g. Dyson/Lorentz
+                              # raw[1] = fit_num ====> Number of functions used
+                              # Rest will be dict: raw[i>1].value or raw[i>1].bounds or raw[i>1].name
+                                    # Ordering is the same as everywhere, see "array_gen.py" file
+                raw = self.dyn_params_table[1][angle_index]
+                slope = raw[2].value
+                offset = raw[3].value
+                temp_param = []
+                for param in range(4, len(raw)):
+                    temp_param.append(raw[param].value)
+
+                if raw[0] == 2: # Lorentz
+                    label = 'Lorentz'
+                elif raw[0] == 3: # Dyson
+                    label = 'Dyson'
+
+                for i_num in range(1, raw[1] + 1): # Plot individual Lines
+                    plt_single_func = Functions.single_func(Bdata2, slope, offset, index_model, temp_param, i_num)
+                    self.ui.Plot_Indi_View.plt.plot(Bdata2, plt_single_func, name=label + str(i_num),pen=(255 - 10 * i_num, 10 * i_num, 5 * i_num))
+                    self.ui.Plot_Indi_View.plt_range.plot(Bdata2, plt_single_func, pen=(255 - 10 * i_num, 10 * i_num, 5 * i_num))
+
+                #self.data_plot.setData(x, args[0], name=args[1], pen=(255,0,0))
+                #self.data_plot_range.setData(x,  args[0], pen=(255,0,0))
+                #plt_single_func = Functions.single_func(Bdata2, slope, offset, index_model, params, i_num)
+                if raw[1] > 1 and args:
+                    x = Bdata2[j_min:j]
+                    self.ui.Plot_Indi_View.plt.plot(x, args[0], name='Result', pen=(0,255,0)) # Plot Fit data
+                    self.ui.Plot_Indi_View.plt_range.plot(x,  args[0], pen=(0,255,0)) # Plot Fit data
+
+            except Exception as e:
+                print('Error in main.plot_data: ', e)
+
+    def set_params_to_table(self):
+        print('Little Reminder to programm this function!')
 
     def Exit(self):
         sys.exit()  #Obviously not the start
@@ -1219,6 +1263,7 @@ class MyForm(QMainWindow):
             self.ui.select_datanumber.setText(str(i))
         else:
             i = int(self.ui.select_datanumber.text())
+        #self.i = i
 
     def set_fit_params(self):
         global temp_paras
