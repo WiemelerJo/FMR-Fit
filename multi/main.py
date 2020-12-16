@@ -15,9 +15,10 @@ import datetime
 from lmfit import Model
 from lmfit import Parameters
 from matplotlib.colors import ListedColormap
-from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox, QShortcut
 from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker
 from PyQt5.Qt import Qt
+from PyQt5.QtGui import QKeySequence
 from Fitprogramm import *
 #from arrays import *
 from fitting import Fit
@@ -157,6 +158,11 @@ class MyForm(QMainWindow):
         self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
         self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
 
+        self.shortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F2), self)
+        self.shortcut.activated.connect(self.keyboard_next_spectra)
+        self.shortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F3), self)
+        self.shortcut.activated.connect(self.keyboard_prev_spectra)
+
         self.fit_num = 1
         self.increment = 0.001
         self.sanity = True
@@ -165,8 +171,8 @@ class MyForm(QMainWindow):
 
     def test(self):
         print("Debug Funktion")
-        test = Gen_Lorentz(10)
-        print(test.get_str())
+        print(self.dyn_params_table[1])
+        print(len(self.dyn_params_table[1]))
 
     def doit(self):
         print("Opening a new window...")
@@ -199,6 +205,14 @@ class MyForm(QMainWindow):
             self.ui.spinBox_increment.setValue(self.increment)
             self.set_increment()
             #print(step, self.increment)
+
+    def keyboard_next_spectra(self):
+        value = self.ui.select_datanumber.value()
+        self.ui.select_datanumber.setValue(value + 1)
+
+    def keyboard_prev_spectra(self):
+        value = self.ui.select_datanumber.value()
+        self.ui.select_datanumber.setValue(value - 1)
 
     def set_increment(self):
         try:
@@ -331,6 +345,7 @@ class MyForm(QMainWindow):
             # the .connect() function will be called len(params) times, which has a min of 5 times with up to 42 times.
             for i in range(0,self.fit_num*value_opt['index_model_num']+2):
                 self.ui.Parameter_Plot_Table.cellWidget(i, 0).blockSignals(True)
+
             W_int = self.ui.parameter_data_select.value()
             W = int(New_W[0][W_int])
             W_real = New_W[1][W_int]
@@ -359,6 +374,7 @@ class MyForm(QMainWindow):
             self.update_parameter_display(params,False)
             self.plot_fitted_params(W,params)
 
+
             for i in range(0,self.fit_num*value_opt['index_model_num']+2):
                 self.ui.Parameter_Plot_Table.cellWidget(i, 0).blockSignals(False)
         except Exception as e:
@@ -374,8 +390,7 @@ class MyForm(QMainWindow):
         global Adata2
         global value_opt
         if value_opt['data'] == 'loaded':
-
-            if int(self.ui.select_datanumber.text()) > len(Adata)-1:
+            if int(self.ui.select_datanumber.value()) > len(Adata)-1:
                 i = len(Adata)-1
                 self.ui.select_datanumber.setValue(int(i))
             else:
@@ -384,6 +399,8 @@ class MyForm(QMainWindow):
             Bdata2 = Bdata[i]
             Adata2 = Adata[i]
             self.plot_data(i)
+            if not self.dyn_params_table[1][i] == None:
+                self.set_default_values(False)
         else:
             self.openFileDialog()
 
@@ -463,7 +480,6 @@ class MyForm(QMainWindow):
             if index_model == 2:
                 #table for lorentz (Fitting)
                 self.ui.Parameter_table.setRowCount(self.fit_num*3+2)
-                self.ui.Parameter_Plot_Table.setRowCount(self.fit_num * 3 + 2)
                 self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values slope
                 self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
                 self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
@@ -474,10 +490,6 @@ class MyForm(QMainWindow):
                 self.ui.Parameter_table.setCellWidget(1, 2, QDoubleSpinBox()) # bound_max
                 self.ui.Parameter_table.setCellWidget(1, 3, QCheckBox()) # use for fitting ?
 
-                for i in range(2):
-                    ch = QDoubleSpinBox(parent=self.ui.Parameter_Plot_Table)
-                    #ch.valueChanged.connect(self.select_fitted_params) #Set signal for Spinbox in Table. Function test() is called
-                    self.ui.Parameter_Plot_Table.setCellWidget(i, 0, ch)  # Value
 
                 parameter_table_names_L_final.append('slope')
                 parameter_table_names_L_final.append('offset')   
@@ -487,24 +499,18 @@ class MyForm(QMainWindow):
                         parameter_table_names_L_final.append(list_index+str(index))
 
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_L_final)
-                self.ui.Parameter_Plot_Table.setVerticalHeaderLabels(parameter_table_names_L_final)
 
                 for zähler in range(0,self.fit_num*3):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox()) # initial_values
                     self.ui.Parameter_table.setCellWidget(zähler+2, 1, QDoubleSpinBox()) # bound_min
                     self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox()) # bound_max
                     self.ui.Parameter_table.setCellWidget(zähler+2, 3, QCheckBox()) # use for fitting ?
-                #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
-                    ch = QDoubleSpinBox(parent=self.ui.Parameter_Plot_Table)
-                    #ch.valueChanged.connect(self.select_fitted_params) #Set signal for Spinbox in Table. Function test() is called
-                    self.ui.Parameter_Plot_Table.setCellWidget(zähler+2, 0, ch) # Value
 
-                self.set_default_values()
+                self.set_default_values(True)
 
             else:
                 #table for dyson (at the moment!) (Fitting)
                 self.ui.Parameter_table.setRowCount(self.fit_num*4+2)
-                self.ui.Parameter_Plot_Table.setRowCount(self.fit_num * 4 + 2)
                 self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values
                 self.ui.Parameter_table.setCellWidget(0, 1, QDoubleSpinBox()) # bound_min
                 self.ui.Parameter_table.setCellWidget(0, 2, QDoubleSpinBox()) # bound_max
@@ -515,11 +521,6 @@ class MyForm(QMainWindow):
                 self.ui.Parameter_table.setCellWidget(1, 2, QDoubleSpinBox()) # bound_max
                 self.ui.Parameter_table.setCellWidget(1, 3, QCheckBox()) # use for fitting ?
 
-                for i in range(2):
-                    ch = QDoubleSpinBox(parent=self.ui.Parameter_Plot_Table)
-                    #ch.valueChanged.connect(self.select_fitted_params) #Set signal for Spinbox in Table. Function test() is called
-                    self.ui.Parameter_Plot_Table.setCellWidget(i, 0, ch)  # Value
-
                 parameter_table_names_D_final.append('slope')
                 parameter_table_names_D_final.append('offset')  
 
@@ -528,7 +529,6 @@ class MyForm(QMainWindow):
                         parameter_table_names_D_final.append(list_index+str(index))
 
                 self.ui.Parameter_table.setVerticalHeaderLabels(parameter_table_names_D_final)
-                self.ui.Parameter_Plot_Table.setVerticalHeaderLabels(parameter_table_names_D_final)
 
                 for zähler in range(0,self.fit_num*4):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 0, QDoubleSpinBox())
@@ -536,12 +536,7 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox())
                     self.ui.Parameter_table.setCellWidget(zähler+2, 3, QCheckBox())
 
-                #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
-                    ch = QDoubleSpinBox(parent=self.ui.Parameter_Plot_Table)
-                    #ch.valueChanged.connect(self.select_fitted_params)  #Set signal for Spinbox in Table. Function test() is called
-                    self.ui.Parameter_Plot_Table.setCellWidget(zähler+2, 0, ch) # Value
-
-                self.set_default_values()
+                self.set_default_values(True)
         except Exception as e:
                 print('Error in make_parameter_table',e)
                 #Assuming a lorentz func as long as index_model hasnt been set
@@ -571,17 +566,25 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.setCellWidget(zähler+2, 2, QDoubleSpinBox()) # bound_max
                     self.ui.Parameter_table.setCellWidget(zähler+2, 3, QCheckBox()) # use for fitting ? 
 
-                self.set_default_values()
+                self.set_default_values(True)
 
-    def set_default_values(self):
+    def set_default_values(self,init):
         # sets default values into the spinbox according to arrays defined in the beginning
         # its basicly is just a for loop in order to catch every row of the table according to the number of lines
+
+        # init: bool
+
         try:
-            incr = self.ui.spinBox_incr.value()
-            if incr > 0 :
-                self.Arrays = Gen_array(self.fit_num, increase=True, increment=incr)
+            if init:
+                # Called after functions were generated (function above)
+                incr = self.ui.spinBox_incr.value()
+                if incr > 0 :
+                    self.Arrays = Gen_array(self.fit_num, increase=True, increment=incr)
+                else:
+                    self.Arrays = Gen_array(self.fit_num)
             else:
-                self.Arrays = Gen_array(self.fit_num)
+                # Called, when fitted and angle is changed
+                self.Arrays = Gen_array(self.fit_num, increase=False, params=self.dyn_params_table[1][self.i])
 
             if index_model == 2:    #Lorentz
                 for zahl in range(0,2): # Linear Funktion, goto next for loop, for lorentz parameters
@@ -605,14 +608,8 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zahl,1).setValue(self.Arrays.default_boundaries_linear_min[zahl]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zahl,2).setValue(self.Arrays.default_boundaries_linear_max[zahl]) # Boundary maximum
 
-                    #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setDecimals(4)
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMinimum(-1000)
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setValue(self.Arrays.default_linear[zahl]) # Inital value
 
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params) #different approach to connect a signal to the spinbox
+                    self.ui.Parameter_table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params) #different approach to connect a signal to the spinbox
 
 
                 for zähler in range(0,self.fit_num*3): # for loop for Lorentz parameters
@@ -632,12 +629,7 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(self.Arrays.default_boundaries_L_min[zähler]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(self.Arrays.default_boundaries_L_max[zähler]) # Boundary maximum
 
-                    #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setDecimals(4)
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_L[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setSingleStep(self.Arrays.default_stepsize_L[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_L[zähler]) # Inital value
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
+                    self.ui.Parameter_table.cellWidget(zähler+2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
 
             else:   # Dyson
                 for zahl in range(0,2): # Linear Funktion
@@ -661,13 +653,7 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zahl,1).setValue(self.Arrays.default_boundaries_linear_min[zahl]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zahl,2).setValue(self.Arrays.default_boundaries_linear_max[zahl]) # Boundary maximum
 
-                    #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setDecimals(4)
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMinimum(-1000)
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setSingleStep(self.Arrays.default_stepsize_linear[zahl])
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl,0).setValue(self.Arrays.default_linear[zahl]) # Inital value
-                    self.ui.Parameter_Plot_Table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
+                    self.ui.Parameter_table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
 
                 for zähler in range(0,self.fit_num*4):  # for loop for Dyson Parameter
                     self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
@@ -686,12 +672,7 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(self.Arrays.default_boundaries_D_min[zähler]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(self.Arrays.default_boundaries_D_max[zähler]) # Boundary maximum
 
-                    #--------------------------------------Fitting Table ends. Below is Table for parameter Plot-----------
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setDecimals(4)
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setMaximum(self.Arrays.default_maximum_bound_spinbox_D[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setSingleStep(self.Arrays.default_stepsize_D[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_D[zähler])
-                    self.ui.Parameter_Plot_Table.cellWidget(zähler + 2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
+                    self.ui.Parameter_table.cellWidget(zähler + 2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
         except Exception as e:
             print("Error in set_default_values:",e)
 
@@ -749,11 +730,11 @@ class MyForm(QMainWindow):
             self.B_ratio = (n-1)/self.B_max
 
             try:
-                if int(self.ui.select_datanumber.text()) > len(Adata)-1: #catches errors, slider for datanumber
+                if int(self.ui.select_datanumber.value()) > len(Adata)-1: #catches errors, slider for datanumber
                     i = len(Adata)-1
-                    self.ui.select_datanumber.setText(str(i))
+                    self.ui.select_datanumber.setValue(int(i))
                 else:
-                    i = int(self.ui.select_datanumber.text())
+                    i = int(self.ui.select_datanumber.value())
             except:
                 print("Weird Bug, I know, just look at the first Tab while loading data :D")
 
@@ -845,66 +826,18 @@ class MyForm(QMainWindow):
             Parameter_from_text = np.loadtxt(params_fname[0],dtype='float',skiprows=0)
         value_opt['parameter'] = 'loaded'
 
-    def update_parameter_display(self,params,spinbox_bool):
-        if not spinbox_bool:
-            for zaehler in range(0, self.fit_num * value_opt['index_model_num']+2):
-                self.ui.Parameter_Plot_Table.cellWidget(zaehler, 0).setValue(params[zaehler])
+    def signal_spinbox_manual_params(self,*args):
+        # args is the value of the SpinBox, that was changed
 
-    def update_current_params(self):
-        #-------------------------------------Todo: Find solution without global parameter
+        #Todo: Delete everything with Para_cp
+        #Todo: replace every index_model with self.index_model
         global Para_cp
-        params = []
-        multiplikator = value_opt['index_model_num']
-        #Params array with slope and offset inside!! So : [slope,offset,....]
-        for zaehler in range(0, self.fit_num * multiplikator+2):
-            params.append(self.ui.Parameter_Plot_Table.cellWidget(zaehler, 0).value())
-        params.append(W_real)
-        self.plot_fitted_params(W,params)
-        Para_cp[W] = params
-        #return params
-
-    def signal_spinbox_manual_params(self):
-        global Debug
-        #spinbox_bool = True
-        # used to estimate if the next function call comes from changed values in spinbox or changed value of angle slider
-        #self."insert func name here"(spinbox_bool)
-        #self.update_parameter_display(Para_cp[W],True)
-        #self.update_current_params()
-        if self.ui.checkBox_change_values.isChecked() == True:
-            Debug += 1
-            #if Debug == 5:
-            self.update_current_params()
-            Debug = 0
-
-    def plot_fitted_params(self,W,params):
-        global Debug
-        Debug = 0
-        j_min, j = self.get_fit_region()
-        x = Bdata[W][j_min:j]
-        y = Adata[W][j_min:j]
-        slope = params[0]
-        offset = params[1]
-        params = params[2:len(params)]
-        self.ui.parameter_plot_widget.canvas.ax.clear()
-        self.ui.parameter_plot_widget.canvas.ax.set_xlabel('Magnetic Field [T]')
-        self.ui.parameter_plot_widget.canvas.ax.set_ylabel('Amplitude [Arb. U.]')
-        self.ui.parameter_plot_widget.canvas.ax.scatter(x, y, color='black', marker='o', label='Experimental data') #Plot experimental Data
-
-        '''if value_opt['dyn_fit'] == 'fitted':
-                                    self.ui.parameter_plot_widget.canvas.ax.plot(x, result.best_fit, label='Best Fit') #Fitted Function'''
-        try:
-            plot_func = Functions.functions_value(x, slope, offset, index_model, params,self.fit_num) # params needs to be an array of fixed values for parameters (alpha1_value, db1_value , ...)
-            self.ui.parameter_plot_widget.canvas.ax.plot(x,plot_func,'r--',label='Best Fit') # Best Fit
-
-            for i_num in range(1,self.fit_num + 1):
-                plt_single_func = Functions.single_func(x, slope, offset, index_model, params, i_num)
-                self.ui.parameter_plot_widget.canvas.ax.plot(x,plt_single_func,label='Function'+str(i_num)) #Single lines
-
-            self.ui.parameter_plot_widget.canvas.ax.legend()
-            self.ui.parameter_plot_widget.canvas.draw()
-        except Exception as e:
-            print('Error in main.plot_fitted_params: ',e)
-            print('Please select a Model first!')
+        # Params array with slope and offset inside!! So : [slope,offset,....]
+        param = self.dyn_params_table[1][self.i]
+        if not param == None:
+            for zaehler in range(0, self.fit_num * index_model + 3):
+                param[zaehler+2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
+            self.plot_data(self.i)
 
     def plot(self):
         global value_opt
@@ -969,9 +902,6 @@ class MyForm(QMainWindow):
 
         if not self.dyn_params_table[1][angle_index] == None:
             try:
-                self.set_params_to_table() # Sets the Parameters from dyn_params_table to table
-
-
                 # --------------------------self.dyn_params_table[1][angle_index] Structure:----------------------------
                         # This is a List mixed with dict:
                               # raw = self.dyn_params_table[1][angle_index]
@@ -1006,9 +936,6 @@ class MyForm(QMainWindow):
 
             except Exception as e:
                 print('Error in main.plot_data: ', e)
-
-    def set_params_to_table(self):
-        print('Little Reminder to programm this function!')
 
     def Exit(self):
         sys.exit()  #Obviously not the start
@@ -1258,27 +1185,25 @@ class MyForm(QMainWindow):
             bound_min = np.append(self.Arrays.default_boundaries_linear_min, self.Arrays.default_boundaries_D_min)
             bound_max = np.append(self.Arrays.default_boundaries_linear_max, self.Arrays.default_boundaries_D_max)
 
-        if int(self.ui.select_datanumber.text()) > len(Adata)-1:
+        if int(self.ui.select_datanumber.value()) > len(Adata)-1:
             i = len(Adata)-1
-            self.ui.select_datanumber.setText(str(i))
+            self.ui.select_datanumber.setValue(int(i))
         else:
-            i = int(self.ui.select_datanumber.text())
+            i = int(self.ui.select_datanumber.value())
         #self.i = i
 
     def set_fit_params(self):
-        global temp_paras
         j_min, j = self.get_fit_region()
         if value_opt['fit'] == 'fitted':
             if index_model == 2:
                 temp_paras = Fit(index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz
             else:
                 temp_paras = Fit(index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Dyson
-            self.refresh_inital_parameter() #Well ... guess what it does
+            self.refresh_inital_parameter(temp_paras)
         else:
             self.plot() #....
 
-    def refresh_inital_parameter(self):
-        # Oh hey still here?
+    def refresh_inital_parameter(self,temp_paras):
         if index_model == 2:
             for zähler in range(0,self.fit_num*3+2):
                 self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value

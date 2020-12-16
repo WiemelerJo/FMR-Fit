@@ -14,8 +14,12 @@ class Gen_array():
             self.increase = False
         self.increment_orig = self.increment
         self.fit_num = fit_num
-
-        self.do_Stuff()
+        if kws and not self.increase:
+            if self.params:
+                self.do_Stuff_with_parameter()
+                self.fit_num = self.params[1]
+        else:
+            self.do_Stuff()
 
     def gen_array(self,ary:list,increase=False,increment=0.001):
         # ary now can now be any array with size for one function
@@ -52,6 +56,53 @@ class Gen_array():
         self.default_boundaries_L_max = self.gen_array([0.5, 0.15, 15])
         self.default_boundaries_D_min = self.gen_array([0.0001, 0.0001, 0.0001, 0.0001])
         self.default_boundaries_D_max = self.gen_array([1, 0.5, 0.15, 15])
+
+        # Arrays for step size for spinbox Linear: [slope, offset]
+        # L: [dB, R, A]
+        # D: [alpha,dB, R, A]
+        self.default_stepsize_linear = [0.1, 0.1]
+        self.default_stepsize_L = self.gen_array([0.0001, 0.01, 1])
+        self.default_stepsize_D = self.gen_array([0.01, 0.0001, 0.01, 1])
+
+        # Arrays for maximum boundary for spinbox Linear: [slope, offset]
+        # L: [dB, R, A]
+        # D: [alpha,dB, R, A]
+        self.default_maximum_bound_spinbox_linear = [1000, 1000]
+        self.default_maximum_bound_spinbox_L = self.gen_array([1.5, 3.0, 15000])
+        self.default_maximum_bound_spinbox_D = self.gen_array([1.0, 1.5, 3.0, 15000])
+
+    def do_Stuff_with_parameter(self):
+        # ---------------Create Arrays for the values according to the order in that they are created-------------------
+        # Just that in this function the parameter array from main  is used
+        # This enables to change all spinbox values more easily
+
+        # Arrays to set the initial VALUES in SpinBox. #For linear: [slope, offset]
+        # For L: [dB1, R1, A1, dB2, R2, A2, ...], For one func [0.03,0.08,7]
+        # For D: [alpha1, dB1, R1, A1, alpha2, dB2, R2, A2, ....]  For one func [0.0001,0.03,0.08,7]
+
+        slope = self.params[2]
+        offset = self.params[3]
+
+        #print(slope.value,slope.min, slope.stderr)
+        clean_params = []
+        for i in range(4,len(self.params)):
+            clean_params.append(self.params[i])
+
+        self.default_linear = [slope.value, offset.value]
+        self.default_values_L = [val.value for val in clean_params]
+        self.default_values_D = [val.value for val in clean_params]
+
+        # Arrays for default Boundaries. For Linear : [slope_min,slope_max, offset_min,offset_max]
+        # For L_min : [dB1_min,R1_min,A1_min]
+        # For L_max : [dB1_max,R1_max,A1_max]
+        # For D_min: [alpha1_min, dB1_min,...]
+        # For D_max: [alpha1_max, dB1_max ...]
+        self.default_boundaries_linear_min = [slope.min, offset.min]
+        self.default_boundaries_linear_max = [slope.max, offset.max]
+        self.default_boundaries_L_min = [val.min for val in clean_params]
+        self.default_boundaries_L_max = [val.max for val in clean_params]
+        self.default_boundaries_D_min = [val.min for val in clean_params]
+        self.default_boundaries_D_max = [val.max for val in clean_params]
 
         # Arrays for step size for spinbox Linear: [slope, offset]
         # L: [dB, R, A]

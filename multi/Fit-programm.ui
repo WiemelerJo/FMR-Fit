@@ -1027,6 +1027,12 @@
               <property name="enabled">
                <bool>true</bool>
               </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
              </widget>
             </item>
            </layout>
@@ -1039,7 +1045,7 @@
                <widget class="QDoubleSpinBox" name="spinBox_increment">
                 <property name="font">
                  <font>
-                  <pointsize>10</pointsize>
+                  <pointsize>9</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -1299,7 +1305,11 @@
                  </widget>
                 </item>
                 <item row="2" column="1">
-                 <widget class="QSpinBox" name="select_datanumber"/>
+                 <widget class="QSpinBox" name="select_datanumber">
+                  <property name="prefix">
+                   <string>Spectra: </string>
+                  </property>
+                 </widget>
                 </item>
                 <item row="1" column="1">
                  <widget class="QSpinBox" name="spinBox_fit_num">
