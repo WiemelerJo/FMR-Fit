@@ -60,6 +60,32 @@ class Plot_pyqtgraph(QtWidgets.QWidget):
     def updateRegion(self):
         self.lr.setRegion(self.plt_range.getViewBox().viewRange()[0])
 
+class ParameterPlot(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)  # Inherit from QWidget
+        self.vbl = QtWidgets.QVBoxLayout()
+        self.win = pg.GraphicsLayoutWidget()
+
+        self.plt_slope = self.win.addPlot(title="Slope")
+        self.plt_slope.addLegend()
+        self.plt_offset = self.win.addPlot(title="Offset")
+        self.plt_offset.addLegend()
+        self.plt_alpha = self.win.addPlot(title="Alpha")
+        self.plt_alpha.addLegend()
+
+        self.win.nextRow()
+
+        self.plt_db = self.win.addPlot(title="Linewidth dB")
+        self.plt_db.addLegend()
+        self.plt_R = self.win.addPlot(title="Resonance Field R")
+        self.plt_R.addLegend()
+        self.plt_A = self.win.addPlot(title="Amplitude A")
+        self.plt_A.addLegend()
+
+        self.vbl.addWidget(self.win)
+        self.setLayout(self.vbl)
+
+
 class GradWidget(QtWidgets.QWidget):
     sigGradientChanged = QtCore.Signal(object)
     def __init__(self, parent=None):

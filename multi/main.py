@@ -143,14 +143,14 @@ class MyForm(QMainWindow):
         self.ui.Button_dropped_points.clicked.connect(self.button_dropped_points)
         self.ui.plot_parameter.clicked.connect(self.parameter_plot)
         self.ui.load_params_from_file.clicked.connect(self.load_parameter_plot)
-        self.ui.parameter_data_select.valueChanged.connect(self.change_parameter_angle)
+        #self.ui.parameter_data_select.valueChanged.connect(self.change_parameter_angle)
         self.ui.checkBox_dynPlot.stateChanged.connect(self.robust_fit)
         self.ui.comboBox_fit_model.activated.connect(self.make_parameter_table)
 
         self.ui.pushButton.clicked.connect(self.test)
         self.ui.Button_angu_view.clicked.connect(self.doit)
 
-        self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
+        #self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
         self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
         self.ui.sumbit_mathematica_2.clicked.connect(self.python_submit)
         self.ui.shift_SpinBox.valueChanged.connect(self.get_shift)
@@ -159,10 +159,21 @@ class MyForm(QMainWindow):
         self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
         self.ui.checkBox_fit_log.stateChanged.connect(self.fit_log)
 
-        self.shortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F2), self)
-        self.shortcut.activated.connect(self.keyboard_next_spectra)
-        self.shortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F3), self)
-        self.shortcut.activated.connect(self.keyboard_prev_spectra)
+        self.shortcut_next = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F2), self) # Goto next Spectra
+        self.shortcut_next.activated.connect(self.keyboard_next_spectra)
+        self.shortcut_next = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Right), self) # Goto next spectra
+        self.shortcut_next.activated.connect(self.keyboard_next_spectra)
+
+        self.shortcut_prev = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F3), self) # Goto previous Spectra
+        self.shortcut_prev.activated.connect(self.keyboard_prev_spectra)
+        self.shortcut_prev = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Left), self)   # Goto previous Spectra
+        self.shortcut_prev.activated.connect(self.keyboard_prev_spectra)
+
+        self.shortcut_drop = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Down), self)   # Add Spectra to dropped Points
+        self.shortcut_drop.activated.connect(self.button_dropped_points)
+
+        self.shortcut_fit = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Up), self)  # Fit Spectra
+        self.shortcut_fit.activated.connect(self.plot)
 
         self.fit_num = 1
         self.increment = 0.001
@@ -177,9 +188,6 @@ class MyForm(QMainWindow):
         self.flw.setText("HI")
 
     def doit(self):
-        print("Opening a new window...")
-        #if self.w is None:
-
         self.w = Popup_View(Z,self.H_range,self.WinkelMax)
         self.w.setWindowTitle("Colourplot")
         self.w.setGeometry(0, 0, 1280, 720)
@@ -217,7 +225,6 @@ class MyForm(QMainWindow):
         self.ui.select_datanumber.setValue(value - 1)
 
     def fit_log(self,*args):
-        print('Opening Fit Log Window',args)
         if args[0] == 2:    # if chekbox is checked, open new window
             self.flw = Fit_Log()
             self.flw.setWindowTitle("Fit Log")
@@ -775,7 +782,9 @@ class MyForm(QMainWindow):
             self.ui.select_datanumber.setMaximum(i_max)
             self.ui.progressBar.setMaximum(i_max)
             self.ui.Scroll_Bar_dropped_points.setMaximum(i_max)
-            self.ui.parameter_data_select.setMaximum(i_max)
+
+            #self.ui.parameter_data_select.setMaximum(i_max)
+
             value_opt['data'] = 'loaded'
             self.dyn_params_table = [[], []]  # New Parameter Table: [0] is angle, [1] corresponding fitted params
             for i in range(i_max):
@@ -883,7 +892,6 @@ class MyForm(QMainWindow):
                 value_opt['fit'] = 'fitted'
                 self.ui.progressBar.setMaximum(i_max-len(exceptions))
                 self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
-                self.ui.label_params_output.setText(result.fit_report()) # Print Fit Report
                 self.set_fit_params()
                 self.add_params_to_table(self.i,index_model,self.fit_num,[ param for name, param in result.params.items()])
 
@@ -900,8 +908,6 @@ class MyForm(QMainWindow):
                 print('Error in main.plot: ',e)
         else:
             self.openFileDialog()
-        if index_model == 0:
-            self.ui.label_params_output.setText('Please select a fitting model first')
 
     def evaluate_min_max(self,Bdata,Adata):
         ind_min = Bdata[int(np.unravel_index(np.argmin(Adata, axis=None), Adata.shape)[0])]
