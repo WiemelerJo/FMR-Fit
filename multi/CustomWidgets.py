@@ -136,3 +136,22 @@ class Popup_View(QtWidgets.QWidget):
         ppos = self.img.mapToParent(pos)
         x, y = ppos.x(), ppos.y()
         self.label.setText("Pos (Field,Angle): %0.1f, %0.1f     Amplitude: %g" % (x, y, val))
+
+class Fit_Log(QtWidgets.QScrollArea):
+    def __init__(self, *args, **kwargs):
+        QtWidgets.QScrollArea.__init__(self, *args, **kwargs)
+        self.setWidgetResizable(True)
+        content = QtWidgets.QWidget(self)
+        self.setWidget(content)
+        lay = QtWidgets.QVBoxLayout(content)
+        self.label = QtWidgets.QLabel(content)
+        self.label.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.label.setWordWrap(True)
+        lay.addWidget(self.label)
+
+    def setText(self,text):
+        self.text = text
+        self.label.setText(self.text)
+
+    def getText(self):
+        return self.text

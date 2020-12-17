@@ -25,7 +25,7 @@ from fitting import Fit
 from parameter_plot import Params_Plot
 from multiprocessing import Process
 from ani_tools import *
-from CustomWidgets import Popup_View
+from CustomWidgets import Popup_View, Fit_Log
 from func_gen import Gen_Lorentz, Gen_Dyson
 from array_gen import *
 
@@ -157,6 +157,7 @@ class MyForm(QMainWindow):
         self.ui.shift_SpinBox_Py.valueChanged.connect(self.get_shift)
         self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
         self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
+        self.ui.checkBox_fit_log.stateChanged.connect(self.fit_log)
 
         self.shortcut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F2), self)
         self.shortcut.activated.connect(self.keyboard_next_spectra)
@@ -171,8 +172,9 @@ class MyForm(QMainWindow):
 
     def test(self):
         print("Debug Funktion")
-        print(self.dyn_params_table[1])
-        print(len(self.dyn_params_table[1]))
+        #print(self.dyn_params_table[1])
+        #print(len(self.dyn_params_table[1]))
+        self.flw.setText("HI")
 
     def doit(self):
         print("Opening a new window...")
@@ -213,6 +215,20 @@ class MyForm(QMainWindow):
     def keyboard_prev_spectra(self):
         value = self.ui.select_datanumber.value()
         self.ui.select_datanumber.setValue(value - 1)
+
+    def fit_log(self,*args):
+        print('Opening Fit Log Window',args)
+        if args[0] == 2:    # if chekbox is checked, open new window
+            self.flw = Fit_Log()
+            self.flw.setWindowTitle("Fit Log")
+            self.flw.setGeometry(0, 0, 600, 720)
+            self.flw.show()
+            try:
+                self.flw.setText(self.fit_report_log)
+            except:
+                pass
+        else:   # close window with uncheking of checkbox
+            self.flw.close()
 
     def set_increment(self):
         try:
@@ -332,6 +348,15 @@ class MyForm(QMainWindow):
             exceptions = list(map(int, x.split(','))) #else set excep as everything that is standing in editLine
         return exceptions
 
+    def block_spinbox_signal(self,block):
+        # block: bool
+        try:
+            for i in range(0, self.fit_num * value_opt['index_model_num'] + 2):
+                self.ui.Parameter_table.cellWidget(i, 0).blockSignals(block)
+        except:
+            for i in range(0, self.fit_num * (index_model + 1) + 2):
+                self.ui.Parameter_table.cellWidget(i, 0).blockSignals(block)
+
     def change_parameter_angle(self):
         global Para_cp
         global W
@@ -429,7 +454,7 @@ class MyForm(QMainWindow):
             print("Error in dyn_Fit: ",e)
 
     def set_model_type_number(self):
-        #sets the integer number of index_model
+        # sets the integer number of index_model
         global value_opt
         global index_model
         if index_model == 2:
@@ -569,12 +594,13 @@ class MyForm(QMainWindow):
                 self.set_default_values(True)
 
     def set_default_values(self,init):
+        #print("DEBUG_SET_DEFAULT_VALUES")
         # sets default values into the spinbox according to arrays defined in the beginning
         # its basicly is just a for loop in order to catch every row of the table according to the number of lines
 
         # init: bool
-
         try:
+            self.block_spinbox_signal(True)
             if init:
                 # Called after functions were generated (function above)
                 incr = self.ui.spinBox_incr.value()
@@ -608,8 +634,8 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zahl,1).setValue(self.Arrays.default_boundaries_linear_min[zahl]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zahl,2).setValue(self.Arrays.default_boundaries_linear_max[zahl]) # Boundary maximum
 
-
-                    self.ui.Parameter_table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params) #different approach to connect a signal to the spinbox
+                    if init:
+                        self.ui.Parameter_table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params) #different approach to connect a signal to the spinbox
 
 
                 for zähler in range(0,self.fit_num*3): # for loop for Lorentz parameters
@@ -628,8 +654,8 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_L[zähler]) # Inital value
                     self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(self.Arrays.default_boundaries_L_min[zähler]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(self.Arrays.default_boundaries_L_max[zähler]) # Boundary maximum
-
-                    self.ui.Parameter_table.cellWidget(zähler+2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
+                    if init:
+                        self.ui.Parameter_table.cellWidget(zähler+2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
 
             else:   # Dyson
                 for zahl in range(0,2): # Linear Funktion
@@ -652,8 +678,8 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zahl,0).setValue(self.Arrays.default_linear[zahl]) # Inital value
                     self.ui.Parameter_table.cellWidget(zahl,1).setValue(self.Arrays.default_boundaries_linear_min[zahl]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zahl,2).setValue(self.Arrays.default_boundaries_linear_max[zahl]) # Boundary maximum
-
-                    self.ui.Parameter_table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
+                    if init:
+                        self.ui.Parameter_table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
 
                 for zähler in range(0,self.fit_num*4):  # for loop for Dyson Parameter
                     self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)
@@ -671,10 +697,12 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zähler+2,0).setValue(self.Arrays.default_values_D[zähler]) # Inital value
                     self.ui.Parameter_table.cellWidget(zähler+2,1).setValue(self.Arrays.default_boundaries_D_min[zähler]) # Boundary minimum
                     self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(self.Arrays.default_boundaries_D_max[zähler]) # Boundary maximum
-
-                    self.ui.Parameter_table.cellWidget(zähler + 2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
+                    if init:
+                        self.ui.Parameter_table.cellWidget(zähler + 2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
         except Exception as e:
             print("Error in set_default_values:",e)
+        self.block_spinbox_signal(False)
+
 
     def openFileDialog(self):
         global value_opt
@@ -827,17 +855,20 @@ class MyForm(QMainWindow):
         value_opt['parameter'] = 'loaded'
 
     def signal_spinbox_manual_params(self,*args):
+        #print("DEBUG_SPINBOX_SIGNAL")
         # args is the value of the SpinBox, that was changed
 
         #Todo: Delete everything with Para_cp
         #Todo: replace every index_model with self.index_model
         global Para_cp
         # Params array with slope and offset inside!! So : [slope,offset,....]
+        #self.block_spinbox_signal(True)
         param = self.dyn_params_table[1][self.i]
         if not param == None:
             for zaehler in range(0, self.fit_num * index_model + 3):
                 param[zaehler+2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
             self.plot_data(self.i)
+        #self.block_spinbox_signal(False)
 
     def plot(self):
         global value_opt
@@ -860,6 +891,9 @@ class MyForm(QMainWindow):
                     self.plot_data(self.i,result.best_fit, 'Best fit Lorentz')
                 else:  # Dyson
                     self.plot_data(self.i,result.best_fit, 'Best fit Dyson')
+                self.fit_report_log = result.fit_report()
+                if self.ui.checkBox_fit_log.isChecked():
+                    self.flw.setText(self.fit_report_log)
                 #print(result.fit_report())
                 #print(result.best_values)
             except Exception as e:
@@ -886,13 +920,14 @@ class MyForm(QMainWindow):
             self.dyn_params_table[1][angle_index].append(i)
 
     def plot_data(self,angle_index,*args):
+        #print("DEBUG_PLOT_DATA")
         # Plots data into a matplotlib canvas created in "pyqtgraph" skript, its the viewport for the measurement
 
         # args[0] = best_fit
         # args[1] = label name
 
         j_min, j = self.get_fit_region()
-
+        #self.block_spinbox_signal(True)
         self.ui.Plot_Indi_View.plt.clear()  # Delete previous data
         self.ui.Plot_Indi_View.plt_range.clear() # Delete previous data
 
@@ -936,6 +971,7 @@ class MyForm(QMainWindow):
 
             except Exception as e:
                 print('Error in main.plot_data: ', e)
+       # self.block_spinbox_signal(False)
 
     def Exit(self):
         sys.exit()  #Obviously not the start
@@ -1204,13 +1240,14 @@ class MyForm(QMainWindow):
             self.plot() #....
 
     def refresh_inital_parameter(self,temp_paras):
+        self.block_spinbox_signal(True)
         if index_model == 2:
             for zähler in range(0,self.fit_num*3+2):
                 self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
         else:
             for zähler in range(0,self.fit_num*4+2):
                 self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
-
+        self.block_spinbox_signal(False)
 
 if __name__=="__main__":
     #appctxt = ApplicationContext() #

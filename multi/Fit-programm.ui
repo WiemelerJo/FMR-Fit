@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
+    <width>1296</width>
     <height>903</height>
    </rect>
   </property>
@@ -1066,85 +1066,6 @@
               </item>
               <item>
                <layout class="QGridLayout" name="gridLayout">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_2">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                    <underline>true</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Select fitting model</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QProgressBar" name="progressBar">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="value">
-                   <number>0</number>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="3">
-                 <widget class="QScrollBar" name="Scroll_Bar_dropped_points">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="0">
-                 <widget class="QPushButton" name="Button_dyn_fit">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Dynamic Fit</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="0">
-                 <widget class="QPushButton" name="Button_Plot">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fit</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="3">
-                 <widget class="QPushButton" name="pushButton">
-                  <property name="text">
-                   <string>Debug_Button</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="0" column="1">
                  <widget class="QComboBox" name="comboBox_fit_model">
                   <property name="maximumSize">
@@ -1185,8 +1106,29 @@
                   </item>
                  </widget>
                 </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_23">
+                <item row="5" column="1">
+                 <widget class="QProgressBar" name="progressBar">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="value">
+                   <number>0</number>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="font">
                    <font>
                     <family>Arial</family>
@@ -1196,7 +1138,59 @@
                    </font>
                   </property>
                   <property name="text">
-                   <string>Dropped Spectra:</string>
+                   <string>Select fitting model:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QPushButton" name="Button_dyn_fit">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Dynamic Fit</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="3">
+                 <widget class="QScrollBar" name="Scroll_Bar_dropped_points">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QPushButton" name="Button_Plot">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Fit</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="3">
+                 <widget class="QPushButton" name="pushButton">
+                  <property name="text">
+                   <string>Debug_Button</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="Dropped_points_edit">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
                   </property>
                  </widget>
                 </item>
@@ -1211,28 +1205,13 @@
                    </font>
                   </property>
                   <property name="text">
-                   <string>Select Spectrum</string>
+                   <string>Select Spectrum:</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
                   </property>
                   <property name="margin">
                    <number>0</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_20">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                    <underline>true</underline>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Amount of functions</string>
                   </property>
                  </widget>
                 </item>
@@ -1255,12 +1234,43 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="Dropped_points_edit">
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_23">
                   <property name="font">
                    <font>
                     <family>Arial</family>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                    <underline>true</underline>
                    </font>
+                  </property>
+                  <property name="text">
+                   <string>Dropped Spectra:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_20">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                    <weight>75</weight>
+                    <bold>true</bold>
+                    <underline>true</underline>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Amount of functions:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QLabel" name="label_test">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="text">
+                   <string/>
                   </property>
                  </widget>
                 </item>
@@ -1273,6 +1283,13 @@
                   </property>
                   <property name="text">
                    <string>Robust Fit? (Much Slower! But better at finding global minima)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QSpinBox" name="select_datanumber">
+                  <property name="prefix">
+                   <string>Spectra: </string>
                   </property>
                  </widget>
                 </item>
@@ -1291,23 +1308,6 @@
                   </property>
                   <property name="text">
                    <string>Add to dropped Spectra</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QLabel" name="label_test">
-                  <property name="frameShape">
-                   <enum>QFrame::Box</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QSpinBox" name="select_datanumber">
-                  <property name="prefix">
-                   <string>Spectra: </string>
                   </property>
                  </widget>
                 </item>
@@ -1334,6 +1334,16 @@
                   </property>
                   <property name="text">
                    <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="3">
+                 <widget class="QCheckBox" name="checkBox_fit_log">
+                  <property name="toolTip">
+                   <string>Will open a second window with Fit information</string>
+                  </property>
+                  <property name="text">
+                   <string>View Fit Log</string>
                   </property>
                  </widget>
                 </item>
@@ -1453,7 +1463,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1280</width>
+     <width>1296</width>
      <height>21</height>
     </rect>
    </property>
