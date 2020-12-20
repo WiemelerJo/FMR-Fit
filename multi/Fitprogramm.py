@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1298, 907)
+        MainWindow.resize(1296, 903)
         font = QtGui.QFont()
         font.setFamily("Arial")
         MainWindow.setFont(font)
@@ -648,7 +648,7 @@ class Ui_MainWindow(object):
         self.gridLayout_6.addWidget(self.tabWidget, 0, 0, 2, 2)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1298, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1296, 21))
         self.menubar.setObjectName("menubar")
         self.menufile = QtWidgets.QMenu(self.menubar)
         self.menufile.setObjectName("menufile")
@@ -665,7 +665,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menufile.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

@@ -76,6 +76,8 @@ class Worker(QThread):
         self.j_min = j_min
         self.exceptions = exceptions
         self.init_values = init_values
+
+
         QThread.__init__(self)
 
     def fit(self,l,params_table,model,robust):
@@ -109,6 +111,19 @@ class Worker(QThread):
         print(self.exceptions)
         Parameter_list = np.zeros(shape=(self.i_max-len(self.exceptions),len(temp_paras)))
         iteration = 0
+
+        for l in range(i_min, i_max):
+            if l not in self.exceptions:
+                self.i_signal.emit()  # update progressbar
+                temp_paras.clear()  # clear temp_paras for each iteration
+                temp_result = self.fit(l, params_table, model, value_opt['robust'])  # this is the fit
+                for name, param in temp_result.params.items():
+                    temp_paras.append(float(param.value))
+                    params_table[name].set(value=param.value, min=None, max=None)
+                temp_paras.append(float(self.Winkeldata[l]))
+                Parameter_list[iteration] = temp_paras
+                iteration += 1  # cleaned iteration (iteration with exceptions removed)
+        '''
         for l in range(i_min,i_max):
             if l not in self.exceptions:
                 self.i_signal.emit() # update progressbar
@@ -120,6 +135,7 @@ class Worker(QThread):
                 temp_paras.append(float(self.Winkeldata[l]))
                 Parameter_list[iteration] = temp_paras
                 iteration += 1  #cleaned iteration (iteration with exceptions removed)
+        '''
         now = datetime.datetime.now()
         np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),self.index_model,self.exceptions,names))
         value_opt['dyn_fit'] = 'fitted'
@@ -143,14 +159,12 @@ class MyForm(QMainWindow):
         self.ui.Button_dropped_points.clicked.connect(self.button_dropped_points)
         self.ui.plot_parameter.clicked.connect(self.parameter_plot)
         self.ui.load_params_from_file.clicked.connect(self.load_parameter_plot)
-        #self.ui.parameter_data_select.valueChanged.connect(self.change_parameter_angle)
         self.ui.checkBox_dynPlot.stateChanged.connect(self.robust_fit)
         self.ui.comboBox_fit_model.activated.connect(self.make_parameter_table)
 
         self.ui.pushButton.clicked.connect(self.test)
         self.ui.Button_angu_view.clicked.connect(self.doit)
 
-        #self.ui.Button_manual_save.clicked.connect(self.save_adjusted)
         self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
         self.ui.sumbit_mathematica_2.clicked.connect(self.python_submit)
         self.ui.shift_SpinBox.valueChanged.connect(self.get_shift)
@@ -185,7 +199,7 @@ class MyForm(QMainWindow):
         print("Debug Funktion")
         #print(self.dyn_params_table[1])
         #print(len(self.dyn_params_table[1]))
-        self.flw.setText("HI")
+        self.plot_params_to_plot_tab()
 
     def doit(self):
         self.w = Popup_View(Z,self.H_range,self.WinkelMax)
@@ -328,16 +342,6 @@ class MyForm(QMainWindow):
         else:
             value_opt['robust'] = False
 
-    def save_adjusted(self):
-        options = QFileDialog.Options()
-        #options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self,"Please select the file to save to","","All Files (*);;Text Files (*.dat)",options=options)
-        if fileName:
-            now = datetime.datetime.now()
-            np.savetxt(fileName, Para_cp, delimiter='\t', newline='\n',
-                       header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}'.format(
-                           now.strftime("%d/%m/%Y, %H:%M:%S"), index_model, exceptions))
-
     def button_dropped_points(self):
         #as something is added to the exceptions, this is beeing called
         excep_append = self.Exceptions()  #gets text of editLine
@@ -357,60 +361,19 @@ class MyForm(QMainWindow):
 
     def block_spinbox_signal(self,block):
         # block: bool
+
+        # Temporarily block every signal from the Spinboxes. There is the Problem,
+        # that everytime the value from these spinboxes is changed a signal is emited.
+        # The bad thing now is, that there is no differentiation between user_event and machine_event,
+        # therefore if the script changes the values to display the next angle,
+        # the .connect() function will be called len(params) times, which has a min of 5 times with up to 42 times.
+
         try:
             for i in range(0, self.fit_num * value_opt['index_model_num'] + 2):
                 self.ui.Parameter_table.cellWidget(i, 0).blockSignals(block)
         except:
             for i in range(0, self.fit_num * (index_model + 1) + 2):
                 self.ui.Parameter_table.cellWidget(i, 0).blockSignals(block)
-
-    def change_parameter_angle(self):
-        global Para_cp
-        global W
-        global W_real
-        params = []
-        try:
-            # Temporarily block every signal from the Spinboxes. There is the Problem,
-            # that everytime the value from these spinboxes is changed a signal is emited.
-            # The bad thing now is, that there is no differentiation between user_event and machine_event,
-            # therefore if the script changes the values to display the next angle,
-            # the .connect() function will be called len(params) times, which has a min of 5 times with up to 42 times.
-            for i in range(0,self.fit_num*value_opt['index_model_num']+2):
-                self.ui.Parameter_Plot_Table.cellWidget(i, 0).blockSignals(True)
-
-            W_int = self.ui.parameter_data_select.value()
-            W = int(New_W[0][W_int])
-            W_real = New_W[1][W_int]
-            self.ui.label_manual_edit_angle.setText(str(W_real))
-
-            #Define Big Array that includes every Parameter
-            if value_opt['dyn_fit'] == 'fitted':
-                Para_orig = np.array(Parameter_list)
-            elif value_opt['parameter'] == 'loaded':
-                Para_orig = Parameter_from_text
-            else:
-                print('Please select a Parameterset!!')
-                self.load_parameters_to_text()
-                Para_orig = Parameter_from_text
-            if not value_opt['params_copied']:
-                #Copy Parameterarray, in order to save the original file
-                Para_cp = np.copy(Para_orig)
-                value_opt['params_copied'] = True
-
-            #Take just the Parameters representing the current angle W
-            if self.ui.checkBox_change_values.isChecked() == False:
-                params = Para_orig[W] #params has Entries like : [slope,offset,...,angle]
-            else:
-                params = Para_cp[W]
-                #params = self.get_current_manual_params()
-            self.update_parameter_display(params,False)
-            self.plot_fitted_params(W,params)
-
-
-            for i in range(0,self.fit_num*value_opt['index_model_num']+2):
-                self.ui.Parameter_Plot_Table.cellWidget(i, 0).blockSignals(False)
-        except Exception as e:
-            print("Error in change_parameter_angle",e)
 
     def set_dataslider(self):
         self.ui.select_datanumber.setValue(int(self.ui.Scroll_Bar_dropped_points.value()))
@@ -436,19 +399,11 @@ class MyForm(QMainWindow):
         else:
             self.openFileDialog()
 
-    def colour_plot_main(self,cbar):
-        #unused at the moment. However it should create the contour plot
-        cbar.set_label('Amplitude [Arb. U.]')
-        plt.xlabel('Magnetic Field [T]')
-        plt.ylabel('Angle [Degrees]')
-        plt.show()
-        plt.close()
-
     def update_bar(self):
         #updates the progressbar
         global p
         self.ui.label_7.setText(str(p))
-        p +=1
+        p += 1
         self.ui.progressBar.setValue(p)
 
     def dyn_fit(self):
@@ -740,6 +695,9 @@ class MyForm(QMainWindow):
             i = 0   # laufvariable = 0
             i_min = 0
             i_max = int(chunksize)
+            self.i_min = i_min
+            self.i_max = i_max
+
             #D_min = min(D[:,3]) #for old colourplot
             #D_max = max(D[:,3]) #for old colourplot
 
@@ -758,7 +716,7 @@ class MyForm(QMainWindow):
 
             self.H_range = max(Bdata[0]) * 1000 # Value in mT
             #self.H_range = max(Bdata[0])
-            print(self.H_range)
+            self.WinkelMin = min(D[:, 2])
             self.WinkelMax = max(D[:, 2])
             self.B_min = min(D[:,1])/10000 # in Tesla
             self.B_max = max(D[:,1])/10000
@@ -783,12 +741,10 @@ class MyForm(QMainWindow):
             self.ui.progressBar.setMaximum(i_max)
             self.ui.Scroll_Bar_dropped_points.setMaximum(i_max)
 
-            #self.ui.parameter_data_select.setMaximum(i_max)
-
             value_opt['data'] = 'loaded'
             self.dyn_params_table = [[], []]  # New Parameter Table: [0] is angle, [1] corresponding fitted params
             for i in range(i_max):
-                self.dyn_params_table[0].append(i)
+                self.dyn_params_table[0].append([i,Winkeldata[i]])
                 self.dyn_params_table[1].append(None)
             self.set_datanumber()
 
@@ -894,11 +850,7 @@ class MyForm(QMainWindow):
                 self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
                 self.set_fit_params()
                 self.add_params_to_table(self.i,index_model,self.fit_num,[ param for name, param in result.params.items()])
-
-                if index_model == 2: # Lorentz
-                    self.plot_data(self.i,result.best_fit, 'Best fit Lorentz')
-                else:  # Dyson
-                    self.plot_data(self.i,result.best_fit, 'Best fit Dyson')
+                self.plot_data(self.i,result.best_fit, 'Best fit')
                 self.fit_report_log = result.fit_report()
                 if self.ui.checkBox_fit_log.isChecked():
                     self.flw.setText(self.fit_report_log)
@@ -961,6 +913,8 @@ class MyForm(QMainWindow):
                     label = 'Lorentz'
                 elif raw[0] == 3: # Dyson
                     label = 'Dyson'
+                else:
+                    label = 'How did you do this?!'
 
                 for i_num in range(1, raw[1] + 1): # Plot individual Lines
                     plt_single_func = Functions.single_func(Bdata2, slope, offset, index_model, temp_param, i_num)
@@ -978,6 +932,26 @@ class MyForm(QMainWindow):
             except Exception as e:
                 print('Error in main.plot_data: ', e)
        # self.block_spinbox_signal(False)
+
+    def plot_params_to_plot_tab(self):
+        # [0] of these arrays is
+        self.slope_array = [[],[]]
+        self.offset_array = [[],[]]
+        self.alpha_array = [[],[]]
+        self.dB_array = [[],[]]
+        self.R_array = [[],[]]
+        self.A_array = [[],[]]
+
+        for param in self.dyn_params_table[1]:
+            if not param == None:
+                slope = param[2].value
+                offset = param[3].value
+                temp_param = []
+
+                if param[0] == 2: #Lorentz
+                    for l in range(4,3 * param[1] + 1):
+                        temp_param.append()
+
 
     def Exit(self):
         sys.exit()  #Obviously not the start
@@ -999,7 +973,6 @@ class MyForm(QMainWindow):
                 New_W[0].append(pos)
                 New_W[1].append(winkel)
         New_W = np.asarray(New_W)
-        #self.ui.parameter_data_select.setRange(np.amin(New_W[1]),np.amax(New_W[1]))
 
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog

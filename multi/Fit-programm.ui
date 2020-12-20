@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1298</width>
-    <height>907</height>
+    <width>1296</width>
+    <height>903</height>
    </rect>
   </property>
   <property name="font">
@@ -31,7 +31,7 @@
        <enum>Qt::DefaultContextMenu</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -1303,7 +1303,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1298</width>
+     <width>1296</width>
      <height>21</height>
     </rect>
    </property>
