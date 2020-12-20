@@ -238,13 +238,13 @@ class MyForm(QMainWindow):
 
     def set_increment(self):
         try:
-            if index_model == 2:
+            if self.index_model == 2:
                 print(self.increment)
                 for zähler in range(0,self.fit_num*3+2):
                     self.ui.Parameter_table.cellWidget(zähler, 0).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 1).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 2).setSingleStep(self.increment)
-            elif index_model == 3:
+            elif self.index_model == 3:
                 for zähler in range(0,self.fit_num*4+2):
                     self.ui.Parameter_table.cellWidget(zähler, 0).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 1).setSingleStep(self.increment)
@@ -357,7 +357,7 @@ class MyForm(QMainWindow):
             for i in range(0, self.fit_num * value_opt['index_model_num'] + 2):
                 self.ui.Parameter_table.cellWidget(i, 0).blockSignals(block)
         except:
-            for i in range(0, self.fit_num * (index_model + 1) + 2):
+            for i in range(0, self.fit_num * (self.index_model + 1) + 2):
                 self.ui.Parameter_table.cellWidget(i, 0).blockSignals(block)
 
     def set_dataslider(self):
@@ -394,16 +394,14 @@ class MyForm(QMainWindow):
     def set_model_type_number(self):
         # sets the integer number of index_model
         global value_opt
-        global index_model
-        if index_model == 2:
+        if self.index_model == 2:
             value_opt['index_model_num'] = 3
-        elif index_model == 3:
+        elif self.index_model == 3:
             value_opt['index_model_num'] = 4
 
     def model_type(self):
         # selects the type of function used in the fit
-        global index_model
-        index_model = self.ui.comboBox_fit_model.currentIndex()
+        self.index_model = self.ui.comboBox_fit_model.currentIndex()
         self.set_model_type_number()
 
     def select_fit_number(self,d):
@@ -439,7 +437,7 @@ class MyForm(QMainWindow):
 
         #function that catches errors!
         try:
-            if index_model == 2:
+            if self.index_model == 2:
                 #table for lorentz (Fitting)
                 self.ui.Parameter_table.setRowCount(self.fit_num*3+2)
                 self.ui.Parameter_table.setCellWidget(0, 0, QDoubleSpinBox()) # initial_values slope
@@ -549,7 +547,7 @@ class MyForm(QMainWindow):
                 # Called, when fitted and angle is changed
                 self.Arrays = Gen_array(self.fit_num, increase=False, params=self.dyn_params_table[1][self.i])
 
-            if index_model == 2:    #Lorentz
+            if self.index_model == 2:    #Lorentz
                 for zahl in range(0,2): # Linear Funktion, goto next for loop, for lorentz parameters
                     self.ui.Parameter_table.cellWidget(zahl,0).setDecimals(4)
                     self.ui.Parameter_table.cellWidget(zahl,1).setDecimals(4)
@@ -732,18 +730,17 @@ class MyForm(QMainWindow):
         global value_opt
         try:
             if value_opt['dyn_fit'] == 'fitted':
-                Params_Plot(Parameter_list,'eigen',index_model)
+                Params_Plot(Parameter_list,'eigen',self.index_model)
             elif value_opt['parameter'] == 'loaded':
                 print('Unfitted parameters. Using from file instead!')
-                Params_Plot(Parameter_from_text,'eigen',index_model)
+                Params_Plot(Parameter_from_text,'eigen',self.index_model)
             else:
                 self.load_parameters_to_text()
-                Params_Plot(Parameter_from_text,'eigen',index_model)
+                Params_Plot(Parameter_from_text,'eigen',self.index_model)
         except Exception as e:
             print('Error in parameter_plot: ',e)
 
     def get_fit_options_from_file(self,fname):
-        global index_model
         global value_opt
 
         f = open(fname)
@@ -768,7 +765,7 @@ class MyForm(QMainWindow):
             # Takes Element 4 of header_parts and converts it into an usable array: ['A','dB','R',....]
             Params_name = np.asarray(ast.literal_eval(header_parts[3].split('[')[1].split(']')[0]))
 
-            index_model = Lineshape
+            self.index_model = Lineshape
             print(value_opt['index_model_num'])
             self.set_model_type_number()
             print(value_opt['index_model_num'])
@@ -780,7 +777,7 @@ class MyForm(QMainWindow):
         print('Loading from file!')
         try:
             self.load_parameters_to_text()
-            Params_Plot(Parameter_from_text,'load',index_model)
+            Params_Plot(Parameter_from_text,'load',self.index_model)
         except Exception as e:
             print('Error in load_parameters_to_text',e)
 
@@ -797,15 +794,12 @@ class MyForm(QMainWindow):
     def signal_spinbox_manual_params(self,*args):
         #print("DEBUG_SPINBOX_SIGNAL")
         # args is the value of the SpinBox, that was changed
-
-        #Todo: Delete everything with Para_cp
-        #Todo: replace every index_model with self.index_model
-        global Para_cp
         # Params array with slope and offset inside!! So : [slope,offset,....]
+
         #self.block_spinbox_signal(True)
         param = self.dyn_params_table[1][self.i]
-        if param != None and params != False:
-            for zaehler in range(0, self.fit_num * index_model + 3):
+        if param != None and param != False:
+            for zaehler in range(0, self.fit_num * self.index_model + 3):
                 param[zaehler+2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
             self.plot_data(self.i)
         #self.block_spinbox_signal(False)
@@ -819,12 +813,12 @@ class MyForm(QMainWindow):
             try:
                 j_min,j = self.get_fit_region() # get fit region
                 self.set_init_params()  #gets the initial parameters from the GUI
-                result = Fit(index_model, self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).fit(index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
+                result = Fit(self.index_model, self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).fit(self.index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
                 value_opt['fit'] = 'fitted'
                 self.ui.progressBar.setMaximum(i_max-len(exceptions))
                 self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
                 self.set_fit_params()
-                self.add_params_to_table(self.i,index_model,self.fit_num,[ param for name, param in result.params.items()])
+                self.add_params_to_table(self.i,self.index_model,self.fit_num,[ param for name, param in result.params.items()])
                 self.plot_data(self.i,result.best_fit, 'Best fit')
                 self.fit_report_log = result.fit_report()
                 if self.ui.checkBox_fit_log.isChecked():
@@ -894,7 +888,7 @@ class MyForm(QMainWindow):
                     label = 'How did you do this?!'
 
                 for i_num in range(1, raw[1] + 1): # Plot individual Lines
-                    plt_single_func = Functions.single_func(Bdata2, slope, offset, index_model, temp_param, i_num)
+                    plt_single_func = Functions.single_func(Bdata2, slope, offset, self.index_model, temp_param, i_num)
                     self.ui.Plot_Indi_View.plt.plot(Bdata2, plt_single_func, name=label + str(i_num),pen=(255 - 10 * i_num, 10 * i_num, 5 * i_num))
                     self.ui.Plot_Indi_View.plt_range.plot(Bdata2, plt_single_func, pen=(255 - 10 * i_num, 10 * i_num, 5 * i_num))
 
@@ -946,29 +940,31 @@ class MyForm(QMainWindow):
             self.save_filename = fileName
             file, names = self.create_save_file()
             now = datetime.datetime.now()
-            np.savetxt(self.save_filename, file, delimiter='\t', newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"), index_model,exceptions, names))
+            np.savetxt(self.save_filename, file, delimiter='\t', newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"), self.index_model,exceptions, names))
 
     def create_save_file(self):
         param_table = []
         name_table = []
 
         # create list of names
-        l = self.dyn_params_table[1][1]
-        params = l[2:len(l)]
-        for raw_name in params:
-            name_table.append(raw_name.name)
-        name_table.append('angle')
+        for l in self.dyn_params_table[1]:
+            if l != None and l != False:
+                params = l[2:len(l)]
+                for raw_name in params:
+                    name_table.append(raw_name.name)
+                name_table.append('angle')
+                break
 
         # create list of params
         for list ,i in enumerate(self.dyn_params_table[1]):
-            params = i[2:len(i)]
-            temp = []
-            for raw in params:
-                temp.append(raw.value)
-            winkel = self.dyn_params_table[0][list]
-            temp.append(winkel[1])
-            param_table.append(temp)
-
+            if i != None  and i != False:
+                params = i[2:len(i)]
+                temp = []
+                for raw in params:
+                    temp.append(raw.value)
+                winkel = self.dyn_params_table[0][list]
+                temp.append(winkel[1])
+                param_table.append(temp)
         return param_table, name_table
 
     def start_worker(self):
@@ -1076,7 +1072,6 @@ class MyForm(QMainWindow):
         return FreeE
 
     def mathematica_submit(self):
-        global index_model
         #(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,outputPath,BresColumn,WinkelColumn,Shift)
         F = self.ui.LineEdit_free_E_den.text()
         Params = "fitParameters = " + self.create_mathematica_array(self.ui.LineEdit_fitted_params.text()) #'fitParameters = {K2p, K2s, K4p, phiu}'
@@ -1088,10 +1083,10 @@ class MyForm(QMainWindow):
         anglestep = 'Pi/'+str(self.ui.spinBox_Anglestep.value())
         iterations = self.ui.spinBox_Iterations.value()
 
-        if index_model == 2:    #Lorentz
+        if self.index_model == 2:    #Lorentz
             BresColumn = 4
             WinkelColumn = 6
-        elif index_model == 3:      #Dyson
+        elif self.index_model == 3:      #Dyson
             BresColumn = 5
             WinkelColumn = 7
         Shift = self.ui.shift_SpinBox.value()
@@ -1134,7 +1129,7 @@ class MyForm(QMainWindow):
             Angle = np.multiply(ani_out[:,0], 180 / m.pi)
             B_res = ani_out[:,1]
 
-            if index_model == 2:
+            if self.index_model == 2:
                 Angle_exp = self.shift_points(Parameter_list[:,5],Shift)
                 B_res_exp = Parameter_list[:,3]
             else:
@@ -1176,7 +1171,7 @@ class MyForm(QMainWindow):
 
         #function that reloads the parameter arrays, grabbs the values from the widgets and writes them into the arrays which are used for fitting
 
-        if index_model == 2:
+        if self.index_model == 2:
             for zahl in range(0,2):
                 init_lin = self.ui.Parameter_table.cellWidget(zahl,0).value() # Inital value linear
                 bounds_min_lin = self.ui.Parameter_table.cellWidget(zahl,1).value() # Boundary minimum linear
@@ -1232,17 +1227,17 @@ class MyForm(QMainWindow):
     def set_fit_params(self):
         j_min, j = self.get_fit_region()
         if value_opt['fit'] == 'fitted':
-            if index_model == 2:
-                temp_paras = Fit(index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num, parameter_table_names_L_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz
+            if self.index_model == 2:
+                temp_paras = Fit(self.index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num, parameter_table_names_L_final,self.index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Lorentz
             else:
-                temp_paras = Fit(index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num,parameter_table_names_D_final,index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Dyson
+                temp_paras = Fit(self.index_model,self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).give_params(self.fit_num,parameter_table_names_D_final,self.index_model,Adata2,Bdata2, j_min,j) #grabs the params file from different class, Dyson
             self.refresh_inital_parameter(temp_paras)
         else:
             self.plot() #....
 
     def refresh_inital_parameter(self,temp_paras):
         self.block_spinbox_signal(True)
-        if index_model == 2:
+        if self.index_model == 2:
             for zähler in range(0,self.fit_num*3+2):
                 self.ui.Parameter_table.cellWidget(zähler,0).setValue(temp_paras[zähler]) # Inital value
         else:
