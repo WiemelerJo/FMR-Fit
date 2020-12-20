@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1296</width>
+    <width>1299</width>
     <height>903</height>
    </rect>
   </property>
@@ -147,6 +147,18 @@
                   </property>
                  </widget>
                 </item>
+                <item row="5" column="0">
+                 <widget class="QPushButton" name="Button_dyn_fit">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Dynamic Fit</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_2">
                   <property name="sizePolicy">
@@ -168,18 +180,6 @@
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
-                 <widget class="QPushButton" name="Button_dyn_fit">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Dynamic Fit</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="2" column="3">
                  <widget class="QScrollBar" name="Scroll_Bar_dropped_points">
                   <property name="font">
@@ -192,31 +192,10 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
-                 <widget class="QPushButton" name="Button_Plot">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Fit</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="4" column="3">
                  <widget class="QPushButton" name="pushButton">
                   <property name="text">
                    <string>Debug_Button</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="Dropped_points_edit">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
                   </property>
                  </widget>
                 </item>
@@ -241,6 +220,27 @@
                   </property>
                  </widget>
                 </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="Dropped_points_edit">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QPushButton" name="Button_Plot">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Fit</string>
+                  </property>
+                 </widget>
+                </item>
                 <item row="1" column="3">
                  <widget class="QDoubleSpinBox" name="spinBox_incr">
                   <property name="locale">
@@ -257,6 +257,18 @@
                   </property>
                   <property name="singleStep">
                    <double>0.001000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="3">
+                 <widget class="QCheckBox" name="checkBox_dynPlot">
+                  <property name="font">
+                   <font>
+                    <family>Arial</family>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Robust Fit? (Much Slower! But better at finding global minima)</string>
                   </property>
                  </widget>
                 </item>
@@ -300,22 +312,36 @@
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="3">
-                 <widget class="QCheckBox" name="checkBox_dynPlot">
-                  <property name="font">
-                   <font>
-                    <family>Arial</family>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Robust Fit? (Much Slower! But better at finding global minima)</string>
-                  </property>
-                 </widget>
-                </item>
                 <item row="2" column="1">
                  <widget class="QSpinBox" name="select_datanumber">
                   <property name="prefix">
                    <string>Spectra: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="3">
+                 <widget class="QCheckBox" name="checkBox_fit_log">
+                  <property name="toolTip">
+                   <string>Will open a second window with Fit information</string>
+                  </property>
+                  <property name="text">
+                   <string>View Fit Log</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QSpinBox" name="spinBox_fit_num">
+                  <property name="suffix">
+                   <string/>
+                  </property>
+                  <property name="prefix">
+                   <string>Fit Functions: </string>
+                  </property>
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                  <property name="maximum">
+                   <number>99999</number>
                   </property>
                  </widget>
                 </item>
@@ -337,22 +363,6 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
-                 <widget class="QSpinBox" name="spinBox_fit_num">
-                  <property name="suffix">
-                   <string/>
-                  </property>
-                  <property name="prefix">
-                   <string>Fit Functions: </string>
-                  </property>
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>99999</number>
-                  </property>
-                 </widget>
-                </item>
                 <item row="5" column="2">
                  <widget class="QLabel" name="label_7">
                   <property name="frameShape">
@@ -363,13 +373,13 @@
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="3">
-                 <widget class="QCheckBox" name="checkBox_fit_log">
+                <item row="6" column="0">
+                 <widget class="QPushButton" name="Button_reset_fit">
                   <property name="toolTip">
-                   <string>Will open a second window with Fit information</string>
+                   <string>Will delete every previous fit!</string>
                   </property>
                   <property name="text">
-                   <string>View Fit Log</string>
+                   <string>Reset Fit</string>
                   </property>
                  </widget>
                 </item>
@@ -1303,7 +1313,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1296</width>
+     <width>1299</width>
      <height>21</height>
     </rect>
    </property>

@@ -61,23 +61,19 @@ class Worker(QThread):
     #This class is responsible for the dynamic fit by creating a so called worker to do the job
     i_signal = pyqtSignal() # signal for the processBar
     error_dynfit_signal = pyqtSignal() # error signal
-    def __init__(self,index_model,fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt,i_min,i_max,j,j_min,exceptions,init_values):
-        self.index_model = index_model
-        self.fit_num = fit_num
+
+    job_done = pyqtSignal(list)
+
+    def __init__(self,Bdata,Adata,i,value_opt,i_min,i_max,j,j_min,dyn_params_table):
         self.Bdata = Bdata
         self.Adata = Adata
-        self.Winkeldata = Winkeldata
         self.i = i
-        self.fileName = fileName
         self.value_opt = value_opt
         self.i_min = i_min
         self.i_max = i_max
         self.j = j
         self.j_min = j_min
-        self.exceptions = exceptions
-        self.init_values = init_values
-
-
+        self.dyn_params_table = dyn_params_table
         QThread.__init__(self)
 
     def fit(self,l,params_table,model,robust):
@@ -94,65 +90,53 @@ class Worker(QThread):
         global Parameter_list
         names = []
         temp_paras = []
-        Fit_obj = Fit(self.index_model, self.fit_num,Adata2,Bdata2, self.j_min,self.j,self.init_values,bound_min,bound_max)
-        params_table = Fit_obj.give_param_table(self.index_model)
+
+        for index in self.dyn_params_table[1]:  #Find first element that is not None or False
+            if index != None and index != False:
+                spectrum = index
+                break
+
+        clean_init = []
+        clean_min = []
+        clean_max = []
+        for i in range(2,len(spectrum)):
+            clean_init.append(spectrum[i].value)
+            clean_min.append(spectrum[i].min)
+            clean_max.append(spectrum[i].max)
+
+        Fit_obj = Fit(spectrum[0], spectrum[1],Adata2,Bdata2, self.j_min,self.j,clean_init,clean_min,clean_max)
+        params_table = Fit_obj.give_param_table(spectrum[0])
         model = Fit_obj.give_model()
 
-        #clean up, just in case
-        names.clear()
-        temp_paras.clear()
-
-        for name, param in result.params.items():
-            names.append('{}'.format(name))  #create an array of names for the header
-            temp_paras.append(float(param.value))  #create the first parameters to save into the .dat file
-        temp_paras.append(float(self.Winkeldata[0]))
-        print(names)
-        #exceptions = self.give_exceptions()
-        print(self.exceptions)
-        Parameter_list = np.zeros(shape=(self.i_max-len(self.exceptions),len(temp_paras)))
-        iteration = 0
-
-        for l in range(i_min, i_max):
-            if l not in self.exceptions:
-                self.i_signal.emit()  # update progressbar
-                temp_paras.clear()  # clear temp_paras for each iteration
-                temp_result = self.fit(l, params_table, model, value_opt['robust'])  # this is the fit
-                for name, param in temp_result.params.items():
-                    temp_paras.append(float(param.value))
-                    params_table[name].set(value=param.value, min=None, max=None)
-                temp_paras.append(float(self.Winkeldata[l]))
-                Parameter_list[iteration] = temp_paras
-                iteration += 1  # cleaned iteration (iteration with exceptions removed)
-        '''
         for l in range(i_min,i_max):
-            if l not in self.exceptions:
-                self.i_signal.emit() # update progressbar
-                temp_paras.clear() # clear temp_paras for each iteration
-                temp_result = self.fit(l,params_table,model,value_opt['robust']) #this is the fit
+            temp_spectra = self.dyn_params_table[1][l]
+            if temp_spectra == None:    # Only use spaces that are equal to None
+                self.i_signal.emit()  # update progressbar
+                temp_result = self.fit(l, params_table, model, value_opt['robust']) # Fit
+                temp_paras.clear()  # clear temp_paras for each iteration
                 for name, param in temp_result.params.items():
-                    temp_paras.append(float(param.value))  
-                    params_table[name].set(value=param.value,min=None,max=None)
-                temp_paras.append(float(self.Winkeldata[l]))
-                Parameter_list[iteration] = temp_paras
-                iteration += 1  #cleaned iteration (iteration with exceptions removed)
-        '''
-        now = datetime.datetime.now()
-        np.savetxt(fileName,Parameter_list,delimiter='\t',newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"),self.index_model,self.exceptions,names))
-        value_opt['dyn_fit'] = 'fitted'
+                    temp_paras.append(param)
+                    params_table[name].set(value=param.value, min=None, max=None)
 
+                self.dyn_params_table[1][l] = [spectrum[0],spectrum[1]] # Set index_model and fit_num
+                for i in temp_paras:
+                    self.dyn_params_table[1][l].append(i)  # Set parameters
+
+        self.job_done.emit(self.dyn_params_table) # emit finished self.dyn_param_table to main Class
 
 class MyForm(QMainWindow):
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # Setup every Button, Slider, ....
         self.ui.actionOpen.triggered.connect(self.openFileDialog)
         self.ui.actionSave.triggered.connect(self.saveFileDialog)
         self.ui.actionExit.triggered.connect(self.Exit)
         self.ui.Button_Plot.clicked.connect(self.plot)
-
         self.ui.comboBox_fit_model.currentIndexChanged.connect(self.model_type)
-        self.ui.Button_dyn_fit.clicked.connect(self.dyn_fit)
+        self.ui.Button_dyn_fit.clicked.connect(self.start_worker)
         self.ui.select_datanumber.valueChanged.connect(self.set_datanumber)
         self.ui.Scroll_Bar_dropped_points.valueChanged.connect(self.set_dataslider)
         self.ui.Dropped_points_edit.editingFinished.connect(self.Exceptions)
@@ -161,10 +145,8 @@ class MyForm(QMainWindow):
         self.ui.load_params_from_file.clicked.connect(self.load_parameter_plot)
         self.ui.checkBox_dynPlot.stateChanged.connect(self.robust_fit)
         self.ui.comboBox_fit_model.activated.connect(self.make_parameter_table)
-
         self.ui.pushButton.clicked.connect(self.test)
         self.ui.Button_angu_view.clicked.connect(self.doit)
-
         self.ui.sumbit_mathematica.clicked.connect(self.mathematica_submit)
         self.ui.sumbit_mathematica_2.clicked.connect(self.python_submit)
         self.ui.shift_SpinBox.valueChanged.connect(self.get_shift)
@@ -172,6 +154,9 @@ class MyForm(QMainWindow):
         self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
         self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
         self.ui.checkBox_fit_log.stateChanged.connect(self.fit_log)
+        self.ui.Button_reset_fit.clicked.connect(self.reset_fit)
+
+        # Set up every Key press Event
 
         self.shortcut_next = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F2), self) # Goto next Spectra
         self.shortcut_next.activated.connect(self.keyboard_next_spectra)
@@ -394,26 +379,17 @@ class MyForm(QMainWindow):
             Bdata2 = Bdata[i]
             Adata2 = Adata[i]
             self.plot_data(i)
-            if not self.dyn_params_table[1][i] == None:
+            spectra = self.dyn_params_table[1][i]
+            if spectra != None and spectra != False:
                 self.set_default_values(False)
         else:
             self.openFileDialog()
 
     def update_bar(self):
         #updates the progressbar
-        global p
-        self.ui.label_7.setText(str(p))
-        p += 1
-        self.ui.progressBar.setValue(p)
-
-    def dyn_fit(self):
-        #starts the dynamic fitting routine
-        global value_opt
-        value_opt['dyn'] = 'dynamic'
-        try:
-            self.saveFileDialog()
-        except Exception as e:
-            print("Error in dyn_Fit: ",e)
+        self.ui.label_7.setText(str(self.progress))
+        self.progress += 1
+        self.ui.progressBar.setValue(self.progress)
 
     def set_model_type_number(self):
         # sets the integer number of index_model
@@ -447,7 +423,6 @@ class MyForm(QMainWindow):
                     self.ui.spinBox_fit_num.setValue(1)
                 else: # True
                     self.sanity = False
-
 
         self.make_parameter_table()
 
@@ -738,7 +713,7 @@ class MyForm(QMainWindow):
             self.ui.Plot_Indi_View.lr.setBounds([round(self.B_min),self.B_max]) # Set Range Boundaries for linearregionitem
 
             self.ui.select_datanumber.setMaximum(i_max)
-            self.ui.progressBar.setMaximum(i_max)
+            self.ui.progressBar.setMaximum(i_max - 1)
             self.ui.Scroll_Bar_dropped_points.setMaximum(i_max)
 
             value_opt['data'] = 'loaded'
@@ -829,7 +804,7 @@ class MyForm(QMainWindow):
         # Params array with slope and offset inside!! So : [slope,offset,....]
         #self.block_spinbox_signal(True)
         param = self.dyn_params_table[1][self.i]
-        if not param == None:
+        if param != None and params != False:
             for zaehler in range(0, self.fit_num * index_model + 3):
                 param[zaehler+2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
             self.plot_data(self.i)
@@ -893,7 +868,9 @@ class MyForm(QMainWindow):
         self.ui.Plot_Indi_View.plt_range.plot(Bdata2, Adata2, pen=(255,255,255))
         self.ui.Plot_Indi_View.plt.addItem(self.ui.Plot_Indi_View.lr) # Plot Linear Range Select Item
 
-        if not self.dyn_params_table[1][angle_index] == None:
+        spectra = self.dyn_params_table[1][angle_index]
+        if spectra != None and spectra != False:
+        #if spectra != None:
             try:
                 # --------------------------self.dyn_params_table[1][angle_index] Structure:----------------------------
                         # This is a List mixed with dict:
@@ -902,7 +879,7 @@ class MyForm(QMainWindow):
                               # raw[1] = fit_num ====> Number of functions used
                               # Rest will be dict: raw[i>1].value or raw[i>1].bounds or raw[i>1].name
                                     # Ordering is the same as everywhere, see "array_gen.py" file
-                raw = self.dyn_params_table[1][angle_index]
+                raw = spectra
                 slope = raw[2].value
                 offset = raw[3].value
                 temp_param = []
@@ -957,31 +934,76 @@ class MyForm(QMainWindow):
         sys.exit()  #Obviously not the start
 
     def saveFileDialog(self):
-        #started when Dyn Fit button pressed
         #gets the filename for saving
-        #then starts the worker responsible for dyn fit
         global p
         global New_W
-        global fileName
-
-        p=0
-        j_min, j = self.get_fit_region()
+        #global fileName
         exceptions = self.Exceptions()
-        New_W = [[],[]] #[0] = position, [1] = angle
-        for pos,winkel in enumerate(Winkeldata):
-            if pos not in exceptions:
-                New_W[0].append(pos)
-                New_W[1].append(winkel)
-        New_W = np.asarray(New_W)
-
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getSaveFileName(self,"Please select the file to save to","","All Files (*);;Text Files (*.dat)",options=options)
         if fileName:
-            self.get_thread = Worker(index_model,self.fit_num,Bdata,Adata,Winkeldata,i,fileName,value_opt['dyn'],i_min,i_max,j,j_min,exceptions,self.init_values)
+            self.save_filename = fileName
+            file, names = self.create_save_file()
+            now = datetime.datetime.now()
+            np.savetxt(self.save_filename, file, delimiter='\t', newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"), index_model,exceptions, names))
+
+    def create_save_file(self):
+        param_table = []
+        name_table = []
+
+        # create list of names
+        l = self.dyn_params_table[1][1]
+        params = l[2:len(l)]
+        for raw_name in params:
+            name_table.append(raw_name.name)
+        name_table.append('angle')
+
+        # create list of params
+        for list ,i in enumerate(self.dyn_params_table[1]):
+            params = i[2:len(i)]
+            temp = []
+            for raw in params:
+                temp.append(raw.value)
+            winkel = self.dyn_params_table[0][list]
+            temp.append(winkel[1])
+            param_table.append(temp)
+
+        return param_table, name_table
+
+    def start_worker(self):
+            # started when Dyn Fit button pressed
+            # then starts the worker responsible for dyn fit
+            self.progress = 0
+            j_min, j = self.get_fit_region()
+            exceptions = self.Exceptions()
+
+            # set every spectra that is excluded to False
+            for l in range(self.i_min, self.i_max):
+                if l in exceptions:
+                    self.dyn_params_table[1][l] = False
+            self.ui.progressBar.setMaximum(self.i_max - 1 - len(exceptions))
+            # Start second Thread to fit angular dependence
+            self.get_thread = Worker(Bdata, Adata, self.i, value_opt['dyn'], i_min, i_max, j, j_min,
+                                     self.dyn_params_table)
             self.get_thread.start()
             self.get_thread.i_signal.connect(self.update_bar)
             self.get_thread.error_dynfit_signal.connect(self.error_msg)
+            self.get_thread.job_done.connect(self.dyn_fit_job_done)
+
+    def dyn_fit_job_done(self,*args):
+        # is called when worker is finished
+        # refreshes dyn_params_table with new data
+        self.dyn_params_table = args[0]
+
+    def reset_fit(self):
+        # reset self.dyn_params_table to None
+        for i in range(self.i_max):
+            self.dyn_params_table[1][i] = None
+        self.set_datanumber()
+        self.progress = 0
+        self.ui.progressBar.setValue(0)
+        self.ui.label_7.setText('')
 
     def python_submit(self,*args):
         # Python AniFit routine
