@@ -258,16 +258,17 @@ class MyForm(QMainWindow):
         self.preB_Sim = self.python_submit(True)
         # if no pre is present, then ani_pre_fit is True
         # ani_pre_fit determines whether it is the first time fitting or just a shift
-        if value_opt['ani_pre_fit']:
-            #value_opt['ani_pre_fit'] = False
-            try:
-                self.maxWinkel = max(self.preB_Sim[2])
-                self.minWinkel = min(self.preB_Sim[2])
-            except Exception as e:
-                print('Error in main.make_preB_sim(): ',e)
-                print('Try fitting the spectra first!')
-        shift = self.ui.shift_SpinBox_Py.value()
-        self.get_shift(shift)
+        if not self.preB_Sim == None:
+            if value_opt['ani_pre_fit']:
+                #value_opt['ani_pre_fit'] = False
+                try:
+                    self.maxWinkel = max(self.preB_Sim[2])
+                    self.minWinkel = min(self.preB_Sim[2])
+                except Exception as e:
+                    print('Error in main.make_preB_sim(): ',e)
+                    print('Try fitting the spectra first!')
+            shift = self.ui.shift_SpinBox_Py.value()
+            self.get_shift(shift)
         #preB_Sim: [0] = B_Sim; [1] = B_Exp; [2] = phi_RANGE_deg
 
     def get_shift(self,d):
@@ -929,9 +930,6 @@ class MyForm(QMainWindow):
 
     def saveFileDialog(self):
         #gets the filename for saving
-        global p
-        global New_W
-        #global fileName
         exceptions = self.Exceptions()
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog
@@ -1024,11 +1022,17 @@ class MyForm(QMainWindow):
         #Then call init_load from ani_tool.py
 
         try:
-            if not args[0]:
-                init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
+            if hasattr(self,"save_filename"):
+                print("Python Submit")
+                if not args[0]:
+                    init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
+                else:
+                    result = init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
+                    return result
             else:
-                result = init_load(fileName, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
-                return result
+                fileName, _ = QFileDialog.getOpenFileName(self, "Please select the file to load Data")
+                self.save_filename = fileName
+                self.make_preB_sim()
         except Exception as e:
             print('Error in main.python_submit(): ',e)
             #print('Try fitting the spectra first!')
