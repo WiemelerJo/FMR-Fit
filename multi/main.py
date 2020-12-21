@@ -861,7 +861,9 @@ class MyForm(QMainWindow):
 
         self.ui.Plot_Indi_View.plt.plot(Bdata2, Adata2,name='Experiment', pen=(255,255,255))    # Plot Experiment data
         self.ui.Plot_Indi_View.plt_range.plot(Bdata2, Adata2, pen=(255,255,255))
+
         self.ui.Plot_Indi_View.plt.addItem(self.ui.Plot_Indi_View.lr) # Plot Linear Range Select Item
+        self.ui.Plot_Indi_View.plt.addItem(self.ui.Plot_Indi_View.label, ignoreBounds=True)
 
         spectra = self.dyn_params_table[1][angle_index]
         if spectra != None and spectra != False:
@@ -906,23 +908,42 @@ class MyForm(QMainWindow):
        # self.block_spinbox_signal(False)
 
     def plot_params_to_plot_tab(self):
-        # [0] of these arrays is
-        self.slope_array = [[],[]]
-        self.offset_array = [[],[]]
-        self.alpha_array = [[],[]]
-        self.dB_array = [[],[]]
-        self.R_array = [[],[]]
-        self.A_array = [[],[]]
+        # Todo: Find way to change colours of plots different functions
+        params_raw = self.dyn_params_table[1]
+        angles_raw = self.dyn_params_table[0]
 
-        for param in self.dyn_params_table[1]:
-            if not param == None:
-                slope = param[2].value
-                offset = param[3].value
-                temp_param = []
+        params = []
+        angles = []
 
-                if param[0] == 2: #Lorentz
-                    for l in range(4,3 * param[1] + 1):
-                        temp_param.append()
+        for l, i in enumerate(params_raw):
+            if i != None and i != False:
+                params.append(i)
+                angles.append(angles_raw[l][1])
+        params = np.asarray(params)
+        angle = np.asarray(angles)
+        # [:, i], (i,2,...) will give a parameter as an array
+        # i=2:slope; i=3:offset; ....
+
+        pen = None
+        symbol = 'd'
+        symbolpen = None
+        symbolsize = 10
+        symbolBrush = (255, 255, 255, 100)
+
+        self.ui.plot_params.plt_slope.plot(angle, params[:, 2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+        self.ui.plot_params.plt_offset.plot(angle, params[:, 3],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+        print(params[0])
+        if self.index_model == 2: # Lorentz
+            for i_num in range(1,self.fit_num + 1):
+                self.ui.plot_params.plt_db.plot(angle,params[:,2+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+                self.ui.plot_params.plt_R.plot(angle,params[:,3+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+                self.ui.plot_params.plt_A.plot(angle,params[:,4+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+        elif self.index_model == 3: # Dyson
+            for i_num in range(1, self.fit_num + 1):
+                self.ui.plot_params.plt_alpha.plot(angle, params[:,2+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+                self.ui.plot_params.plt_db.plot(angle, params[:,3+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+                self.ui.plot_params.plt_R.plot(angle, params[:,4+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+                self.ui.plot_params.plt_A.plot(angle, params[:,5+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
 
 
     def Exit(self):
@@ -936,11 +957,11 @@ class MyForm(QMainWindow):
         fileName, _ = QFileDialog.getSaveFileName(self,"Please select the file to save to","","All Files (*);;Text Files (*.dat)",options=options)
         if fileName:
             self.save_filename = fileName
-            file, names = self.create_save_file()
+            file, names = self.create_param_file()
             now = datetime.datetime.now()
             np.savetxt(self.save_filename, file, delimiter='\t', newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"), self.index_model,exceptions, names))
 
-    def create_save_file(self):
+    def create_param_file(self):
         param_table = []
         name_table = []
 
@@ -976,6 +997,7 @@ class MyForm(QMainWindow):
             for l in range(self.i_min, self.i_max):
                 if l in exceptions:
                     self.dyn_params_table[1][l] = False
+                    self.dyn_params_table[0][l] = [l,False]
             self.ui.progressBar.setMaximum(self.i_max - 1 - len(exceptions))
             # Start second Thread to fit angular dependence
             self.get_thread = Worker(Bdata, Adata, self.i, value_opt['dyn'], i_min, i_max, j, j_min,
@@ -989,6 +1011,7 @@ class MyForm(QMainWindow):
         # is called when worker is finished
         # refreshes dyn_params_table with new data
         self.dyn_params_table = args[0]
+        self.plot_params_to_plot_tab()
 
     def reset_fit(self):
         # reset self.dyn_params_table to None
@@ -998,6 +1021,13 @@ class MyForm(QMainWindow):
         self.progress = 0
         self.ui.progressBar.setValue(0)
         self.ui.label_7.setText('')
+        # reset the plots
+        self.ui.plot_params.plt_slope.clear()
+        self.ui.plot_params.plt_offset.clear()
+        self.ui.plot_params.plt_alpha.clear()
+        self.ui.plot_params.plt_db.clear()
+        self.ui.plot_params.plt_R.clear()
+        self.ui.plot_params.plt_A.clear()
 
     def python_submit(self,*args):
         # Python AniFit routine

@@ -37,6 +37,12 @@ class Plot_pyqtgraph(QtWidgets.QWidget):
         self.plt_range = self.win.addPlot()
         self.plt.addItem(self.lr)
 
+        self.label = pg.TextItem(text='Hover Event', anchor=(0,0))
+        self.plt.addItem(self.label, ignoreBounds=True)
+
+        self.plt.hoverEvent = self.imageHoverEvent
+        self.plt.mouseClickEvent = self.imageClickEvent
+
         self.plt.setLabel('left',"Amplitude (Arb. Units)")  # Y-Axis
         self.plt.setLabel('bottom',"Magnetic Field", units='T') # X-Axis
         self.plt.showGrid(True,True) # Show Grid
@@ -59,6 +65,21 @@ class Plot_pyqtgraph(QtWidgets.QWidget):
 
     def updateRegion(self):
         self.lr.setRegion(self.plt_range.getViewBox().viewRange()[0])
+
+    def imageClickEvent(self, event):
+        pos = event.pos()
+        ppos = self.plt.mapToParent(pos)
+        print(ppos.x())
+
+    def imageHoverEvent(self, event):
+        """Show the position, pixel, and value under the mouse cursor.
+        """
+        if event.isExit():
+            self.label.setText("")
+            return
+        pos = event.pos()
+        x, y = pos.x(), pos.y()
+        self.label.setText("Pos (Field,Angle): %0.1f, %0.1f" % (x, y))
 
 class ParameterPlot(QtWidgets.QWidget):
     def __init__(self, parent=None):
