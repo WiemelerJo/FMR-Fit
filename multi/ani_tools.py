@@ -148,10 +148,33 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
     # the information of the shifted angles to map/fit the interpolated data.
 
     #try:
+
+    def correct_phi_RANGE(phi_RANGE,len_ref, count=0, add='-', lauf_var=0, shift=0):
+        if add == '-':
+            phi_RANGE = np.arange(phi_min + shift, phi_max + shift, m.pi / (1 / (phi_step / m.pi) - lauf_var), dtype='float')
+        else:
+            phi_RANGE = np.arange(phi_min + shift, phi_max + shift, m.pi / (1 / (phi_step / m.pi) + lauf_var), dtype='float')
+        if len(phi_RANGE) != len_ref:
+            print(len(phi_RANGE),len_ref,count)
+            if count < 10:
+                correct_phi_RANGE(phi_RANGE, len_ref, count+1,'-', lauf_var+1)
+            elif count < 20:
+                if count == 10:
+                    lauf_var = 0
+                correct_phi_RANGE(phi_RANGE,len_ref,count+1,'+', lauf_var+1)
+            else:
+                print('phi_RANGE and reference_data have different length, change Anglestep (~ +-1 ) and try again')
+        else:
+            return phi_RANGE
+
     if Fit:
         phi_min = (Winkel_min + shift) * m.pi / 180  # define smallest value; shifted
         phi_max = (Winkel_max + shift) * m.pi / 180  # define biggest value; shifted
-        phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
+       # phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
+        phi_RANGE = np.arange(Winkel_min + shift, Winkel_max + shift, phi_step*180/m.pi) * m.pi/180
+        # There is the possibility, that the length of phi_RANGE can be smaller or bigger than reference_data
+        if len(phi_RANGE) != len(reference_data):
+            phi_RANGE = correct_phi_RANGE(phi_RANGE, len(reference_data),0 , '-', 0, shift*m.pi/180)
 
         # Then limit the array so that it doesnt exceed 0-360 degrees
         for i, l in enumerate(phi_RANGE):
@@ -177,15 +200,16 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
         # plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
         main_loop(Plot, rule, phi_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
     else:   # Pre Fit
-        phi_min = Winkel_min * m.pi / 180  # define smallest value; shifted
-        phi_max = Winkel_max * m.pi / 180  # define biggest value; shifted
-        phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
+        phi_RANGE = phi_RANGE_deg * m.pi/180
+        if len(phi_RANGE) != len(reference_data):
+            phi_RANGE = correct_phi_RANGE(phi_RANGE, len(reference_data))
 
         print('Creating pre fit')
         result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg, reference_data, B_RES, F)
         return result
     #except Exception as e:
     #    print('Error in ani_tools.init_load(): ',e)
+
 
 def init_folder(filename):
     # This function should get the filename string from the main script and then checks if folders are present, if not they will be created
@@ -376,7 +400,6 @@ def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, mode
     # ---------Now the iteration could start--------------
     # 4. calculate error between B_sim1 and B_Sim2, if bigger than maxBresDelta, start iterating
     # 5. Iteration: set B_Sim1 = B_Sim2 and go to step 1. until error is smaller than maxBresDelta
-
     ani_result = model.fit(reference_data, params_Fit, phi_real=phi_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)
     print(ani_result.fit_report())
 
