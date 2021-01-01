@@ -809,24 +809,23 @@ class MyForm(QMainWindow):
         value_opt['dyn'] = 'single'
         self.model_type()
         if value_opt['data'] == 'loaded':
-            try:
-                j_min,j = self.get_fit_region() # get fit region
-                self.set_init_params()  #gets the initial parameters from the GUI
-                result = Fit(self.index_model, self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).fit(self.index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
-                value_opt['fit'] = 'fitted'
-                self.ui.progressBar.setMaximum(i_max-len(exceptions))
-                self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
-                self.set_fit_params()
-                self.add_params_to_table(self.i,self.index_model,self.fit_num,[ param for name, param in result.params.items()])
-                self.plot_data(self.i,result.best_fit, 'Best fit')
-                self.plot_params_to_plot_tab()
-                self.fit_report_log = result.fit_report()
-                if self.ui.checkBox_fit_log.isChecked():
-                    self.flw.setText(self.fit_report_log)
-                #print(result.fit_report())
-                #print(result.best_values)
-            except Exception as e:
-                print('Error in main.plot: ',e)
+            #try:
+            j_min,j = self.get_fit_region() # get fit region
+            self.set_init_params()  #gets the initial parameters from the GUI
+            result = Fit(self.index_model, self.fit_num,Adata2,Bdata2, j_min,j,self.init_values,bound_min,bound_max).fit(self.index_model,Adata2,Bdata2, j_min,j) #fit and save it as result
+            value_opt['fit'] = 'fitted'
+            self.evaluate_min_max(Bdata2[j_min:j],Adata2[j_min:j])
+            self.set_fit_params()
+            self.add_params_to_table(self.i,self.index_model,self.fit_num,[ param for name, param in result.params.items()])
+            self.plot_data(self.i,result.best_fit, 'Best fit')
+            self.plot_params_to_plot_tab()
+            self.fit_report_log = result.fit_report()
+            if self.ui.checkBox_fit_log.isChecked():
+                self.flw.setText(self.fit_report_log)
+            #print(result.fit_report())
+            #print(result.best_values)
+            #except Exception as e:
+            #    print('Error in main.plot: ',e)
         else:
             self.openFileDialog()
 
@@ -901,12 +900,12 @@ class MyForm(QMainWindow):
 
                 if raw[1] > 1 and args: # Plot fitted result
                     x = Bdata2[j_min:j]
-                    pen_result = pg.mkPen((255,0,0),width=3,)
+                    pen_result = pg.mkPen((255,0,0),width=3)
                     self.ui.Plot_Indi_View.plt.plot(x, args[0], name='Result', pen=pen_result) # Plot Fit data
                     self.ui.Plot_Indi_View.plt_range.plot(x,  args[0], pen=pen_result) # Plot Fit data
                 elif raw[1] > 1:# Plot result obtained from manual adjustment
                     x = Bdata2[j_min:j]
-                    pen_result = pg.mkPen((255, 0, 0), width=3, )
+                    pen_result = pg.mkPen((255, 0, 0), width=3)
                     plt_multi_func = Functions.functions_value(x, slope, offset, self.index_model, temp_param, raw[1])
                     self.ui.Plot_Indi_View.plt.plot(x, plt_multi_func, name='Result', pen=pen_result)  # Plot Fit data
                     self.ui.Plot_Indi_View.plt_range.plot(x, plt_multi_func, pen=pen_result)  # Plot Fit data
@@ -936,7 +935,7 @@ class MyForm(QMainWindow):
         symbol = 'd'
         symbolpen = None
         symbolsize = 10
-        symbolBrush = (255, 255, 255, 100)
+        symbolBrush = (255, 255, 255, 255)
 
         self.ui.plot_params.plt_slope.clear()
         self.ui.plot_params.plt_offset.clear()
@@ -949,12 +948,13 @@ class MyForm(QMainWindow):
         self.ui.plot_params.plt_offset.plot(angle, params[:, 3],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         if self.index_model == 2: # Lorentz
             for i_num in range(1,self.fit_num + 1):
-                self.ui.plot_params.plt_db.plot(angle,params[:,2+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+                symbolBrush = pg.intColor(i_num)
+                self.ui.plot_params.plt_db.plot(angle,params[:,2+3*(i_num-1)+2],name='Function' + str(i_num), pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_R.plot(angle,params[:,3+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_A.plot(angle,params[:,4+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         elif self.index_model == 3: # Dyson
             for i_num in range(1, self.fit_num + 1):
-                self.ui.plot_params.plt_alpha.plot(angle, params[:,2+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
+                self.ui.plot_params.plt_alpha.plot(angle, params[:,2+4*(i_num-1)+2],name='Function' + str(i_num), pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_db.plot(angle, params[:,3+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_R.plot(angle, params[:,4+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_A.plot(angle, params[:,5+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
