@@ -31,6 +31,7 @@ from array_gen import *
 
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
+# Todo : Add Polaraplot in Python Anifit
 # TODO: Maybe implement a performance mode using CuPy or MOT Module (CUDA and multiprocess optimized optimzation)
 # TODO: Robust Fit mit Multithreading?
 
@@ -138,7 +139,7 @@ class MyForm(QMainWindow):
         self.ui.comboBox_fit_model.currentIndexChanged.connect(self.model_type)
         self.ui.Button_dyn_fit.clicked.connect(self.start_worker)
         self.ui.select_datanumber.valueChanged.connect(self.set_datanumber)
-        self.ui.Scroll_Bar_dropped_points.valueChanged.connect(self.set_dataslider)
+
         self.ui.Dropped_points_edit.editingFinished.connect(self.Exceptions)
         self.ui.Button_dropped_points.clicked.connect(self.button_dropped_points)
         self.ui.plot_parameter.clicked.connect(self.parameter_plot)
@@ -360,9 +361,6 @@ class MyForm(QMainWindow):
         except:
             for i in range(0, self.fit_num * (self.index_model + 1) + 2):
                 self.ui.Parameter_table.cellWidget(i, 0).blockSignals(block)
-
-    def set_dataslider(self):
-        self.ui.select_datanumber.setValue(int(self.ui.Scroll_Bar_dropped_points.value()))
 
     def set_datanumber(self):
         #Defines the dataset looked at
@@ -713,7 +711,6 @@ class MyForm(QMainWindow):
 
             self.ui.select_datanumber.setMaximum(i_max)
             self.ui.progressBar.setMaximum(i_max - 1)
-            self.ui.Scroll_Bar_dropped_points.setMaximum(i_max)
 
             value_opt['data'] = 'loaded'
             self.dyn_params_table = [[], []]  # New Parameter Table: [0] is angle, [1] corresponding fitted params
@@ -800,9 +797,10 @@ class MyForm(QMainWindow):
         #self.block_spinbox_signal(True)
         param = self.dyn_params_table[1][self.i]
         if param != None and param != False:
-            for zaehler in range(0, self.fit_num * self.index_model + 3):
+            for zaehler in range(0, self.fit_num * self.index_model + 4):
                 param[zaehler+2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
             self.plot_data(self.i)
+
         #self.block_spinbox_signal(False)
 
     def plot(self):
@@ -821,6 +819,7 @@ class MyForm(QMainWindow):
                 self.set_fit_params()
                 self.add_params_to_table(self.i,self.index_model,self.fit_num,[ param for name, param in result.params.items()])
                 self.plot_data(self.i,result.best_fit, 'Best fit')
+                self.plot_params_to_plot_tab()
                 self.fit_report_log = result.fit_report()
                 if self.ui.checkBox_fit_log.isChecked():
                     self.flw.setText(self.fit_report_log)
@@ -891,17 +890,26 @@ class MyForm(QMainWindow):
                     label = 'How did you do this?!'
 
                 for i_num in range(1, raw[1] + 1): # Plot individual Lines
+                    pen_fit = pg.mkPen(pg.intColor(i_num),width=3,style=QtCore.Qt.DashLine)
                     plt_single_func = Functions.single_func(Bdata2, slope, offset, self.index_model, temp_param, i_num)
-                    self.ui.Plot_Indi_View.plt.plot(Bdata2, plt_single_func, name=label + str(i_num),pen=(255 - 10 * i_num, 10 * i_num, 5 * i_num))
-                    self.ui.Plot_Indi_View.plt_range.plot(Bdata2, plt_single_func, pen=(255 - 10 * i_num, 10 * i_num, 5 * i_num))
+                    self.ui.Plot_Indi_View.plt.plot(Bdata2, plt_single_func, name=label + str(i_num),pen=pen_fit)
+                    self.ui.Plot_Indi_View.plt_range.plot(Bdata2, plt_single_func, pen=pen_fit)
 
                 #self.data_plot.setData(x, args[0], name=args[1], pen=(255,0,0))
                 #self.data_plot_range.setData(x,  args[0], pen=(255,0,0))
                 #plt_single_func = Functions.single_func(Bdata2, slope, offset, index_model, params, i_num)
-                if raw[1] > 1 and args:
+
+                if raw[1] > 1 and args: # Plot fitted result
                     x = Bdata2[j_min:j]
-                    self.ui.Plot_Indi_View.plt.plot(x, args[0], name='Result', pen=(0,255,0)) # Plot Fit data
-                    self.ui.Plot_Indi_View.plt_range.plot(x,  args[0], pen=(0,255,0)) # Plot Fit data
+                    pen_result = pg.mkPen((255,0,0),width=3,)
+                    self.ui.Plot_Indi_View.plt.plot(x, args[0], name='Result', pen=pen_result) # Plot Fit data
+                    self.ui.Plot_Indi_View.plt_range.plot(x,  args[0], pen=pen_result) # Plot Fit data
+                elif raw[1] > 1:# Plot result obtained from manual adjustment
+                    x = Bdata2[j_min:j]
+                    pen_result = pg.mkPen((255, 0, 0), width=3, )
+                    plt_multi_func = Functions.functions_value(x, slope, offset, self.index_model, temp_param, raw[1])
+                    self.ui.Plot_Indi_View.plt.plot(x, plt_multi_func, name='Result', pen=pen_result)  # Plot Fit data
+                    self.ui.Plot_Indi_View.plt_range.plot(x, plt_multi_func, pen=pen_result)  # Plot Fit data
 
             except Exception as e:
                 print('Error in main.plot_data: ', e)
@@ -930,9 +938,15 @@ class MyForm(QMainWindow):
         symbolsize = 10
         symbolBrush = (255, 255, 255, 100)
 
+        self.ui.plot_params.plt_slope.clear()
+        self.ui.plot_params.plt_offset.clear()
+        self.ui.plot_params.plt_alpha.clear()
+        self.ui.plot_params.plt_db.clear()
+        self.ui.plot_params.plt_R.clear()
+        self.ui.plot_params.plt_A.clear()
+
         self.ui.plot_params.plt_slope.plot(angle, params[:, 2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         self.ui.plot_params.plt_offset.plot(angle, params[:, 3],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
-        print(params[0])
         if self.index_model == 2: # Lorentz
             for i_num in range(1,self.fit_num + 1):
                 self.ui.plot_params.plt_db.plot(angle,params[:,2+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
@@ -987,6 +1001,7 @@ class MyForm(QMainWindow):
         return param_table, name_table
 
     def start_worker(self):
+            # Todo: Create option to set single spectra to None, in order to re dynamic fit them
             # started when Dyn Fit button pressed
             # then starts the worker responsible for dyn fit
             self.progress = 0
@@ -1051,20 +1066,20 @@ class MyForm(QMainWindow):
         shift = float(self.ui.shift_SpinBox_Py.value())
         #Then call init_load from ani_tool.py
 
-        try:
-            if hasattr(self,"save_filename"):
-                print("Python Submit")
-                if not args[0]:
-                    init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
-                else:
-                    result = init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
-                    return result
+        #try:
+        if hasattr(self,"save_filename"):
+            print("Python Submit")
+            if not args[0]:
+                init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
             else:
-                fileName, _ = QFileDialog.getOpenFileName(self, "Please select the file to load Data")
-                self.save_filename = fileName
-                self.make_preB_sim()
-        except Exception as e:
-            print('Error in main.python_submit(): ',e)
+                result = init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
+                return result
+        else:
+            fileName, _ = QFileDialog.getOpenFileName(self, "Please select the file to load Data")
+            self.save_filename = fileName
+            self.make_preB_sim()
+        #except Exception as e:
+        #    print('Error in main.python_submit(): ',e)
             #print('Try fitting the spectra first!')
         #except Exception as e:
         #    if len(fit_params) != len(fit_params_value):
