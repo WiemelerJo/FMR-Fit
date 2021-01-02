@@ -75,17 +75,10 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
     # Fit: bool, to control whether to fit or not
     # Plot: bool, same as Fit
 
-    # The rest will be passed as *arg
-    # phi_array: array, of angles Phi of phi in degrees shifted!
-    # phi_array_not_shifted: orig array 
-    # R_raw: array of raw Bres fitted, taken from a file
 
-    if args:
-        print('Ja Moin')
-        phi_array = args[0]
-        print(filename, FreeE, fit_params, fixed_params, shifts, anglestep, phi_array)
-    else:
-        print(filename, FreeE, fit_params, fixed_params, shifts, anglestep,Fit,Plot)
+
+
+    print(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit, Plot)
 
     maxBresDelta = 0.001  # Also adjustable by gui?
 
@@ -139,56 +132,62 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     Winkel_min = min(Winkel) # its in deg; Orignial data
     Winkel_max = max(Winkel) # its in deg; Orignial data
-    phi_step = anglestep  # define stepwidth (resolution)
-    phi_RANGE_deg = np.arange(Winkel_min,Winkel_max,phi_step*180/m.pi)  # Phi Array in degress NOT shifted
-    reference_data = B_inter(phi_RANGE_deg) # Interpolate Data from experiment with array steps set by programm
+    angle_step = anglestep  # define stepwidth (resolution)
+    angle_RANGE_deg = np.arange(Winkel_min,Winkel_max,angle_step*180/m.pi)  # Phi Array in degress NOT shifted
+    reference_data = B_inter(angle_RANGE_deg) # Interpolate Data from experiment with array steps set by programm
     # Now the idea is, we have an array (B_inter_data_array) of real world data, which is shifted in +- direction,
     # we therefore need to shift this.
-    # This reference_data is not shifted, the shift is introduced in phi_RANGE. The lmfit routine then uses
+    # This reference_data is not shifted, the shift is introduced in angle_RANGE. The lmfit routine then uses
     # the information of the shifted angles to map/fit the interpolated data.
 
     #try:
 
-    def correct_phi_RANGE(phi_RANGE,len_ref, count=0, add='-', lauf_var=0, shift=0):
+    def correct_angle_RANGE(angle_RANGE,len_ref, count=0, add='-', lauf_var=0, shift=0):
         if add == '-':
-            phi_RANGE = np.arange(phi_min + shift, phi_max + shift, m.pi / (1 / (phi_step / m.pi) - lauf_var), dtype='float')
+            angle_RANGE = np.arange(angle_min + shift, angle_max + shift, m.pi / (1 / (angle_step / m.pi) - lauf_var), dtype='float')
         else:
-            phi_RANGE = np.arange(phi_min + shift, phi_max + shift, m.pi / (1 / (phi_step / m.pi) + lauf_var), dtype='float')
-        if len(phi_RANGE) != len_ref:
-            print(len(phi_RANGE),len_ref,count)
+            angle_RANGE = np.arange(angle_min + shift, angle_max + shift, m.pi / (1 / (angle_step / m.pi) + lauf_var), dtype='float')
+        if len(angle_RANGE) != len_ref:
+            print(len(angle_RANGE),len_ref,count)
             if count < 10:
-                correct_phi_RANGE(phi_RANGE, len_ref, count+1,'-', lauf_var+1)
+                correct_angle_RANGE(angle_RANGE, len_ref, count+1,'-', lauf_var+1)
             elif count < 20:
                 if count == 10:
                     lauf_var = 0
-                correct_phi_RANGE(phi_RANGE,len_ref,count+1,'+', lauf_var+1)
+                correct_angle_RANGE(angle_RANGE,len_ref,count+1,'+', lauf_var+1)
             else:
-                print('phi_RANGE and reference_data have different length, change Anglestep (~ +-1 ) and try again')
+                print('angle_RANGE and reference_data have different length, change Anglestep (~ +-1 ) and try again')
         else:
-            return phi_RANGE
+            return angle_RANGE
+
+    if args:
+        # args will be present if OOP Fit is selected
+        is_OOP = True
+    else:
+        is_OOP = False
 
     if Fit:
-        phi_min = (Winkel_min + shift) * m.pi / 180  # define smallest value; shifted
-        phi_max = (Winkel_max + shift) * m.pi / 180  # define biggest value; shifted
-       # phi_RANGE = np.arange(phi_min, phi_max, phi_step, dtype='float')  # array of radians, with stepwidth = anglestep
-        phi_RANGE = np.arange(Winkel_min + shift, Winkel_max + shift, phi_step*180/m.pi) * m.pi/180
-        # There is the possibility, that the length of phi_RANGE can be smaller or bigger than reference_data
-        if len(phi_RANGE) != len(reference_data):
-            phi_RANGE = correct_phi_RANGE(phi_RANGE, len(reference_data),0 , '-', 0, shift*m.pi/180)
+        angle_min = (Winkel_min + shift) * m.pi / 180  # define smallest value; shifted
+        angle_max = (Winkel_max + shift) * m.pi / 180  # define biggest value; shifted
+       # angle_RANGE = np.arange(angle_min, angle_max, angle_step, dtype='float')  # array of radians, with stepwidth = anglestep
+        angle_RANGE = np.arange(Winkel_min + shift, Winkel_max + shift, angle_step*180/m.pi) * m.pi/180
+        # There is the possibility, that the length of angle_RANGE can be smaller or bigger than reference_data
+        if len(angle_RANGE) != len(reference_data):
+            angle_RANGE = correct_angle_RANGE(angle_RANGE, len(reference_data),0 , '-', 0, shift*m.pi/180)
 
         # Then limit the array so that it doesnt exceed 0-360 degrees
-        for i, l in enumerate(phi_RANGE):
+        for i, l in enumerate(angle_RANGE):
             if l >= 359.99 * m.pi / 180:
-                phi_RANGE[i] -= 360.0 * m.pi / 180
+                angle_RANGE[i] -= 360.0 * m.pi / 180
             elif l <= 0.0:
-                phi_RANGE[i] += 360.0 * m.pi / 180
+                angle_RANGE[i] += 360.0 * m.pi / 180
         print('Simulating Bres and fitting anisotropy constants. Your computer may be unresponsive')
         end_pfad = init_folder(filename)
 
 
         func_args = [i for i in fit_params.keys()] # get the names/keys of the fitted params
         func_args = str(func_args).replace('[','').replace(']','').replace("'",'') # prepare the list for the string function
-        func_str = create_str_func(func_args)
+        func_str = create_str_func(func_args, is_OOP)
         exec(func_str,globals())  # This will create the function given by func_str: "Model_Fit_Fkt"
 
         # Then create Parameter dict() and model for lmfit
@@ -197,15 +196,15 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
             params_Fit.add(name, value)
         model = Model(Model_Fit_Fkt)
 
-        # plot: bool, rules_start: dict, phi_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
-        main_loop(Plot, rule, phi_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta,end_pfad)
+        # plot: bool, rules_start: dict, angle_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
+        main_loop(Plot, rule, angle_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad, is_OOP)
     else:   # Pre Fit
-        phi_RANGE = phi_RANGE_deg * m.pi/180
-        if len(phi_RANGE) != len(reference_data):
-            phi_RANGE = correct_phi_RANGE(phi_RANGE, len(reference_data))
+        angle_RANGE = angle_RANGE_deg * m.pi/180
+        if len(angle_RANGE) != len(reference_data):
+            angle_RANGE = correct_angle_RANGE(angle_RANGE, len(reference_data))
 
         print('Creating pre fit')
-        result = create_pre_fit(rule, phi_RANGE, phi_RANGE_deg, reference_data, B_RES, F)
+        result = create_pre_fit(rule, angle_RANGE, angle_RANGE_deg, reference_data, B_RES, F, is_OOP)
         return result
     #except Exception as e:
     #    print('Error in ani_tools.init_load(): ',e)
@@ -224,12 +223,40 @@ def init_folder(filename):
         os.mkdir(dir_path)
     return dir_path + '/'
 
-def create_str_func(func_args):
+def create_str_func(func_args, is_OOP):
     # this function creates a string, that in the later part will be converted to an expression
     # It is necessary for taking varying K parameters into account. With this it is possible to create a function with
     # varying explicit function parameters needed for the Fit
-    func = """
-def Model_Fit_Fkt(phi_real, .ß123, **kwargs):
+    if is_OOP: # OOP
+        func = """
+def Model_Fit_Fkt(angle_real, .ß123, **kwargs):
+
+
+    fkt = []
+    B_RES = kwargs['B_RES']
+    Eq_angles = kwargs['Eq_angles']
+    #print("Now it comes!:")
+    #print(locals())
+    #print(kwargs)
+
+    Local_dict = locals()
+    Local_dict.pop('kwargs')
+    Local_dict.pop('B_RES')
+    Local_dict.pop('angle_real')
+    Local_dict.pop('fkt')
+    Local_dict.pop('Eq_angles')
+    #print(Local_dict)
+
+    a = B_RES.subs({i: l for i, l in kwargs['fixed_params'].items()})  # Parameter, B and EqAngle missing
+
+    for i, l in enumerate(angle_real):
+        b = a.subs({i: l for i, l in Local_dict.items()})
+        c = b.subs({thetaB: l, theta: Eq_angles[0][i], phi: Eq_angles[1][i], phiB: Eq_angles[2][i]})
+        fkt.append(float(c))
+    return fkt""".replace('.ß123', func_args)
+    else: # IP
+        func = """
+def Model_Fit_Fkt(angle_real, .ß123, **kwargs):
     
     
     fkt = []
@@ -242,21 +269,21 @@ def Model_Fit_Fkt(phi_real, .ß123, **kwargs):
     Local_dict = locals()
     Local_dict.pop('kwargs')
     Local_dict.pop('B_RES')
-    Local_dict.pop('phi_real')
+    Local_dict.pop('angle_real')
     Local_dict.pop('fkt')
     Local_dict.pop('Eq_angles')
     #print(Local_dict)
 
     a = B_RES.subs({i: l for i, l in kwargs['fixed_params'].items()})  # Parameter, B and EqAngle missing
 
-    for i, l in enumerate(phi_real):
+    for i, l in enumerate(angle_real):
         b = a.subs({i: l for i, l in Local_dict.items()})
         c = b.subs({phiB: l, theta: Eq_angles[0][i], phi: Eq_angles[1][i], thetaB: Eq_angles[2][i]})
         fkt.append(float(c))
     return fkt""".replace('.ß123',func_args)
     return func
 
-def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, maxBresDelta, model, params_Fit, phi_RANGE, fit_params, pool):
+def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, maxBresDelta, model, params_Fit, angle_RANGE, fit_params, pool, is_OOP):
     B_Sim = B_Sim_orig
     B_Sim2 = B_Sim2_orig
     it_while = 0
@@ -266,7 +293,7 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
         B_Sim = np.copy(B_Sim2)  # To start with the result from previous iteration
         Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
 
-        ani_result = model.fit(reference_data, params_Fit, phi_real=phi_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)  # Fit
+        ani_result = model.fit(reference_data, params_Fit, angle_real=angle_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)  # Fit
         print(ani_result.fit_report())
 
         # Refresh the parameter dict()
@@ -281,8 +308,8 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
         FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing 
 
         # Recalculate EqAngles
-        func = partial(ResFieldNumInp, B_FKT, FKT)
-        B_Sim2 = pool.map(func, phi_RANGE, reference_data)
+        func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)
+        B_Sim2 = pool.map(func, angle_RANGE, reference_data)
         B_Sim2 = np.asarray(B_Sim2)
 
         # print error between old and new result
@@ -296,7 +323,7 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
 
     return B_Sim2,fit_params
 
-def ResFieldNumInp(B_RES, F, phi_val, reference_data):
+def ResFieldNumInp(B_RES, F, is_OOP, phi_val, reference_data):
     phiB_val = phi_val
     FKT = F
 
@@ -311,16 +338,22 @@ def ResFieldNumInp(B_RES, F, phi_val, reference_data):
     B = reference_data
     #B_FKT = B_RES.subs({i: l for i, l in rule.items()})  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     #FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing
-    Eq_angles = solveAngles(B, phiB_val, FKT)
-    result = B_FKT.subs({'theta': Eq_angles[0], 'phi': Eq_angles[1], 'thetaB': Eq_angles[2], 'phiB': phiB_val})
+    Eq_angles = solveAngles(B, phiB_val, FKT, is_OOP)
+    if is_OOP: # OOP
+        result = B_FKT.subs({'theta': Eq_angles[0], 'phi': Eq_angles[1], 'phiB': Eq_angles[2], 'thetaB': phiB_val})
+    else: # IP
+        result = B_FKT.subs({'theta': Eq_angles[0], 'phi': Eq_angles[1], 'thetaB': Eq_angles[2], 'phiB': phiB_val})
     #print(float(result))
     return [float(result), float(Eq_angles[0]), float(Eq_angles[1]), float(Eq_angles[2])]
 
 def F_fkt(x, *args):
     # Function of Free Energy Density, that should be minimized
-    # *args is array:[B,phiB]
+    # *args is array:[B,phiB,fkt,is_OOP] or [B,thetaB,fkt,is_OOP]
     # x are the fitted params
-    Fit_fkt = args[2].subs({'B': args[0], 'phiB': args[1], 'theta': x[0], 'phi': x[1], 'thetaB': x[2]})
+    if args[3]: # OOP
+        Fit_fkt = args[2].subs({'B': args[0], 'thetaB': args[1], 'theta': x[0], 'phi': x[1], 'phiB': x[2]})
+    else:   # IP
+        Fit_fkt = args[2].subs({'B': args[0], 'phiB': args[1], 'theta': x[0], 'phi': x[1], 'thetaB': x[2]})
     return float(Fit_fkt)
 
 def update_rules(params_new, fixed_params):
@@ -329,7 +362,7 @@ def update_rules(params_new, fixed_params):
     print('Updated rule:', rule_new)
     return rule_new
 
-def solveAngles(B, phiB, fkt):
+def solveAngles(B, phiB, fkt, is_OOP):
     # Minimize Angles Theta, Phi, ThetaB
     # start_paras for the moment these are constant: [m.pi/2, m.pi, m.pi/2]
     # start_paras = [m.pi/2, m.pi, m.pi/2]
@@ -353,9 +386,13 @@ def solveAngles(B, phiB, fkt):
     # After evaluating some minima: Global Minimum search was everytime equivalent to local minima search (sometimes modulo 2*PI). This equivalence must not be true in every case!!!
     # ----------------------------------------------------------------------------------------------------------------------------------
     Bounds = [(0, 2 * m.pi), (0, 2 * m.pi), (0, 2 * m.pi)]
-    start_paras = np.asarray([m.pi / 2, m.pi, m.pi / 2])
-    result = minimize(F_fkt, start_paras, args=(B, phiB, fkt), method='L-BFGS-B',
-                      bounds=Bounds)
+    if is_OOP: # OOP
+        #[Theta, Phi, PhiB]
+        start_paras = np.asarray([m.pi / 2, m.pi, m.pi])
+    else:
+        # [Theta, Phi, ThetaB]
+        start_paras = np.asarray([m.pi / 2, m.pi, m.pi / 2])
+    result = minimize(F_fkt, start_paras, args=(B, phiB, fkt, is_OOP), method='L-BFGS-B',bounds=Bounds)
     # alternatively a global search can be performed using shgo or differential_evolution, look up scipy Docs.
     # result = shgo(F_fkt,Bounds, args=(B,phiB,fkt))  #Works as fast as local search (maybe even faster), but produces weird artifacts in plot!?
     # result = dual_annealing(F_fkt,Bounds, args=(B,phiB,fkt))   # Finds nice solution but takes years to compute one array with Anglestep = m.pi/40
@@ -363,19 +400,19 @@ def solveAngles(B, phiB, fkt):
     ##print(result.x[0],result.x[1],result.x[2],"\"Local Minimum\"")
     return result.x[0], result.x[1], result.x[2]
 
-def create_pre_fit(rules_start, phi_RANGE, phi_RANGE_deg, reference_data, B_RES, F):
+def create_pre_fit(rules_start, angle_RANGE, angle_RANGE_deg, reference_data, B_RES, F, is_OOP):
     pool = Pool()  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
-    func = partial(ResFieldNumInp, B_FKT, FKT) # indirectly add more than one functional arguments without *args or **kwargs
-    B_Sim = pool.map(func, phi_RANGE, reference_data)  # Now this function can be mapped to the pool using an array phi_RANGE
+    func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP) # indirectly add more than one functional arguments without *args or **kwargs
+    B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     #pool.close()
-    return B_Sim[:, 0], reference_data, phi_RANGE_deg
+    return B_Sim[:, 0], reference_data, angle_RANGE_deg
 
-def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad):
-    #phi_RANGE is array of rad not shifted
+def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad, is_OOP):
+    #angle_RANGE is array of rad not shifted
     #phi_array is aray of deg shifted
     start = time.time()
     
@@ -384,8 +421,8 @@ def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, mode
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
 
-    func = partial(ResFieldNumInp, B_FKT, FKT)  # indirectly add more than one functional arguments without *args or **kwargs
-    B_Sim = pool.map(func, phi_RANGE, reference_data)  # Now this function can be mapped to the pool using an array phi_RANGE
+    func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)  # indirectly add more than one functional arguments without *args or **kwargs
+    B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
 
@@ -400,7 +437,7 @@ def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, mode
     # ---------Now the iteration could start--------------
     # 4. calculate error between B_sim1 and B_Sim2, if bigger than maxBresDelta, start iterating
     # 5. Iteration: set B_Sim1 = B_Sim2 and go to step 1. until error is smaller than maxBresDelta
-    ani_result = model.fit(reference_data, params_Fit, phi_real=phi_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)
+    ani_result = model.fit(reference_data, params_Fit, angle_real=angle_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)
     print(ani_result.fit_report())
 
     # Refresh the parameter dict()
@@ -414,8 +451,8 @@ def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, mode
     B_FKT = str(B_RES.subs({i: l for i, l in rule.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing 
 
-    func = partial(ResFieldNumInp, B_FKT, FKT)
-    B_Sim2 = pool.map(func, phi_RANGE, reference_data)
+    func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)
+    B_Sim2 = pool.map(func, angle_RANGE, reference_data)
     B_Sim2 = np.asarray(B_Sim2)
 
     delta = np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]) 
@@ -424,7 +461,7 @@ def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, mode
 
     if delta > maxBresDelta:
         # if delta is too big start iterating
-        Sim_result = iteration(B_Sim, B_Sim2, B_RES, fixed_params,reference_data, F,maxBresDelta, model, params_Fit, phi_RANGE, fit_params, pool)
+        Sim_result = iteration(B_Sim, B_Sim2, B_RES, fixed_params,reference_data, F,maxBresDelta, model, params_Fit, angle_RANGE, fit_params, pool, is_OOP)
         # Sim_result is now a list 5D List: 
         #    [:, 0] = B_Sim
         #    [:, 1] = Eq_Angle1
@@ -449,11 +486,11 @@ def main_loop(plot: bool, rules_start, phi_RANGE, reference_data, B_RES, F, mode
     print('It took',end)
 
     if plot:
-        phi_deg = pool.map(rad_to_deg, phi_RANGE)
+        phi_deg = pool.map(rad_to_deg, angle_RANGE)
         plt.cla()
         plt.clf()
         plt.plot(phi_deg, B_Sim2[:, 0], '-g', label='Simulation')
-        # plt.plot(phi_RANGE_deg, ani_result.best_fit, '-r', label='best fit')
+        # plt.plot(angle_RANGE_deg, ani_result.best_fit, '-r', label='best fit')
         #plt.plot(phi_deg, B_Sim[:, 0], '-g', label='Simulation1')
         plt.plot(phi_deg, reference_data, '-b', label='Interpolation')
         plt.scatter(phi_deg, reference_data, label='Experiment')

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1299</width>
-    <height>903</height>
+    <height>907</height>
    </rect>
   </property>
   <property name="font">
@@ -995,6 +995,23 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
+           <widget class="QComboBox" name="comboBox_angular_ori">
+            <property name="maxVisibleItems">
+             <number>2</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Angular dependence (Orientation): Azimuthal (IP-Phi-dependence)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Angular dependence (Orientation): Polar (OOP-Theta dependence)</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
              <layout class="QGridLayout" name="gridLayout_8">
@@ -1161,6 +1178,40 @@
             </item>
             <item>
              <layout class="QGridLayout" name="gridLayout_9">
+              <item row="6" column="0">
+               <widget class="QPushButton" name="preview_button_Py">
+                <property name="text">
+                 <string>Run Preview</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_11">
+                <property name="text">
+                 <string>Anglestep :</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="Label_5">
+                <property name="font">
+                 <font>
+                  <pointsize>16</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Options</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
               <item row="3" column="1">
                <widget class="QLineEdit" name="LineEdit_Start_Val_Py">
                 <property name="font">
@@ -1173,21 +1224,6 @@
                 </property>
                 <property name="text">
                  <string>863.25, 261345, 13720.6, 5.0756</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="label_35">
-                <property name="font">
-                 <font>
-                  <underline>false</underline>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Shift :</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>
@@ -1247,37 +1283,37 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
-               <widget class="QLabel" name="Label_5">
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_35">
                 <property name="font">
                  <font>
-                  <pointsize>16</pointsize>
-                  <weight>75</weight>
-                  <bold>true</bold>
+                  <underline>false</underline>
                  </font>
                 </property>
                 <property name="text">
-                 <string>Options</string>
+                 <string>Shift :</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
-              <item row="5" column="0">
-               <widget class="QLabel" name="label_11">
-                <property name="text">
-                 <string>Anglestep :</string>
+              <item row="6" column="1">
+               <widget class="QSpinBox" name="spinBox_function_select">
+                <property name="suffix">
+                 <string/>
                 </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
+                <property name="prefix">
+                 <string>Function: </string>
                 </property>
-               </widget>
-              </item>
-              <item row="6" column="0">
-               <widget class="QPushButton" name="preview_button_Py">
-                <property name="text">
-                 <string>Run Preview</string>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>1</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
                 </property>
                </widget>
               </item>

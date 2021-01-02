@@ -185,7 +185,8 @@ class MyForm(QMainWindow):
         print("Debug Funktion")
         #print(self.dyn_params_table[1])
         #print(len(self.dyn_params_table[1]))
-        self.plot_params_to_plot_tab()
+        #self.plot_params_to_plot_tab()
+        print(self.preB_Sim)
 
     def doit(self):
         self.w = Popup_View(Z,self.H_range,self.WinkelMax)
@@ -259,17 +260,18 @@ class MyForm(QMainWindow):
         self.preB_Sim = self.python_submit(True)
         # if no pre is present, then ani_pre_fit is True
         # ani_pre_fit determines whether it is the first time fitting or just a shift
-        if not self.preB_Sim == None:
-            if value_opt['ani_pre_fit']:
-                #value_opt['ani_pre_fit'] = False
-                try:
-                    self.maxWinkel = max(self.preB_Sim[2])
-                    self.minWinkel = min(self.preB_Sim[2])
-                except Exception as e:
-                    print('Error in main.make_preB_sim(): ',e)
-                    print('Try fitting the spectra first!')
-            shift = self.ui.shift_SpinBox_Py.value()
-            self.get_shift(shift)
+        print('MOINAWDAWD',self.preB_Sim)
+        #if not self.preB_Sim == None:
+        if value_opt['ani_pre_fit']:
+            #value_opt['ani_pre_fit'] = False
+            try:
+                self.maxWinkel = max(self.preB_Sim[2])
+                self.minWinkel = min(self.preB_Sim[2])
+            except Exception as e:
+                print('Error in main.make_preB_sim(): ',e)
+                print('Try fitting the spectra first!')
+        shift = self.ui.shift_SpinBox_Py.value()
+        self.get_shift(shift)
         #preB_Sim: [0] = B_Sim; [1] = B_Exp; [2] = phi_RANGE_deg
 
     def get_shift(self,d):
@@ -300,8 +302,6 @@ class MyForm(QMainWindow):
         self.ui.Ani_Const_Plot.canvas.ax.clear()
         self.ui.Ani_Const_Plot.canvas.ax.set_ylabel('Resonance Field [T]')
         self.ui.Ani_Const_Plot.canvas.ax.set_xlabel('Angle [Deg]')
-
-        #print(angle)
 
         self.ui.Ani_Const_Plot.canvas.ax.scatter(angle, data[1], color='black', marker='o',
                                                  label='Experimental data')  # Plot experimental Data
@@ -1077,7 +1077,8 @@ class MyForm(QMainWindow):
         else:
             fileName, _ = QFileDialog.getOpenFileName(self, "Please select the file to load Data")
             self.save_filename = fileName
-            self.make_preB_sim()
+            return init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
+            #self.make_preB_sim()
         #except Exception as e:
         #    print('Error in main.python_submit(): ',e)
             #print('Try fitting the spectra first!')
