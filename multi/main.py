@@ -156,6 +156,7 @@ class MyForm(QMainWindow):
         self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
         self.ui.checkBox_fit_log.stateChanged.connect(self.fit_log)
         self.ui.Button_reset_fit.clicked.connect(self.reset_fit)
+        self.ui.comboBox_angular_ori.activated.connect(self.change_anifit_ui)
 
         # Set up every Key press Event
 
@@ -260,7 +261,6 @@ class MyForm(QMainWindow):
         self.preB_Sim = self.python_submit(True)
         # if no pre is present, then ani_pre_fit is True
         # ani_pre_fit determines whether it is the first time fitting or just a shift
-        print('MOINAWDAWD',self.preB_Sim)
         #if not self.preB_Sim == None:
         if value_opt['ani_pre_fit']:
             #value_opt['ani_pre_fit'] = False
@@ -321,6 +321,23 @@ class MyForm(QMainWindow):
 
         self.ui.Ani_Const_Plot_Py.canvas.ax.legend()
         self.ui.Ani_Const_Plot_Py.canvas.draw()
+
+    def change_anifit_ui(self,*args):
+        # args i the index
+        # index = 0 == IP Fit
+        # index = 1 == OOP Fit
+        index = args[0]
+
+        if index == 0:
+            self.ui.LineEdit_fitted_params_Py.setText('K2p, K2s, K4p, phiU')
+            self.ui.LineEdit_fixed_Param_Py.setText('omega, g, M, K4s')
+            self.ui.LineEdit_fixed_values_Py.setText('2*Pi*9.8782*10^9, 2.05, 1.53*10^6, 0')
+            self.ui.LineEdit_Start_Val_Py.setText('863.25, 261345, 13720.6, 5.0756')
+        else:
+            self.ui.LineEdit_fitted_params_Py.setText('K4s, phiU')
+            self.ui.LineEdit_fixed_Param_Py.setText('omega, g, M, K2p, K2s, K4p')
+            self.ui.LineEdit_fixed_values_Py.setText('2*Pi*9.8782*10^9, 2.05, 1.53*10^6, 863.25, 261345, 13720.6')
+            self.ui.LineEdit_Start_Val_Py.setText('15000.0, 5.0756')
 
     def robust_fit(self):
         global value_opt
@@ -703,9 +720,7 @@ class MyForm(QMainWindow):
             except:
                 print("Weird Bug, I know, just look at the first Tab while loading data :D")
 
-
             # B_min bis B_max
-
 
             self.ui.Plot_Indi_View.lr.setBounds([round(self.B_min),self.B_max]) # Set Range Boundaries for linearregionitem
 
@@ -1067,17 +1082,23 @@ class MyForm(QMainWindow):
         #Then call init_load from ani_tool.py
 
         #try:
+        is_OOP = self.ui.comboBox_angular_ori.currentIndex()
+        if is_OOP == 0: # IP
+            is_OOP = False
+        else: # OOP
+            is_OOP = True
+
         if hasattr(self,"save_filename"):
             print("Python Submit")
             if not args[0]:
-                init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True)
+                init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True, is_OOP)
             else:
-                result = init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
+                result = init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False, is_OOP)
                 return result
         else:
             fileName, _ = QFileDialog.getOpenFileName(self, "Please select the file to load Data")
             self.save_filename = fileName
-            return init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False)
+            return init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False, is_OOP)
             #self.make_preB_sim()
         #except Exception as e:
         #    print('Error in main.python_submit(): ',e)

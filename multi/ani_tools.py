@@ -64,7 +64,7 @@ def get_fit_options_from_file(fname):
         # If Lineshape = 3 its Dyson
     return Lineshape
 
-def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, *args):
+def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, ani_ori: bool, *args):
     #global B_RES
     # filename string,  value, path to parameter.dat file used for fitting
     # FreeE string,  of Free Energy Density
@@ -74,9 +74,6 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
     # anglestep: integer
     # Fit: bool, to control whether to fit or not
     # Plot: bool, same as Fit
-
-
-
 
     print(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit, Plot)
 
@@ -160,11 +157,7 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
         else:
             return angle_RANGE
 
-    if args:
-        # args will be present if OOP Fit is selected
-        is_OOP = True
-    else:
-        is_OOP = False
+    is_OOP = ani_ori
 
     if Fit:
         angle_min = (Winkel_min + shift) * m.pi / 180  # define smallest value; shifted
