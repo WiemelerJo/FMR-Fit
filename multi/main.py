@@ -109,7 +109,7 @@ class Worker(QThread):
         params_table = Fit_obj.give_param_table(spectrum[0])
         model = Fit_obj.give_model()
 
-        for l in range(i_min,i_max):
+        for l in range(self.i_min,self.i_max):
             temp_spectra = self.dyn_params_table[1][l]
             if temp_spectra == None:    # Only use spaces that are equal to None
                 self.i_signal.emit()  # update progressbar
@@ -155,8 +155,10 @@ class MyForm(QMainWindow):
         self.ui.preview_button_Py.clicked.connect(self.make_preB_sim)
         self.ui.spinBox_fit_num.valueChanged.connect(self.select_fit_number)
         self.ui.checkBox_fit_log.stateChanged.connect(self.fit_log)
+        self.ui.Button_reset_all.clicked.connect(self.reset_fit_all)
         self.ui.Button_reset_fit.clicked.connect(self.reset_fit)
         self.ui.comboBox_angular_ori.activated.connect(self.change_anifit_ui)
+        self.ui.spinBox_function_select.valueChanged.connect(self.anifit_function_select)
 
         # Set up every Key press Event
 
@@ -187,9 +189,10 @@ class MyForm(QMainWindow):
         #print(self.dyn_params_table[1])
         #print(len(self.dyn_params_table[1]))
         #self.plot_params_to_plot_tab()
-        print(self.preB_Sim)
+
 
     def doit(self):
+        # Start Colour Plot Popup
         self.w = Popup_View(Z,self.H_range,self.WinkelMax)
         self.w.setWindowTitle("Colourplot")
         self.w.setGeometry(0, 0, 1280, 720)
@@ -242,7 +245,6 @@ class MyForm(QMainWindow):
     def set_increment(self):
         try:
             if self.index_model == 2:
-                print(self.increment)
                 for zähler in range(0,self.fit_num*3+2):
                     self.ui.Parameter_table.cellWidget(zähler, 0).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 1).setSingleStep(self.increment)
@@ -381,7 +383,6 @@ class MyForm(QMainWindow):
 
     def set_datanumber(self):
         #Defines the dataset looked at
-        global i
         global Bdata2
         global Adata2
         global value_opt
@@ -407,13 +408,24 @@ class MyForm(QMainWindow):
         self.progress += 1
         self.ui.progressBar.setValue(self.progress)
 
-    def set_model_type_number(self):
+    def set_model_type_number(self,*args):
         # sets the integer number of index_model
         global value_opt
-        if self.index_model == 2:
-            value_opt['index_model_num'] = 3
-        elif self.index_model == 3:
-            value_opt['index_model_num'] = 4
+        if args:
+            # args will be self.index_model
+            if args[0] == 2:
+                self.index_model_num = 3
+                value_opt['index_model_num'] = 3
+            elif args[0] == 3:
+                self.index_model_num = 4
+                value_opt['index_model_num'] = 4
+        else:
+            if self.index_model == 2:
+                self.index_model_num = 3
+                value_opt['index_model_num'] = 3
+            elif self.index_model == 3:
+                self.index_model_num = 4
+                value_opt['index_model_num'] = 4
 
     def model_type(self):
         # selects the type of function used in the fit
@@ -661,14 +673,9 @@ class MyForm(QMainWindow):
         global Bdata
         global Adata
         global Winkeldata
-        global n
-        global i_min
-        global i_max
         global D_min
         global D_max
         global chunksize
-        global X
-        global Y
         global Z
         fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
         if fname[0]:
@@ -696,9 +703,10 @@ class MyForm(QMainWindow):
             Winkeldata = []
             for i in range(chunksize):
                 Winkeldata.append(Winkeldata_raw[i][0])
-            X = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize) #List of sublists, magnetic field, for colour plot
-            Y = np.split(np.array(D[:,2]),chunksize)    #List of sublists, angle data, for colour plot
+            #X = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize) #List of sublists, magnetic field, for colour plot
+            #Y = np.split(np.array(D[:,2]),chunksize)    #List of sublists, angle data, for colour plot
             Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot
+
             #X = D[:,1].reshape(72,1024)
             #Y = D[:,2].reshape(72,1024)
             #Z = D[:,3].reshape(72,1024)
@@ -779,9 +787,7 @@ class MyForm(QMainWindow):
             Params_name = np.asarray(ast.literal_eval(header_parts[3].split('[')[1].split(']')[0]))
 
             self.index_model = Lineshape
-            print(value_opt['index_model_num'])
             self.set_model_type_number()
-            print(value_opt['index_model_num'])
             self.fit_num = int((len(Params_name)-2)/value_opt['index_model_num'])
         else:
             print('File was not created by this script!')
@@ -810,9 +816,11 @@ class MyForm(QMainWindow):
         # Params array with slope and offset inside!! So : [slope,offset,....]
 
         #self.block_spinbox_signal(True)
+
         param = self.dyn_params_table[1][self.i]
+        self.set_model_type_number(param[0])
         if param != None and param != False:
-            for zaehler in range(0, self.fit_num * self.index_model + 4):
+            for zaehler in range(0, param[1] * self.index_model_num + 2):
                 param[zaehler+2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
             self.plot_data(self.i)
 
@@ -930,7 +938,6 @@ class MyForm(QMainWindow):
        # self.block_spinbox_signal(False)
 
     def plot_params_to_plot_tab(self):
-        # Todo: Find way to change colours of plots different functions
         params_raw = self.dyn_params_table[1]
         angles_raw = self.dyn_params_table[0]
 
@@ -988,7 +995,8 @@ class MyForm(QMainWindow):
             self.save_filename = fileName
             file, names = self.create_param_file()
             now = datetime.datetime.now()
-            np.savetxt(self.save_filename, file, delimiter='\t', newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape  \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"), self.index_model,exceptions, names))
+            np.savetxt(self.save_filename, file, delimiter='\t', newline='\n', header='FMR-Fit\nThis data was fitted {} using: $.{} Lineshape and {} Function(s) \nDropped Points {}     \nData is arranged as follows {}'.format(now.strftime("%d/%m/%Y, %H:%M:%S"), self.index_model,self.fit_num,exceptions, names))
+            self.ui.spinBox_function_select.setMaximum(int(self.fit_num))
 
     def create_param_file(self):
         param_table = []
@@ -1030,7 +1038,7 @@ class MyForm(QMainWindow):
                     self.dyn_params_table[0][l] = [l,False]
             self.ui.progressBar.setMaximum(self.i_max - 1 - len(exceptions))
             # Start second Thread to fit angular dependence
-            self.get_thread = Worker(Bdata, Adata, self.i, value_opt['dyn'], i_min, i_max, j, j_min,
+            self.get_thread = Worker(Bdata, Adata, self.i, value_opt['dyn'], self.i_min, self.i_max, j, j_min,
                                      self.dyn_params_table)
             self.get_thread.start()
             self.get_thread.i_signal.connect(self.update_bar)
@@ -1044,6 +1052,10 @@ class MyForm(QMainWindow):
         self.plot_params_to_plot_tab()
 
     def reset_fit(self):
+        self.dyn_params_table[1][self.i] = None
+        self.set_datanumber()
+
+    def reset_fit_all(self):
         # reset self.dyn_params_table to None
         for i in range(self.i_max):
             self.dyn_params_table[1][i] = None
@@ -1059,8 +1071,14 @@ class MyForm(QMainWindow):
         self.ui.plot_params.plt_R.clear()
         self.ui.plot_params.plt_A.clear()
 
+    def anifit_function_select(self,*args):
+        self.fit_select = self.ui.spinBox_function_select.value()
+
     def python_submit(self,*args):
         # Python AniFit routine
+
+        self.anifit_function_select()
+
         #try:
         # FreeEnergy from GUI has to be converted to Python synatx
         F = self.ui.LineEdit_free_E_den_Py.text()
@@ -1089,16 +1107,20 @@ class MyForm(QMainWindow):
             is_OOP = True
 
         if hasattr(self,"save_filename"):
+            self.get_fit_options_from_file(self.save_filename)
+            self.ui.spinBox_function_select.setMaximum(int(self.fit_num))
             print("Python Submit")
             if not args[0]:
-                init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True, is_OOP)
+                init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, True, True, is_OOP, self.fit_select )
             else:
-                result = init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False, is_OOP)
+                result = init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False, is_OOP, self.fit_select )
                 return result
         else:
             fileName, _ = QFileDialog.getOpenFileName(self, "Please select the file to load Data")
             self.save_filename = fileName
-            return init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False, is_OOP)
+            self.get_fit_options_from_file(self.save_filename)
+            self.ui.spinBox_function_select.setMaximum(int(self.fit_num))
+            return init_load(self.save_filename, F, ani_fit_params, ani_fixed_params, shift, anglestep, False, False, is_OOP, self.fit_select )
             #self.make_preB_sim()
         #except Exception as e:
         #    print('Error in main.python_submit(): ',e)
@@ -1162,7 +1184,7 @@ class MyForm(QMainWindow):
             WinkelColumn = 7
         Shift = self.ui.shift_SpinBox.value()
         #print(Params,StartVal)
-        choice = QMessageBox.question(self, 'Sumbitting!',"This fitting can take a while!\nThe GUI will be unresponsive after submission, are you sure to continue?")
+        choice = QMessageBox.question(self, 'Submitting!',"This fitting can take a while!\nThe GUI will be unresponsive after submission, are you sure to continue?")
         try:
             if choice == QMessageBox.Yes:
                 #p = Process(target=py2mat.submit(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift))

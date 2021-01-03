@@ -46,10 +46,6 @@ F = Function('F')
 
 
 def get_fit_options_from_file(fname):
-    global index_model
-    global fit_num
-    global value_opt
-
     with open(fname) as f:
         header_parts = []
         Title = f.readline()
@@ -62,9 +58,11 @@ def get_fit_options_from_file(fname):
         Lineshape = int(header_parts[1].split('$.')[1].split(' Lineshape')[0])  # Extract lineshape out of params file
         # If Lineshape = 2 its Lorentz
         # If Lineshape = 3 its Dyson
-    return Lineshape
 
-def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, ani_ori: bool, *args):
+        fit_num = int(header_parts[1].split(' ')[11])
+    return Lineshape, fit_num
+
+def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, ani_ori: bool, fit_select:int, *args):
     #global B_RES
     # filename string,  value, path to parameter.dat file used for fitting
     # FreeE string,  of Free Energy Density
@@ -90,20 +88,18 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     # Load fitted Params and determine Lineshape
 
-    Lineshape = get_fit_options_from_file(filename)
+    Lineshape, fit_num = get_fit_options_from_file(filename)
+
     D = np.loadtxt(filename, dtype='float', skiprows=0) # Data
     if Lineshape == 2: #Lorentz
-        R_raw = D[:, 3]
-        Winkel = D[:, 5].flatten()
+        R_raw = D[:, 3 * fit_select]
+        Winkel = D[:, 3 * fit_num + 2].flatten()
     elif Lineshape == 3: #Dyson
         print("Dyson")
-        R_raw = D[:, 4]
-        Winkel = D[:, 6].flatten()
-    else: # Rest (not implemented yet), assume Dyson
+        R_raw = D[:, 4 * fit_select]
+        Winkel = D[:, 4 * fit_num + 2].flatten()
+    else: # Rest (not implemented yet)
         print("Please use either Lorentz or Dyson shape!")
-        R_raw = D[:, 4]
-        Winkel = D[:, 6].flatten()
-
     
     B_inter = interp1d(Winkel, R_raw)  # Interpoliertes B_res, array mit Länge len(Winkel)
 

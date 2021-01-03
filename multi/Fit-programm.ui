@@ -349,7 +349,7 @@
                    <string>Will delete every previous fit!</string>
                   </property>
                   <property name="text">
-                   <string>Reset Fit</string>
+                   <string>Reset Present Fit</string>
                   </property>
                  </widget>
                 </item>
@@ -368,6 +368,13 @@
                   </property>
                   <property name="text">
                    <string>Add to dropped Spectra</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="1">
+                 <widget class="QPushButton" name="Button_reset_all">
+                  <property name="text">
+                   <string>Reset All</string>
                   </property>
                  </widget>
                 </item>
@@ -1349,7 +1356,24 @@
     <addaction name="actionSave"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionAmplitude_Inverter"/>
+    <addaction name="actionMeasurement_Modifier"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionInfo"/>
+    <addaction name="actionContact"/>
+    <addaction name="actionBug_Report"/>
+   </widget>
    <addaction name="menufile"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuHelp"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -1370,6 +1394,31 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionAmplitude_Inverter">
+   <property name="text">
+    <string>Amplitude Inverter</string>
+   </property>
+  </action>
+  <action name="actionMeasurement_Modifier">
+   <property name="text">
+    <string>Measurement Modifier</string>
+   </property>
+  </action>
+  <action name="actionInfo">
+   <property name="text">
+    <string>Info</string>
+   </property>
+  </action>
+  <action name="actionContact">
+   <property name="text">
+    <string>Contact</string>
+   </property>
+  </action>
+  <action name="actionBug_Report">
+   <property name="text">
+    <string>Bug Report</string>
    </property>
   </action>
  </widget>
