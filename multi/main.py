@@ -17,7 +17,7 @@ from lmfit import Parameters
 from matplotlib.colors import ListedColormap
 from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox, QShortcut
 from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker
-from PyQt5.Qt import Qt
+from PyQt5.Qt import Qt, QUrl, QDesktopServices
 from PyQt5.QtGui import QKeySequence
 from Fitprogramm import *
 #from arrays import *
@@ -26,6 +26,7 @@ from parameter_plot import Params_Plot
 from multiprocessing import Process
 from ani_tools import *
 from CustomWidgets import Popup_View, Fit_Log
+from Measurement_mod import Measurement_Mod
 from func_gen import Gen_Lorentz, Gen_Dyson
 from array_gen import *
 
@@ -131,15 +132,25 @@ class MyForm(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # Setup every Button, Slider, ....
+        # File Menu
         self.ui.actionOpen.triggered.connect(self.openFileDialog)
         self.ui.actionSave.triggered.connect(self.saveFileDialog)
         self.ui.actionExit.triggered.connect(self.Exit)
+
+        # Tool Menu
+        self.ui.actionAmplitude_Inverter.triggered.connect(self.amplitude_inverter)
+        self.ui.actionMeasurement_Modifier.triggered.connect(self.measurement_modifier)
+
+        # Help Menu
+        self.ui.actionInfo.triggered.connect(self.open_info)
+        self.ui.actionContact.triggered.connect(self.open_contact)
+        self.ui.actionBug_Report.triggered.connect(self.open_bug_report)
+
+        # Setup every Button, Slider, ....
         self.ui.Button_Plot.clicked.connect(self.plot)
         self.ui.comboBox_fit_model.currentIndexChanged.connect(self.model_type)
         self.ui.Button_dyn_fit.clicked.connect(self.start_worker)
         self.ui.select_datanumber.valueChanged.connect(self.set_datanumber)
-
         self.ui.Dropped_points_edit.editingFinished.connect(self.Exceptions)
         self.ui.Button_dropped_points.clicked.connect(self.button_dropped_points)
         self.ui.plot_parameter.clicked.connect(self.parameter_plot)
@@ -161,7 +172,6 @@ class MyForm(QMainWindow):
         self.ui.spinBox_function_select.valueChanged.connect(self.anifit_function_select)
 
         # Set up every Key press Event
-
         self.shortcut_next = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F2), self) # Goto next Spectra
         self.shortcut_next.activated.connect(self.keyboard_next_spectra)
         self.shortcut_next = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_Right), self) # Goto next spectra
@@ -184,12 +194,40 @@ class MyForm(QMainWindow):
 
         self.show()
 
-    def test(self):
+    def test(self,*args,**kwargs):
         print("Debug Funktion")
         #print(self.dyn_params_table[1])
         #print(len(self.dyn_params_table[1]))
         #self.plot_params_to_plot_tab()
 
+    def amplitude_inverter(self):
+        # Invert Amplitude in a specific angle range
+        print('amplitude_inverter')
+
+    def measurement_modifier(self):
+        # Merge two measurements
+        # For example OOP with highfield OOP to catch hard axis
+        #try:
+        print('measurement_modifier')
+        print(self.i_min, self.i_min)
+        self.m_mod = Measurement_Mod(Bdata, Adata, Winkeldata_raw, self.WinkelMax, self.i_min, self.i_max)
+        self.m_mod.setWindowTitle("Measurment Modifier")
+        self.m_mod.setGeometry(0,0,1000,720)
+        self.m_mod.show()
+        #except Exception as e:
+        #    print('Error in main.measurement_modifier: ',e)
+
+    def open_contact(self):
+        url = QUrl("https://www.uni-due.de/agfarle/team/staff_deu.php?pers_id=269")
+        QDesktopServices.openUrl(url)
+
+    def open_info(self):
+        url = QUrl("https://github.com/WiemelerJo/FMR-Fit")
+        QDesktopServices.openUrl(url)
+
+    def open_bug_report(self):
+        url = QUrl("https://github.com/WiemelerJo/FMR-Fit/issues")
+        QDesktopServices.openUrl(url)
 
     def doit(self):
         # Start Colour Plot Popup
@@ -672,6 +710,7 @@ class MyForm(QMainWindow):
         global i
         global Bdata
         global Adata
+        global Winkeldata_raw
         global Winkeldata
         global D_min
         global D_max

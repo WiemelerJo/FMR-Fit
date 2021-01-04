@@ -26,6 +26,52 @@ class PlotWidget(QtWidgets.QWidget):
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
 
+class Small_Plot(QtWidgets.QWidget):
+    def __init__(self,parent=None):
+        QtWidgets.QWidget.__init__(self, parent)  # Inherit from QWidget
+        self.layout = QtWidgets.QVBoxLayout()
+        self.win = pg.GraphicsLayoutWidget()
+
+        #Z = np.asarray(args[0])
+        #self.Z = np.transpose(Z)
+
+        #chunk = args[1]
+        #winkel_max = args[2]
+
+        # win = pg.GraphicsLayoutWidget()
+        self.view = self.win.addViewBox(0, 1)
+
+        xScale = pg.AxisItem(orientation='bottom', linkView=self.view)
+        self.win.addItem(xScale, 1, 1)
+        yScale = pg.AxisItem(orientation='left', linkView=self.view)
+        self.win.addItem(yScale, 0, 0)
+
+        #self.label = pg.TextItem(text='Hover Event', anchor=(0, 0))
+        #self.view.addItem(self.label, ignoreBounds=True)
+
+        yScale.setLabel('Magnetic Field', units='mT')
+        xScale.setLabel('Angle', units='Deg')
+
+        self.img = pg.ImageItem(border='w')
+        self.img2 = pg.ImageItem(border='w')
+
+        #data = np.array(self.Z)
+
+        #img.setImage(data)
+        #self.img.hoverEvent = self.imageHoverEvent
+
+        #self.img.setRect(QtCore.QRect(0, 0, chunk, winkel_max))
+        self.view.addItem(self.img)
+        self.view.addItem(self.img2)
+        self.img2.setZValue(10)
+
+        hist = pg.HistogramLUTItem()
+        hist.setImageItem(self.img)
+        self.win.addItem(hist, 0, 2)
+
+        self.layout.addWidget(self.win)
+        self.setLayout(self.layout)
+
 class Plot_pyqtgraph(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)  # Inherit from QWidget
