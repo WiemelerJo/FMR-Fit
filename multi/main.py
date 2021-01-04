@@ -209,7 +209,6 @@ class MyForm(QMainWindow):
         # For example OOP with highfield OOP to catch hard axis
         #try:
         print('measurement_modifier')
-        print(self.i_min, self.i_min)
         self.m_mod = Measurement_Mod(Bdata, Adata, Winkeldata_raw, self.WinkelMax, self.i_min, self.i_max)
         self.m_mod.setWindowTitle("Measurment Modifier")
         self.m_mod.setGeometry(0,0,1000,720)

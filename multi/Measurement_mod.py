@@ -72,7 +72,8 @@ class Measurement_Mod(QtWidgets.QWidget):
             self.WinkelMin_2 = min(D[:, 2])
             self.WinkelMax_2 = max(D[:, 2])
             self.winkel_diff_2 = max(D[:, 2]) - min(D[:, 2])
-
+            self.winkelstep2 = D[:, 2][n] - D[:, 2][n-1]
+            print(self.winkelstep2)
 
             self.plot(2)
             self.calculate = True
@@ -95,7 +96,10 @@ class Measurement_Mod(QtWidgets.QWidget):
         Winkeldata_fin = []
 
         offset = self.ui.spinbox_offset.value()
-        self.winkelarray = np.arange(offset, offset + self.winkel_diff_2, self.winkelstep)
+        if self.winkelstep != self.winkelstep2:
+            print('Winkelssteps different!')
+            print(self.winkelstep,self.winkelstep2)
+        self.winkelarray = np.arange(offset, offset + self.winkel_diff_2 + self.winkelstep, self.winkelstep)
 
         A_extrapol = np.vectorize(self.extrapol)
 
@@ -105,20 +109,22 @@ class Measurement_Mod(QtWidgets.QWidget):
 
             # Add to Adata1
             # A_extrapol = interp1d(self.Bdata1[i], self.Z_1[i], fill_value='extrapolate')
-            slope, offset, r, p, se = linregress(self.Bdata1[i],self.Z_1[i])
             # Adata_fin.append(np.append(self.Z_1[i],A_extrapol(Add_B_array)))
-            Adata_fin.append(np.append(self.Z_1[i], A_extrapol(Add_B_array, slope, offset)))
-            if i in self.winkelarray:
-                # PROBLEM
-                for l in self.Z_2:
-                    for k in range(len(l) + 1):
-                        Adata_fin[i][-k] = l[-k]
+
+            slope, intercept, r, p, se = linregress(self.Bdata1[i],self.Z_1[i])
+            Adata_fin.append(np.append(self.Z_1[i], A_extrapol(Add_B_array, slope, intercept)))
+            #print(len(self.winkelarray),len(self.Z_2))
+            if self.Winkeldata1[i][0] in self.winkelarray:
+                index = np.where(self.winkelarray == self.Winkeldata1[i][0])[0]
+                for k in range(len(self.Z_2[index[0]])):
+                    Adata_fin[i][-k] = self.Z_2[index[0]][-k]
 
         Bdata_fin = np.asarray(Bdata_fin).flatten() * 10000
         Adata_fin = np.asarray(Adata_fin).flatten()
         Winkeldata_fin = np.asarray(Winkeldata_fin).flatten()
 
-        index = np.linspace(1,Bdata_fin.shape[0],num=Bdata_fin.shape[0]) #np.full(len(Bdata_fin),420)
+        # index = np.linspace(1,Bdata_fin.shape[0],num=Bdata_fin.shape[0])
+        index = np.full(len(Bdata_fin),420)
         #print(Bdata_fin.shape[0],index.shape, Bdata_fin.shape, Adata_fin.shape, Winkeldata_fin.shape)
         save_array = [index,Bdata_fin, Winkeldata_fin, Adata_fin]
         np.savetxt('test.dat',np.transpose(save_array) ,delimiter='\t', newline='\n')
