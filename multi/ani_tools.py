@@ -5,7 +5,7 @@ from symengine.lib.symengine_wrapper import solve
 from sympy import sin, cos, sqrt, Eq, Symbol, Function, Matrix, re, sympify
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
-from scipy.optimize import shgo, differential_evolution  # activate when using global optimization
+from scipy.optimize import shgo, differential_evolution, basinhopping  # activate when using global optimization
 from pathos.multiprocessing import ProcessingPool as Pool
 
 '''try:
@@ -58,8 +58,11 @@ def get_fit_options_from_file(fname):
         Lineshape = int(header_parts[1].split('$.')[1].split(' Lineshape')[0])  # Extract lineshape out of params file
         # If Lineshape = 2 its Lorentz
         # If Lineshape = 3 its Dyson
-
-        fit_num = int(header_parts[1].split(' ')[11])
+        try:
+            fit_num = int(header_parts[1].split(' ')[11])
+        except:
+            print('Could not extract numbers of fit functions. Assuming one function!')
+            fit_num = 1
     return Lineshape, fit_num
 
 def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit: bool, Plot: bool, ani_ori: bool, fit_select:int, *args):
@@ -387,6 +390,10 @@ def solveAngles(B, phiB, fkt, is_OOP):
     # result = dual_annealing(F_fkt,Bounds, args=(B,phiB,fkt))   # Finds nice solution but takes years to compute one array with Anglestep = m.pi/40
     #result = differential_evolution(F_fkt,Bounds, args=(B,phiB,fkt)) #slower than shgo, but also nice solution
     ##print(result.x[0],result.x[1],result.x[2],"\"Local Minimum\"")
+
+    # Basinhopping might be a good approach for global minima search!
+    #args = (B, phiB, fkt, is_OOP)
+    #result = basinhopping(F_fkt,start_paras, T=0.8, stepsize=m.pi/8, niter=5,minimizer_kwargs={'args':args,"method":"L-BFGS-B"})
     return result.x[0], result.x[1], result.x[2]
 
 def create_pre_fit(rules_start, angle_RANGE, angle_RANGE_deg, reference_data, B_RES, F, is_OOP):

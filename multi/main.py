@@ -291,7 +291,7 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zähler, 0).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 1).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 2).setSingleStep(self.increment)
-                    self.ui.Parameter_table.cellWidget(zähler, 3).setSingleStep(self.increment)
+                    #self.ui.Parameter_table.cellWidget(zähler, 3).setSingleStep(self.increment)
         except:
             return 0
 
@@ -1004,6 +1004,7 @@ class MyForm(QMainWindow):
         self.ui.plot_params.plt_R.clear()
         self.ui.plot_params.plt_A.clear()
 
+
         self.ui.plot_params.plt_slope.plot(angle, params[:, 2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         self.ui.plot_params.plt_offset.plot(angle, params[:, 3],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         if self.index_model == 2: # Lorentz
@@ -1014,6 +1015,7 @@ class MyForm(QMainWindow):
                 self.ui.plot_params.plt_A.plot(angle,params[:,4+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         elif self.index_model == 3: # Dyson
             for i_num in range(1, self.fit_num + 1):
+                symbolBrush = pg.intColor(i_num)
                 self.ui.plot_params.plt_alpha.plot(angle, params[:,2+4*(i_num-1)+2],name='Function' + str(i_num), pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_db.plot(angle, params[:,3+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_R.plot(angle, params[:,4+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
