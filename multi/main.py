@@ -2,6 +2,7 @@ import sys
 import matplotlib as mpl
 mpl.use('QT5Agg')
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 import math as m
 import Functions
@@ -291,7 +292,7 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zähler, 0).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 1).setSingleStep(self.increment)
                     self.ui.Parameter_table.cellWidget(zähler, 2).setSingleStep(self.increment)
-                    self.ui.Parameter_table.cellWidget(zähler, 3).setSingleStep(self.increment)
+                    #self.ui.Parameter_table.cellWidget(zähler, 3).setSingleStep(self.increment)
         except:
             return 0
 
@@ -703,6 +704,32 @@ class MyForm(QMainWindow):
             print("Error in set_default_values:",e)
         self.block_spinbox_signal(False)
 
+    def check_header(self,fname):
+        # Searches for a header in file
+
+        with open(fname, 'r') as f:
+            line_index = 1
+            skip_value = 0
+            no_header_cnt = 0
+            while True:
+                if line_index > 20 or no_header_cnt > 3:
+                    break
+                temp_line = f.readline()
+                for i in temp_line:
+                    if i not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '\n', '.',
+                                 ' ']:  # Find character different from list and declare a possible found header for this line
+                        #print('Found possible Header', i, line_index)
+                        skip_value = line_index
+                        no_header_cnt = 0
+                        break
+                    elif i != ' ':  # Check if found data just a space, if not, then we have data. If no_header_cnt is bigger than 3, we found the header. skip_value then defines how many row to skip
+                        #print(no_header_cnt, i)
+                        no_header_cnt += 1
+                        break
+                line_index += 1
+                
+        return skip_value
+
 
     def openFileDialog(self):
         global value_opt
@@ -717,14 +744,26 @@ class MyForm(QMainWindow):
         global Z
         fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
         if fname[0]:
+            start = time.time()
+            row_skip_val = self.check_header(fname[0])
             try:
-                D = np.loadtxt(fname[0],dtype='float') #Load Data 
+                df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=row_skip_val, sep='\s+')
+                #D = np.loadtxt(fname[0], dtype='float', skiprows=2)  # Load Data with header file / Native Bruker Ascii
             except:
-                D = np.loadtxt(fname[0],dtype='float',skiprows=2)   #Load Data with header file
-            counts = np.unique(D[:,2], return_counts=True)  #get the int count of different numbers at row 3
-            counts1 = counts[1]
-            n = counts1[0]
-            chunksize = int(len(D[:,0])/n)  #set chunk size for example 1024,2048,4096
+                df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\s+')
+                #D = np.loadtxt(fname[0], dtype='float')  # Load Data Without Header
+
+            counts = df['Sample Angle [deg]'].value_counts()[0]
+            chunksize = int(df.shape[0] / counts)
+
+            Bdata = np.split(np.true_divide(df['Field [G]'].to_numpy(), 10000), chunksize)
+            Adata = np.split(df['Intensity []'].to_numpy(), chunksize)
+            Winkeldata_raw = np.split(df['Sample Angle [deg]'].to_numpy(), chunksize)
+
+            #counts = np.unique(D[:,2], return_counts=True)  #get the int count of different numbers at row 3
+            #counts1 = counts[1]
+            #n = counts1[0]
+            #chunksize = int(len(D[:,0])/n)  #set chunk size for example 1024,2048,4096
 
             i = 0   # laufvariable = 0
             i_min = 0
@@ -735,15 +774,20 @@ class MyForm(QMainWindow):
             #D_min = min(D[:,3]) #for old colourplot
             #D_max = max(D[:,3]) #for old colourplot
 
-            Bdata = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize)  #List of sublists, magnetic field
-            Winkeldata_raw = np.split(np.array(D[:,2]),chunksize)   #List of sublists, angle data
-            Adata = np.split(np.array(D[:,3]),chunksize)    #List of sublists, amplitude data
+            #Bdata = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize)  #List of sublists, magnetic field
+            #Winkeldata_raw = np.split(np.array(D[:,2]),chunksize)   #List of sublists, angle data
+            #Adata = np.split(np.array(D[:,3]),chunksize)    #List of sublists, amplitude data
+
             Winkeldata = []
             for i in range(chunksize):
                 Winkeldata.append(Winkeldata_raw[i][0])
+            end = time.time()
+            #print('Loading and processing took: ',end-start,'sec')
+
             #X = np.split(np.true_divide(np.array(D[:,1]),10000),chunksize) #List of sublists, magnetic field, for colour plot
             #Y = np.split(np.array(D[:,2]),chunksize)    #List of sublists, angle data, for colour plot
-            Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot
+            #Z = np.split(np.array(D[:,3]),chunksize)     #List of sublists, amplitude data, for colour plot
+            Z = np.copy(Adata)
 
             #X = D[:,1].reshape(72,1024)
             #Y = D[:,2].reshape(72,1024)
@@ -751,11 +795,11 @@ class MyForm(QMainWindow):
 
             self.H_range = max(Bdata[0]) * 1000 # Value in mT
             #self.H_range = max(Bdata[0])
-            self.WinkelMin = min(D[:, 2])
-            self.WinkelMax = max(D[:, 2])
-            self.B_min = min(D[:,1])/10000 # in Tesla
-            self.B_max = max(D[:,1])/10000
-            self.B_ratio = (n-1)/self.B_max
+            self.WinkelMin = df['Sample Angle [deg]'].min()     # min(D[:, 2])
+            self.WinkelMax = df['Sample Angle [deg]'].max()     #max(D[:, 2])
+            self.B_min = df['Field [G]'].min()/10000   # min(D[:,1])/10000 # in Tesla
+            self.B_max = df['Field [G]'].max()/10000   # max(D[:,1])/10000
+            self.B_ratio = (counts-1)/self.B_max
 
             try:
                 if int(self.ui.select_datanumber.value()) > len(Adata)-1: #catches errors, slider for datanumber
@@ -1004,6 +1048,7 @@ class MyForm(QMainWindow):
         self.ui.plot_params.plt_R.clear()
         self.ui.plot_params.plt_A.clear()
 
+
         self.ui.plot_params.plt_slope.plot(angle, params[:, 2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         self.ui.plot_params.plt_offset.plot(angle, params[:, 3],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         if self.index_model == 2: # Lorentz
@@ -1014,6 +1059,7 @@ class MyForm(QMainWindow):
                 self.ui.plot_params.plt_A.plot(angle,params[:,4+3*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
         elif self.index_model == 3: # Dyson
             for i_num in range(1, self.fit_num + 1):
+                symbolBrush = pg.intColor(i_num)
                 self.ui.plot_params.plt_alpha.plot(angle, params[:,2+4*(i_num-1)+2],name='Function' + str(i_num), pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_db.plot(angle, params[:,3+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
                 self.ui.plot_params.plt_R.plot(angle, params[:,4+4*(i_num-1)+2],pen=pen, symbol=symbol, symbolPen=symbolpen, symbolSize=symbolsize, symbolBrush=symbolBrush)
