@@ -1369,9 +1369,16 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <widget class="QMenu" name="menuBruker_to_ASCII">
+     <property name="title">
+      <string>Bruker to ASCII</string>
+     </property>
+     <addaction name="actionConvert_Bruker_data_to_ASCII_folder"/>
+     <addaction name="actionConvert_Bruker_data_to_ASCII_Single"/>
+    </widget>
     <addaction name="actionAmplitude_Inverter"/>
     <addaction name="actionMeasurement_Modifier"/>
-    <addaction name="actionConvert_Bruker_data_to_ASCII"/>
+    <addaction name="menuBruker_to_ASCII"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1433,7 +1440,17 @@
   </action>
   <action name="actionConvert_Bruker_data_to_ASCII">
    <property name="text">
-    <string>Convert Bruker data to ASCII</string>
+    <string>Bruker to ASCII (Single)</string>
+   </property>
+  </action>
+  <action name="actionConvert_Bruker_data_to_ASCII_folder">
+   <property name="text">
+    <string>Folder full of data</string>
+   </property>
+  </action>
+  <action name="actionConvert_Bruker_data_to_ASCII_Single">
+   <property name="text">
+    <string>Single data file</string>
    </property>
   </action>
  </widget>

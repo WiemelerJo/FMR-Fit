@@ -144,7 +144,8 @@ class MyForm(QMainWindow):
         # Tool Menu
         self.ui.actionAmplitude_Inverter.triggered.connect(self.amplitude_inverter)
         self.ui.actionMeasurement_Modifier.triggered.connect(self.measurement_modifier)
-        self.ui.actionConvert_Bruker_data_to_ASCII.triggered.connect(self.convertBrukerASCII)
+        self.ui.actionConvert_Bruker_data_to_ASCII_folder.triggered.connect(lambda: self.convertBrukerASCII(True))
+        self.ui.actionConvert_Bruker_data_to_ASCII_Single.triggered.connect(lambda: self.convertBrukerASCII(False))
 
         # Help Menu
         self.ui.actionInfo.triggered.connect(self.open_info)
@@ -221,10 +222,16 @@ class MyForm(QMainWindow):
         #except Exception as e:
         #    print('Error in main.measurement_modifier: ',e)
 
-    def convertBrukerASCII(self):
+    def convertBrukerASCII(self, folder:bool):
         # Convert native Bruker files (.DTA, .DSC) into one ASCII .dat
-        path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-        BrukerASCIIConvert(path,True)
+        if folder: # Select folder path and convert every data in this folder
+            path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+            BrukerASCIIConvert(path,True)
+        else: # Select just one file
+            path = QFileDialog.getOpenFileName(self, "Select File")
+            print(path[0])
+            BrukerASCIIConvert(path[0], False)
+
 
 
     def open_contact(self):
