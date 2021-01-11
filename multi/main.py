@@ -16,8 +16,6 @@ import datetime
 from lmfit import Model
 from lmfit import Parameters
 
-from matplotlib.colors import ListedColormap
-
 from multiprocessing import Process
 
 from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox, QShortcut
@@ -35,6 +33,7 @@ from tools.ani_tools import *
 from tools.Measurement_mod import Measurement_Mod
 from tools.func_gen import Gen_Lorentz, Gen_Dyson
 from tools.array_gen import *
+from tools.BrukerASCIIConvert_class import BrukerASCIIConvert
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
 # Todo : Add Polaraplot in Python Anifit
@@ -145,6 +144,7 @@ class MyForm(QMainWindow):
         # Tool Menu
         self.ui.actionAmplitude_Inverter.triggered.connect(self.amplitude_inverter)
         self.ui.actionMeasurement_Modifier.triggered.connect(self.measurement_modifier)
+        self.ui.actionConvert_Bruker_data_to_ASCII.triggered.connect(self.convertBrukerASCII)
 
         # Help Menu
         self.ui.actionInfo.triggered.connect(self.open_info)
@@ -220,6 +220,12 @@ class MyForm(QMainWindow):
         self.m_mod.show()
         #except Exception as e:
         #    print('Error in main.measurement_modifier: ',e)
+
+    def convertBrukerASCII(self):
+        # Convert native Bruker files (.DTA, .DSC) into one ASCII .dat
+        path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        BrukerASCIIConvert(path,True)
+
 
     def open_contact(self):
         url = QUrl("https://www.uni-due.de/agfarle/team/staff_deu.php?pers_id=269")
@@ -718,6 +724,9 @@ class MyForm(QMainWindow):
                 if line_index > 20 or no_header_cnt > 3:
                     break
                 temp_line = f.readline()
+                if temp_line[0] == '#':  # Converted Bruker Data
+                    skip_value = False
+                    break
                 for i in temp_line:
                     if i not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '\n', '.',
                                  ' ']:  # Find character different from list and declare a possible found header for this line
@@ -747,12 +756,15 @@ class MyForm(QMainWindow):
         if fname[0]:
             start = time.time()
             row_skip_val = self.check_header(fname[0])
-            try:
-                df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=row_skip_val, sep='\s+')
-                #D = np.loadtxt(fname[0], dtype='float', skiprows=2)  # Load Data with header file / Native Bruker Ascii
-            except:
-                df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\s+')
-                #D = np.loadtxt(fname[0], dtype='float')  # Load Data Without Header
+            if row_skip_val == 0 or row_skip_val > 0:
+                try:
+                    df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=row_skip_val, sep='\s+')
+                    #D = np.loadtxt(fname[0], dtype='float', skiprows=2)  # Load Data with header file / Native Bruker Ascii
+                except:
+                    df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\s+')
+                    #D = np.loadtxt(fname[0], dtype='float')  # Load Data Without Header
+            else:
+                df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\t')
 
             counts = df['Sample Angle [deg]'].value_counts()[0]
             chunksize = int(df.shape[0] / counts)

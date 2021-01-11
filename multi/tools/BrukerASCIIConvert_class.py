@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3.8
 # ========================================================================
 #               Bruker DTA + DSC to ASCII File Conversion
 #
@@ -118,7 +118,7 @@ class BrukerASCIIConvert():
             msg_type = "ASCII Conversion: Success"
             self.print2term(msg_type, msg_str=savedir_ASCII)
 
-        elapsed_time = "execution time = " + str(time.time()-start_time), "seconds"
+        elapsed_time = "Conversion finished: execution time = " + str(time.time()-start_time) + "seconds"
         self.print2term(elapsed_time)
 
     def DTA_filepathnames(self,filename):
@@ -455,7 +455,7 @@ class BrukerASCIIConvert():
         header_str += header_lst[len(header_lst)-1]
         header_str = header_str.replace("'","")
 
-        np.savetxt(savedir_ASCII, self.data_table, header=header_str, delimiter="\t")
+        np.savetxt(savedir_ASCII, self.data_table, header=header_str, delimiter="\t", fmt='%f')
         return
 
     def print2term(self, msg_type, msg_str=None):
