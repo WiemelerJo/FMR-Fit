@@ -688,11 +688,14 @@ class Ui_MainWindow(object):
         self.actionContact.setObjectName("actionContact")
         self.actionBug_Report = QtWidgets.QAction(MainWindow)
         self.actionBug_Report.setObjectName("actionBug_Report")
+        self.actionConvert_Bruker_data_to_ASCII = QtWidgets.QAction(MainWindow)
+        self.actionConvert_Bruker_data_to_ASCII.setObjectName("actionConvert_Bruker_data_to_ASCII")
         self.menufile.addAction(self.actionOpen)
         self.menufile.addAction(self.actionSave)
         self.menufile.addAction(self.actionExit)
         self.menuTools.addAction(self.actionAmplitude_Inverter)
         self.menuTools.addAction(self.actionMeasurement_Modifier)
+        self.menuTools.addAction(self.actionConvert_Bruker_data_to_ASCII)
         self.menuHelp.addAction(self.actionInfo)
         self.menuHelp.addAction(self.actionContact)
         self.menuHelp.addAction(self.actionBug_Report)
@@ -815,4 +818,5 @@ class Ui_MainWindow(object):
         self.actionInfo.setText(_translate("MainWindow", "Info"))
         self.actionContact.setText(_translate("MainWindow", "Contact"))
         self.actionBug_Report.setText(_translate("MainWindow", "Bug Report"))
-from CustomWidgets import ParameterPlot, PlotWidget, Plot_pyqtgraph
+        self.actionConvert_Bruker_data_to_ASCII.setText(_translate("MainWindow", "Convert Bruker data to ASCII"))
+from lib.CustomWidgets import ParameterPlot, PlotWidget, Plot_pyqtgraph

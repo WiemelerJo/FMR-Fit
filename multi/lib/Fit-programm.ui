@@ -1371,6 +1371,7 @@
     </property>
     <addaction name="actionAmplitude_Inverter"/>
     <addaction name="actionMeasurement_Modifier"/>
+    <addaction name="actionConvert_Bruker_data_to_ASCII"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1430,22 +1431,27 @@
     <string>Bug Report</string>
    </property>
   </action>
+  <action name="actionConvert_Bruker_data_to_ASCII">
+   <property name="text">
+    <string>Convert Bruker data to ASCII</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
    <class>PlotWidget</class>
    <extends>QGraphicsView</extends>
-   <header>CustomWidgets</header>
+   <header>lib.CustomWidgets</header>
   </customwidget>
   <customwidget>
    <class>Plot_pyqtgraph</class>
    <extends>QGraphicsView</extends>
-   <header>CustomWidgets</header>
+   <header>lib.CustomWidgets</header>
   </customwidget>
   <customwidget>
    <class>ParameterPlot</class>
    <extends>QGraphicsView</extends>
-   <header>CustomWidgets</header>
+   <header>lib.CustomWidgets</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets
-from Modifier import *
+from lib.Modifier import *
 from scipy.stats import linregress
 
 class Measurement_Mod(QtWidgets.QWidget):

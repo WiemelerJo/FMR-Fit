@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import math as m
-import Functions
+import lib.Functions as Functions
 import ast
-import py2mat
+import tools.py2mat
 import time
 import multiprocessing as multip
 import pyqtgraph as pg
@@ -15,22 +15,26 @@ import datetime
 
 from lmfit import Model
 from lmfit import Parameters
+
 from matplotlib.colors import ListedColormap
+
+from multiprocessing import Process
+
 from PyQt5.QtWidgets import QMainWindow, QApplication,QFileDialog,QDoubleSpinBox, QCheckBox, QLabel, QMessageBox, QShortcut
 from PyQt5.QtCore import QThread, pyqtSignal, QSignalBlocker
 from PyQt5.Qt import Qt, QUrl, QDesktopServices
 from PyQt5.QtGui import QKeySequence
-from Fitprogramm import *
-#from arrays import *
-from fitting import Fit
-from parameter_plot import Params_Plot
-from multiprocessing import Process
-from ani_tools import *
-from CustomWidgets import Popup_View, Fit_Log
-from Measurement_mod import Measurement_Mod
-from func_gen import Gen_Lorentz, Gen_Dyson
-from array_gen import *
 
+from lib.Fitprogramm import *
+from lib.arrays import *
+from lib.fitting import Fit
+from lib.CustomWidgets import Popup_View, Fit_Log
+
+from tools.parameter_plot import Params_Plot
+from tools.ani_tools import *
+from tools.Measurement_mod import Measurement_Mod
+from tools.func_gen import Gen_Lorentz, Gen_Dyson
+from tools.array_gen import *
 
 # TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
 # Todo : Add Polaraplot in Python Anifit
@@ -727,7 +731,6 @@ class MyForm(QMainWindow):
                         break
                 line_index += 1
         return skip_value
-
 
     def openFileDialog(self):
         global value_opt

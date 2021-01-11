@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from lmfit import Model
 from lmfit import Parameters
-from func_gen import Gen_Lorentz, Gen_Dyson
+from tools.func_gen import Gen_Lorentz, Gen_Dyson
 #from PyQt5.QtCore import *
 
 class Fit(object):

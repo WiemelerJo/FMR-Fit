@@ -109,7 +109,7 @@
   <customwidget>
    <class>Small_Plot</class>
    <extends>QGraphicsView</extends>
-   <header>CustomWidgets</header>
+   <header>lib.CustomWidgets</header>
   </customwidget>
  </customwidgets>
  <resources/>
