@@ -99,7 +99,7 @@ class BrukerASCIIConvert():
             DSC_filepathname = filename[:-4] + ".DSC"
 
             # set save directory to be same as original data
-            savedir_ASCII = filename + ".dat"
+            savedir_ASCII = filename[:-4] + ".dat"
 
             # load DSC file and make a dict of relvant DSC parameters (Re/Im, 1D/2D/3D)
             self.DSC_param_dict = self.load_DSC_vals(DSC_filepathname)

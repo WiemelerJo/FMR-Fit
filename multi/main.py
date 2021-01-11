@@ -229,10 +229,9 @@ class MyForm(QMainWindow):
             BrukerASCIIConvert(path,True)
         else: # Select just one file
             path = QFileDialog.getOpenFileName(self, "Select File")
-            print(path[0])
             BrukerASCIIConvert(path[0], False)
-
-
+            file = path[0][:-4] + ".dat"
+            self.openFileDialog(True,[file,[None]])
 
     def open_contact(self):
         url = QUrl("https://www.uni-due.de/agfarle/team/staff_deu.php?pers_id=269")
@@ -748,7 +747,7 @@ class MyForm(QMainWindow):
                 line_index += 1
         return skip_value
 
-    def openFileDialog(self):
+    def openFileDialog(self,*args):
         global value_opt
         global i
         global Bdata
@@ -759,7 +758,15 @@ class MyForm(QMainWindow):
         global D_max
         global chunksize
         global Z
-        fname = QFileDialog.getOpenFileName(self, 'Open file','/home')
+        load_bruker_conv = False
+        if args:
+            if args[0]:
+                load_bruker_conv = args[0]
+                path = args[1]
+        if load_bruker_conv:
+            fname = path
+        else:
+            fname = QFileDialog.getOpenFileName(self, 'Open file', '/home')
         if fname[0]:
             start = time.time()
             row_skip_val = self.check_header(fname[0])
