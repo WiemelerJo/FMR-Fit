@@ -706,7 +706,6 @@ class MyForm(QMainWindow):
 
     def check_header(self,fname):
         # Searches for a header in file
-
         with open(fname, 'r') as f:
             line_index = 1
             skip_value = 0
@@ -727,7 +726,6 @@ class MyForm(QMainWindow):
                         no_header_cnt += 1
                         break
                 line_index += 1
-                
         return skip_value
 
 
