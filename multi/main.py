@@ -176,6 +176,7 @@ class MyForm(QMainWindow):
         self.ui.Button_reset_fit.clicked.connect(self.reset_fit)
         self.ui.comboBox_angular_ori.activated.connect(self.change_anifit_ui)
         self.ui.spinBox_function_select.valueChanged.connect(self.anifit_function_select)
+        self.ui.button_load_parameter.pressed.connect(self.load_file_to_dynparamtable)
 
         # Set up every Key press Event
         self.shortcut_next = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_F2), self) # Goto next Spectra
@@ -202,7 +203,9 @@ class MyForm(QMainWindow):
 
     def test(self,*args,**kwargs):
         print("Debug Funktion")
-        #print(self.dyn_params_table[1])
+       #print(type(self.dyn_params_table[1][0]))
+        raw = self.dyn_params_table[1][0]
+        print(type(raw[3]),raw[3])
         #print(len(self.dyn_params_table[1]))
         #self.plot_params_to_plot_tab()
 
@@ -851,6 +854,61 @@ class MyForm(QMainWindow):
                 self.dyn_params_table[1].append(None)
             self.set_datanumber()
 
+    def gen_names(self):
+        names_ar_L = ['dB', 'R', 'A']
+        name_ar_D = ['alpha', 'dB', 'R', 'A']
+        names_ar_lin = ['slope', 'offset']
+        names = []
+
+        for i in names_ar_lin:
+            names.append(i)
+
+        if self.index_model == 2:  # Lorentz
+            for i in range(1, self.fit_num + 1):
+                for l in names_ar_L:
+                    names.append(l + str(i))
+        elif self.index_model == 3:  # Dyson
+            for i in range(1, self.fit_num + 1):
+                for l in name_ar_D:
+                    names.append(l + str(i))
+        else:
+            print('Not supported Lineshape!')
+        return names
+
+    def load_file_to_dynparamtable(self):
+        # Takes a prev fitted file (from this script) and loads it into self.dyn_params_table
+        if not hasattr(self,'dyn_params_table'):
+            self.openFileDialog()
+        else:
+            # Todo: abfrage ob parameter überschrieben werden sollen!
+
+            filename = QFileDialog.getOpenFileName(self, 'Open file', '/home')
+            # Construct self.dyn_params_table out of file
+            self.get_fit_options_from_file(filename[0]) # set index_model, fit_num and dropped_points
+            names = self.gen_names()
+
+            params = np.loadtxt(filename[0])
+
+            # --------------------------self.dyn_params_table[1][angle_index] Structure:----------------------------
+            # This is a List mixed with dict:
+            # raw = self.dyn_params_table[1][angle_index]
+            # raw[0] = index_model ====> The Function that has been used e.g. Dyson/Lorentz
+            # raw[1] = fit_num ====> Number of functions used
+            # Rest will be dict: raw[i>1].value or raw[i>1].bounds or raw[i>1].name
+
+            for index, val in enumerate(self.dyn_params_table[1]):
+                if index not in self.dropped_points and val != False:
+                    self.dyn_params_table[1][index] = [self.index_model, self.fit_num]
+
+                    if self.index_model == 2:
+                        for l in range(0, 3 * self.fit_num + 2):
+                            self.dyn_params_table[1][index].append(Parameter(names[l], params[index][l]))
+                    elif self.index_model == 3:
+                        for l in range(0, 4 * self.fit_num + 2):
+                            self.dyn_params_table[1][index].append(Parameter(names[l], params[index][l]))
+            self.plot_params_to_plot_tab()
+            angle_index = self.ui.select_datanumber.value()
+            self.plot_data(angle_index)
 
     def error_msg(self):
         self.ui.label_params_output.setText('No data fitted yet!')
@@ -873,6 +931,8 @@ class MyForm(QMainWindow):
     def get_fit_options_from_file(self,fname):
         global value_opt
 
+        #Todo: Change Dropped_points line edit to dropped points from file
+
         f = open(fname)
         Title = f.readline()
 
@@ -886,18 +946,21 @@ class MyForm(QMainWindow):
             Lineshape = int(header_parts[1].split('$.')[1].split(' Lineshape')[0])  # Extract lineshape out of params file
 
             try:
-                # Takes Element 3 of header_parts and converts it into an usable array
-                Dropped_points = np.asarray(ast.literal_eval(header_parts[2].split('[')[1].split(']')[0]))
+                # Takes Element 3 of header_parts and converts it into a usable array
+                self.dropped_points = np.asarray(ast.literal_eval(header_parts[2].split('[')[1].split(']')[0]))
             except Exception as e:
                 print('Error trying to get Dropped_Points, assuming Droppedpoints as empty:', e)
-                Droppen_points = None
+                self.dropped_points = []
 
             # Takes Element 4 of header_parts and converts it into an usable array: ['A','dB','R',....]
             Params_name = np.asarray(ast.literal_eval(header_parts[3].split('[')[1].split(']')[0]))
 
             self.index_model = Lineshape
+            self.ui.comboBox_fit_model.setCurrentIndex(self.index_model)
             self.set_model_type_number()
             self.fit_num = int((len(Params_name)-2)/value_opt['index_model_num'])
+            self.ui.spinBox_fit_num.setValue(self.fit_num)
+            self.make_parameter_table()
         else:
             print('File was not created by this script!')
 
@@ -1132,6 +1195,7 @@ class MyForm(QMainWindow):
                 winkel = self.dyn_params_table[0][list]
                 temp.append(winkel[1])
                 param_table.append(temp)
+
         return param_table, name_table
 
     def start_worker(self):

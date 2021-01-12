@@ -495,8 +495,6 @@ def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, mo
         plt.legend()
         plt.show()
 
-
-
 def rad_to_deg(val):
     val = val*180/m.pi
     return val
@@ -527,6 +525,25 @@ def make_phirange(shift_value: float, phi_array: list, circ: bool, minWinkel: fl
                 phi_array[l] += 360.0
     return phi_array
 
+def make_phi_range():
+    if add == '-':
+        angle_RANGE = np.arange(angle_min + shift, angle_max + shift, m.pi / (1 / (angle_step / m.pi) - lauf_var),
+                                dtype='float')
+    else:
+        angle_RANGE = np.arange(angle_min + shift, angle_max + shift, m.pi / (1 / (angle_step / m.pi) + lauf_var),
+                                dtype='float')
+    if len(angle_RANGE) != len_ref:
+        print(len(angle_RANGE), len_ref, count)
+        if count < 10:
+            correct_angle_RANGE(angle_RANGE, len_ref, count + 1, '-', lauf_var + 1)
+        elif count < 20:
+            if count == 10:
+                lauf_var = 0
+            correct_angle_RANGE(angle_RANGE, len_ref, count + 1, '+', lauf_var + 1)
+        else:
+            print('angle_RANGE and reference_data have different length, change Anglestep (~ +-1 ) and try again')
+    else:
+        return angle_RANGE
 
 
 
