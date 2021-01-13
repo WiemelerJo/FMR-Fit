@@ -2,7 +2,8 @@ from lmfit import Model
 from lmfit import Parameters
 from lmfit import Parameter
 from symengine.lib.symengine_wrapper import solve
-from sympy import sin, cos, sqrt, Eq, Symbol, Function, Matrix, re, sympify
+from symengine import sin, cos, sqrt, sympify, Symbol, Function, Eq
+#from sympy import sin, cos, sqrt, Eq, Symbol, Function, Matrix, re, sympify
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy.optimize import shgo, differential_evolution, basinhopping  # activate when using global optimization
@@ -301,7 +302,10 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
 
         # Recalculate EqAngles
         func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)
-        B_Sim2 = pool.map(func, angle_RANGE, reference_data)
+        #B_Sim2 = pool.map(func, angle_RANGE, reference_data)
+        B_Sim2 = []
+        for index, val in enumerate(angle_RANGE):
+            B_Sim2.append(func(val, reference_data[index]))
         B_Sim2 = np.asarray(B_Sim2)
 
         # print error between old and new result
@@ -355,6 +359,7 @@ def update_rules(params_new, fixed_params):
     return rule_new
 
 def solveAngles(B, phiB, fkt, is_OOP):
+    # Todo: Add Robust Fit Method as Global Solver
     # Minimize Angles Theta, Phi, ThetaB
     # start_paras for the moment these are constant: [m.pi/2, m.pi, m.pi/2]
     # start_paras = [m.pi/2, m.pi, m.pi/2]
@@ -397,12 +402,14 @@ def solveAngles(B, phiB, fkt, is_OOP):
     return result.x[0], result.x[1], result.x[2]
 
 def create_pre_fit(rules_start, angle_RANGE, angle_RANGE_deg, reference_data, B_RES, F, is_OOP):
-    pool = Pool()  # Create pool of threads for multiprocessing
-
+    #pool = Pool()  # Create pool of threads for multiprocessing
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
     func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP) # indirectly add more than one functional arguments without *args or **kwargs
-    B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
+    #B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
+    B_Sim = []
+    for index, val in enumerate(angle_RANGE):
+        B_Sim.append(func(val,reference_data[index]))
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     #pool.close()
     return B_Sim[:, 0], reference_data, angle_RANGE_deg
@@ -412,13 +419,16 @@ def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, mo
     #phi_array is aray of deg shifted
     start = time.time()
     
-    pool = Pool()  # Create pool of threads for multiprocessing
+    #pool = Pool()  # Create pool of threads for multiprocessing
 
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
 
     func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)  # indirectly add more than one functional arguments without *args or **kwargs
-    B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
+    #B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
+    B_Sim = []
+    for index, val in enumerate(angle_RANGE):
+        B_Sim.append(func(val, reference_data[index]))
     B_Sim = np.asarray(B_Sim)  # convert List to numpy array
     Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
 
@@ -448,13 +458,18 @@ def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, mo
     FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing 
 
     func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)
-    B_Sim2 = pool.map(func, angle_RANGE, reference_data)
+   #B_Sim2 = pool.map(func, angle_RANGE, reference_data)
+
+    B_Sim2 = []
+    for index, val in enumerate(angle_RANGE):
+        B_Sim2.append(func(val, reference_data[index]))
     B_Sim2 = np.asarray(B_Sim2)
 
     delta = np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]) 
     print("Magnituden Unterschied von: ", delta, ", maxBresDelta: ",
           maxBresDelta, " bigger than magnitude? ", delta > maxBresDelta)
 
+    pool = None
     if delta > maxBresDelta:
         # if delta is too big start iterating
         Sim_result = iteration(B_Sim, B_Sim2, B_RES, fixed_params,reference_data, F,maxBresDelta, model, params_Fit, angle_RANGE, fit_params, pool, is_OOP)
@@ -482,7 +497,12 @@ def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, mo
     print('It took',end)
 
     if plot:
-        phi_deg = pool.map(rad_to_deg, angle_RANGE)
+        #phi_deg = pool.map(rad_to_deg, angle_RANGE)
+        phi_deg = []
+        for val in angle_RANGE:
+            phi_deg.append(rad_to_deg(angle_RANGE))
+        phi_deg = np.asarray(phi_deg[0])
+
         plt.cla()
         plt.clf()
         plt.plot(phi_deg, B_Sim2[:, 0], '-g', label='Simulation')
