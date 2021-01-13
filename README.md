@@ -1,7 +1,7 @@
 # FMR-Fit
 Small GUI for extracting parameters of ferromagnetic resonance measurements made in python.
 Packages used:
-matplotlib, numpy, lmfit (wrapper for scipy), PyQt5 (Basicly PySide2), sympy and symengine (C wrapper of Symengine for Python), PyQtGraph ,OPTIONAL: mayavi
+matplotlib, numpy, lmfit (wrapper for scipy), PyQt5 (Basicly PySide2), symengine (C wrapper of Symengine for Python), PyQtGraph 
 
 
 # Usage
