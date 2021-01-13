@@ -251,7 +251,6 @@ def Model_Fit_Fkt(angle_real, .ß123, **kwargs):
         func = """
 def Model_Fit_Fkt(angle_real, .ß123, **kwargs):
     
-    
     fkt = []
     B_RES = kwargs['B_RES']
     Eq_angles = kwargs['Eq_angles']
@@ -268,97 +267,104 @@ def Model_Fit_Fkt(angle_real, .ß123, **kwargs):
     #print(Local_dict)
 
     a = B_RES.subs({i: l for i, l in kwargs['fixed_params'].items()})  # Parameter, B and EqAngle missing
-
+    
     for i, l in enumerate(angle_real):
         b = a.subs({i: l for i, l in Local_dict.items()})
         c = b.subs({phiB: l, theta: Eq_angles[0][i], phi: Eq_angles[1][i], thetaB: Eq_angles[2][i]})
         fkt.append(float(c))
+    
     return fkt""".replace('.ß123',func_args)
+
     return func
 
 def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, maxBresDelta, model, params_Fit, angle_RANGE, fit_params, pool, is_OOP):
     B_Sim = B_Sim_orig
     B_Sim2 = B_Sim2_orig
     it_while = 0
-    while np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]) > maxBresDelta:
-
+    while np.linalg.norm(np.asarray(B_Sim[0]) - np.asarray(B_Sim2[0])) > maxBresDelta:
+        # ______________________________________________________
+        # Check Error
         print('Error too big! Start iterating; Iteration: ',it_while)
         B_Sim = np.copy(B_Sim2)  # To start with the result from previous iteration
-        Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
+        Eq_angles = [B_Sim[1], B_Sim[2], B_Sim[3]]
 
+        # ______________________________________________________
+        # Fit
         ani_result = model.fit(reference_data, params_Fit, angle_real=angle_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)  # Fit
         print(ani_result.fit_report())
-
+        # ______________________________________________________
         # Refresh the parameter dict()
         for name, param in ani_result.params.items():
             fit_params[name] = param.value
             params_Fit[name].set(value=param.value)
-
+        # ______________________________________________________
         # Refresh rule
         rule = update_rules(fit_params, fixed_params)
 
         B_FKT = str(B_RES.subs({i: l for i, l in rule.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
         FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing 
 
+        # ______________________________________________________
         # Recalculate EqAngles
-        func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)
-        #B_Sim2 = pool.map(func, angle_RANGE, reference_data)
-        B_Sim2 = []
-        for index, val in enumerate(angle_RANGE):
-            B_Sim2.append(func(val, reference_data[index]))
-        B_Sim2 = np.asarray(B_Sim2)
+        B_Sim2 = do_all(B_FKT, FKT, is_OOP, angle_RANGE, reference_data, pool)
 
         # print error between old and new result
-        print(np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]))
+        print(np.linalg.norm(B_Sim[0] - B_Sim2[0]))
 
         if it_while > 5:   # End statement if algorithm is iterating too often
             print("Stop Iteration, Iter_Count is too high")
             break
         else:
             it_while += 1
+    B_Sim2 = [np.asarray(B_Sim2[0]), np.asarray(B_Sim2[1]), np.asarray(B_Sim2[2]),np.asarray(B_Sim2[3]), fit_params]
+    return B_Sim2
 
-    return B_Sim2,fit_params
-
-def ResFieldNumInp(B_RES, F, is_OOP, phi_val, reference_data):
-    phiB_val = phi_val
-    FKT = F
-
+def do_all(B_RES, F, is_OOP, angle, reference_data, pool):
+    # ______________________________________________________
+    # This function takes the free Energy function and the resonance function and uses them to minimize the eq_Angle and
+    # calc the "simulated" res_field as result: list
+    # ______________________________________________________
     # Here Python with multiprocessing behaves weird. If one would give ResFieldNumInp B_RES without subs, the interpreter can no longe pickle the data
     # (means, he somehow cant convert it to binary data and back, could be a bug in symengine!)
-    # once B_RES was subs and converted to string it somehow works. One disadvantage of this mehtod is, 
+    # once B_RES was subs and converted to string it somehow works. One disadvantage of this mehtod is,
     # that the string B_RES now has to be interpreted each time the function is called
     # i dont now if this has any performance affections (it may even be faster; nothing noticeable yet).
-    B_FKT = sympify(B_RES)
+    # ______________________________________________________
 
-    # takes EqAngles and solves B_RES using interpolated datal
-    B = reference_data
-    #B_FKT = B_RES.subs({i: l for i, l in rule.items()})  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
-    #FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing
-    Eq_angles = solveAngles(B, phiB_val, FKT, is_OOP)
+    FKT = str(F) # Convert Symengine Object to string in order to pickle
+    B_FKT = sympify(B_RES) # Convert string to symengine object
+
+    Bounds = [(0, 2 * m.pi), (0, 2 * m.pi), (0, 2 * m.pi)]
+    if is_OOP:  # OOP
+        # Minimised Angles: [Theta, Phi, PhiB]
+        start_paras = np.asarray([m.pi / 2, m.pi, m.pi])
+    else:
+        # Minimised Angles: [Theta, Phi, ThetaB]
+        start_paras = np.asarray([m.pi / 2, m.pi, m.pi / 2])
+
+    func = partial(solve_angle, is_OOP, FKT, start_paras, Bounds) # gen fake function to add more than one functional arguments without *args or **kwargs
+    Eq_angles_raw = pool.map(func, angle, reference_data) # use fake func in pool.map()
+    Eq_angles = [[],[],[]]
+
+    # ______________________________________________________
+    # Calculate final result of B using minimised angles
+    result = []
     if is_OOP: # OOP
-        result = B_FKT.subs({'theta': Eq_angles[0], 'phi': Eq_angles[1], 'phiB': Eq_angles[2], 'thetaB': phiB_val})
+        for i, list in enumerate(Eq_angles_raw):
+            result.append(float(B_FKT.subs({'theta': list[0], 'phi': list[1], 'phiB': list[2], 'thetaB': angle[i]})))
+            Eq_angles[0].append(list[0])
+            Eq_angles[1].append(list[1])
+            Eq_angles[2].append(list[2])
     else: # IP
-        result = B_FKT.subs({'theta': Eq_angles[0], 'phi': Eq_angles[1], 'thetaB': Eq_angles[2], 'phiB': phiB_val})
-    #print(float(result))
-    return [float(result), float(Eq_angles[0]), float(Eq_angles[1]), float(Eq_angles[2])]
+        for i, list in enumerate(Eq_angles_raw):
+            result.append(float(B_FKT.subs({'theta': list[0], 'phi': list[1], 'thetaB': list[2], 'phiB': angle[i]})))
+            Eq_angles[0].append(list[0])
+            Eq_angles[1].append(list[1])
+            Eq_angles[2].append(list[2])
 
-def F_fkt(x, *args):
-    # Function of Free Energy Density, that should be minimized
-    # *args is array:[B,phiB,fkt,is_OOP] or [B,thetaB,fkt,is_OOP]
-    # x are the fitted params
-    if args[3]: # OOP
-        Fit_fkt = args[2].subs({'B': args[0], 'thetaB': args[1], 'theta': x[0], 'phi': x[1], 'phiB': x[2]})
-    else:   # IP
-        Fit_fkt = args[2].subs({'B': args[0], 'phiB': args[1], 'theta': x[0], 'phi': x[1], 'thetaB': x[2]})
-    return float(Fit_fkt)
+    return result, Eq_angles[0], Eq_angles[1], Eq_angles[2]
 
-def update_rules(params_new, fixed_params):
-    # update rules array according to new values inside params_new
-    rule_new = {**params_new, **fixed_params}
-    print('Updated rule:', rule_new)
-    return rule_new
-
-def solveAngles(B, phiB, fkt, is_OOP):
+def solve_angle(is_OOP, fkt, start_paras, Bounds, angle, B):
     # Todo: Add Robust Fit Method as Global Solver
     # Minimize Angles Theta, Phi, ThetaB
     # start_paras for the moment these are constant: [m.pi/2, m.pi, m.pi/2]
@@ -382,56 +388,47 @@ def solveAngles(B, phiB, fkt, is_OOP):
                         print(RESULT,'Global Minimum')'''
     # After evaluating some minima: Global Minimum search was everytime equivalent to local minima search (sometimes modulo 2*PI). This equivalence must not be true in every case!!!
     # ----------------------------------------------------------------------------------------------------------------------------------
-    Bounds = [(0, 2 * m.pi), (0, 2 * m.pi), (0, 2 * m.pi)]
-    if is_OOP: # OOP
-        #[Theta, Phi, PhiB]
-        start_paras = np.asarray([m.pi / 2, m.pi, m.pi])
-    else:
-        # [Theta, Phi, ThetaB]
-        start_paras = np.asarray([m.pi / 2, m.pi, m.pi / 2])
-    result = minimize(F_fkt, start_paras, args=(B, phiB, fkt, is_OOP), method='L-BFGS-B',bounds=Bounds)
-    # alternatively a global search can be performed using shgo or differential_evolution, look up scipy Docs.
-    # result = shgo(F_fkt,Bounds, args=(B,phiB,fkt))  #Works as fast as local search (maybe even faster), but produces weird artifacts in plot!?
-    # result = dual_annealing(F_fkt,Bounds, args=(B,phiB,fkt))   # Finds nice solution but takes years to compute one array with Anglestep = m.pi/40
-    #result = differential_evolution(F_fkt,Bounds, args=(B,phiB,fkt)) #slower than shgo, but also nice solution
-    ##print(result.x[0],result.x[1],result.x[2],"\"Local Minimum\"")
 
-    # Basinhopping might be a good approach for global minima search!
-    #args = (B, phiB, fkt, is_OOP)
-    #result = basinhopping(F_fkt,start_paras, T=0.8, stepsize=m.pi/8, niter=5,minimizer_kwargs={'args':args,"method":"L-BFGS-B"})
+
+    result = minimize(F_fkt, start_paras, args=(B, angle, sympify(fkt), is_OOP), method='L-BFGS-B',bounds=Bounds)
+    args = (B, angle, sympify(fkt), is_OOP)
+    #result = basinhopping(F_fkt, start_paras, T=1.0, stepsize=m.pi / 8, niter=10, minimizer_kwargs={'args': args, "method": "L-BFGS-B"})
     return result.x[0], result.x[1], result.x[2]
 
+def F_fkt(x, *args):
+    # Function of Free Energy Density, that should be minimized
+    # *args is array:[B,phiB,fkt,is_OOP] or [B,thetaB,fkt,is_OOP]
+    # x are the fitted params
+    if args[3]: # OOP
+        Fit_fkt = args[2].subs({'B': args[0], 'thetaB': args[1], 'theta': x[0], 'phi': x[1], 'phiB': x[2]})
+    else:   # IP
+        Fit_fkt = args[2].subs({'B': args[0], 'phiB': args[1], 'theta': x[0], 'phi': x[1], 'thetaB': x[2]})
+    return float(Fit_fkt)
+
+def update_rules(params_new, fixed_params):
+    # update rules array according to new values inside params_new
+    rule_new = {**params_new, **fixed_params}
+    print('Updated rule:', rule_new)
+    return rule_new
+
 def create_pre_fit(rules_start, angle_RANGE, angle_RANGE_deg, reference_data, B_RES, F, is_OOP):
-    #pool = Pool()  # Create pool of threads for multiprocessing
+    start = time.time()
+    pool = Pool()  # Create pool of threads for multiprocessing
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
-    func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP) # indirectly add more than one functional arguments without *args or **kwargs
-    #B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
-    B_Sim = []
-    for index, val in enumerate(angle_RANGE):
-        B_Sim.append(func(val,reference_data[index]))
-    B_Sim = np.asarray(B_Sim)  # convert List to numpy array
-    #pool.close()
-    return B_Sim[:, 0], reference_data, angle_RANGE_deg
+    B_Sim = do_all(B_FKT, FKT, is_OOP, angle_RANGE, reference_data, pool)
+    print('It took:', time.time() - start,'sec')
+    return B_Sim[0], reference_data, angle_RANGE_deg
 
 def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad, is_OOP):
     #angle_RANGE is array of rad not shifted
     #phi_array is aray of deg shifted
     start = time.time()
-    
-    #pool = Pool()  # Create pool of threads for multiprocessing
-
+    pool = Pool()  # Create pool of threads for multiprocessing
     B_FKT = str(B_RES.subs({i: l for i, l in rules_start.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
-
-    func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)  # indirectly add more than one functional arguments without *args or **kwargs
-    #B_Sim = pool.map(func, angle_RANGE, reference_data)  # Now this function can be mapped to the pool using an array angle_RANGE
-    B_Sim = []
-    for index, val in enumerate(angle_RANGE):
-        B_Sim.append(func(val, reference_data[index]))
-    B_Sim = np.asarray(B_Sim)  # convert List to numpy array
-    Eq_angles = [B_Sim[:, 1], B_Sim[:, 2], B_Sim[:, 3]]
-
+    B_Sim = do_all(B_FKT, FKT, is_OOP, angle_RANGE, reference_data, pool)
+    Eq_angles = [B_Sim[1], B_Sim[2], B_Sim[3]]
     # Works as follows:
     # This is an implementation of dynamic programming. Solve a numerical problem by splitting it into sub problems (i think).
     # Using iterations, solving of the sub problems will give the solution of the main problem.
@@ -443,7 +440,7 @@ def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, mo
     # ---------Now the iteration could start--------------
     # 4. calculate error between B_sim1 and B_Sim2, if bigger than maxBresDelta, start iterating
     # 5. Iteration: set B_Sim1 = B_Sim2 and go to step 1. until error is smaller than maxBresDelta
-    ani_result = model.fit(reference_data, params_Fit, angle_real=angle_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles)
+    ani_result = model.fit(reference_data, params_Fit, angle_real=angle_RANGE, B_RES=B_RES, fixed_params=fixed_params, Eq_angles=Eq_angles) # non linear fit of K Values
     print(ani_result.fit_report())
 
     # Refresh the parameter dict()
@@ -453,45 +450,37 @@ def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, mo
 
     # Refresh rule
     rule = update_rules(fit_params, fixed_params)
-
     B_FKT = str(B_RES.subs({i: l for i, l in rule.items()}))  # rule beeing inserted, missing : B, theta, thetaB, phi, phiB
-    FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing 
+    FKT = F.subs({i: l for i, l in rule.items()})  # rule beeing inserted, for minimizing
+    B_Sim2 = do_all(B_FKT, FKT, is_OOP, angle_RANGE, reference_data, pool) # New simulated B result, that is different of B_Sim, because we changed the K values through non linear fitting
 
-    func = partial(ResFieldNumInp, B_FKT, FKT, is_OOP)
-   #B_Sim2 = pool.map(func, angle_RANGE, reference_data)
-
-    B_Sim2 = []
-    for index, val in enumerate(angle_RANGE):
-        B_Sim2.append(func(val, reference_data[index]))
-    B_Sim2 = np.asarray(B_Sim2)
-
-    delta = np.linalg.norm(B_Sim[:, 0] - B_Sim2[:, 0]) 
+    delta = np.linalg.norm(np.asarray(B_Sim[0]) - np.asarray(B_Sim2[0]))
     print("Magnituden Unterschied von: ", delta, ", maxBresDelta: ",
           maxBresDelta, " bigger than magnitude? ", delta > maxBresDelta)
 
-    pool = None
     if delta > maxBresDelta:
         # if delta is too big start iterating
         Sim_result = iteration(B_Sim, B_Sim2, B_RES, fixed_params,reference_data, F,maxBresDelta, model, params_Fit, angle_RANGE, fit_params, pool, is_OOP)
         # Sim_result is now a list 5D List: 
-        #    [:, 0] = B_Sim
-        #    [:, 1] = Eq_Angle1
-        #    [:, 2] = Eq_Angle2
-        #    [:, 3] = Eq_Angle3
-        #    [1] = best fit params dict
-        B_Sim2 = Sim_result[0]
+        #    [0] = B_Sim
+        #    [1] = Eq_Angle1
+        #    [2] = Eq_Angle2
+        #    [3] = Eq_Angle3
+        #    [4] = best fit params dict
+
+        #Sim_result = np.asarray(Sim_result)
 
         # make output file
         now = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         end_pfad_now = end_pfad + str(now)
 
         with open(end_pfad_now + '_Ani_Constants.dat','w') as f:
-            for key, val in Sim_result[1].items():
+            for key, val in Sim_result[4].items():
                 print([key, val])
                 f.write('{0}: {1}'.format(key,val))
                 f.write('\n')
-        np.savetxt(end_pfad_now + '_Function.dat', B_Sim2[:,0])
-        Eq_angles = [B_Sim2[:,1],B_Sim2[:,2],B_Sim2[:,3]]
+        np.savetxt(end_pfad_now + '_Function.dat', Sim_result[0])
+        Eq_angles = np.asarray([Sim_result[1],Sim_result[2],Sim_result[3]])
         np.savetxt(end_pfad_now + '_Eq_Angles.dat', Eq_angles)
     end = time.time() - start
     print('It took',end)
@@ -505,7 +494,7 @@ def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, mo
 
         plt.cla()
         plt.clf()
-        plt.plot(phi_deg, B_Sim2[:, 0], '-g', label='Simulation')
+        plt.plot(phi_deg, Sim_result[0], '-g', label='Simulation')
         # plt.plot(angle_RANGE_deg, ani_result.best_fit, '-r', label='best fit')
         #plt.plot(phi_deg, B_Sim[:, 0], '-g', label='Simulation1')
         plt.plot(phi_deg, reference_data, '-b', label='Interpolation')
