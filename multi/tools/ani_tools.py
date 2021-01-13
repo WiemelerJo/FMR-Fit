@@ -3,7 +3,6 @@ from lmfit import Parameters
 from lmfit import Parameter
 from symengine.lib.symengine_wrapper import solve
 from symengine import sin, cos, sqrt, sympify, Symbol, Function, Eq
-#from sympy import sin, cos, sqrt, Eq, Symbol, Function, Matrix, re, sympify
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 from scipy.optimize import shgo, differential_evolution, basinhopping  # activate when using global optimization
@@ -109,7 +108,7 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     #FreeE = 'B*M*(sin(theta)*sin(thetaB)*cos(phi - phiB) + cos(theta)*cos(thetaB)) - K2p*sin(theta)**2*cos(phi - phiu)**2 - K4p*(cos(4*phi) + 3)*sin(theta)**4/8 - K4s*cos(theta)**4/2 - (-K2s + M**2*mu0/2)*sin(theta)**2'
     # Freie Energy Formel + Baselgia
-    F = sympify(FreeE)  # let sympy interpret the FreeE string as a function
+    F = sympify(FreeE)  # let symengine interpret the FreeE string as a function
 
     # Use Baselgia approach for Bres (Has no singularity at theta = 0!)
     halb_res = gamma ** 2 / M ** 2 * (
@@ -311,7 +310,7 @@ def iteration(B_Sim_orig, B_Sim2_orig, B_RES, fixed_params, reference_data, F, m
         # print error between old and new result
         print(np.linalg.norm(B_Sim[0] - B_Sim2[0]))
 
-        if it_while > 5:   # End statement if algorithm is iterating too often
+        if it_while > 10:   # End statement if algorithm is iterating too often
             print("Stop Iteration, Iter_Count is too high")
             break
         else:
