@@ -357,29 +357,21 @@ class MyForm(QMainWindow):
 
     def update_canvas(self,data:list,angle:list):
         #Data is 2D List: data[0] = B_Sim, data[1] = B_Exp
+        pen = None
+        symbol = 'd'
+        symbolpen = None
+        symbolsize = 10
+        symbolBrush = (255, 255, 255, 255)
+
         # Mathematica Canvas
-        self.ui.Ani_Const_Plot.canvas.ax.clear()
-        self.ui.Ani_Const_Plot.canvas.ax.set_ylabel('Resonance Field [T]')
-        self.ui.Ani_Const_Plot.canvas.ax.set_xlabel('Angle [Deg]')
-
-        self.ui.Ani_Const_Plot.canvas.ax.scatter(angle, data[1], color='black', marker='o',
-                                                 label='Experimental data')  # Plot experimental Data
-        self.ui.Ani_Const_Plot.canvas.ax.plot(self.preB_Sim[2], data[0], 'r--', label='B_res Simulation')
-
-        self.ui.Ani_Const_Plot.canvas.ax.legend()
-        self.ui.Ani_Const_Plot.canvas.draw()
+        self.ui.Ani_Const_Plot.plt.clear()
+        self.ui.Ani_Const_Plot.plt.plot(angle, data[1], pen=pen, symbol=symbol, symbolPen=symbolpen,symbolSize=symbolsize, symbolBrush=symbolBrush)
+        self.ui.Ani_Const_Plot.plt.plot(self.preB_Sim[2], data[0], label='B_res Simulation',pen=(255,0,0))
 
         # Python canvas
-        self.ui.Ani_Const_Plot_Py.canvas.ax.clear()
-        self.ui.Ani_Const_Plot_Py.canvas.ax.set_ylabel('Resonance Field [T]')
-        self.ui.Ani_Const_Plot_Py.canvas.ax.set_xlabel('Angle [Deg]')
-
-        self.ui.Ani_Const_Plot_Py.canvas.ax.scatter(angle, data[1], color='black', marker='o',
-                                                 label='Experimental data')  # Plot experimental Data
-        self.ui.Ani_Const_Plot_Py.canvas.ax.plot(self.preB_Sim[2], data[0], 'r--', label='B_res Simulation')
-
-        self.ui.Ani_Const_Plot_Py.canvas.ax.legend()
-        self.ui.Ani_Const_Plot_Py.canvas.draw()
+        self.ui.Ani_Const_Plot_Py.plt.clear()
+        self.ui.Ani_Const_Plot_Py.plt.plot(angle, data[1], pen=pen, symbol=symbol, symbolPen=symbolpen,symbolSize=symbolsize, symbolBrush=symbolBrush)
+        self.ui.Ani_Const_Plot_Py.plt.plot(self.preB_Sim[2], data[0], label='B_res Simulation',pen=(255,0,0))
 
     def change_anifit_ui(self,*args):
         # args i the index

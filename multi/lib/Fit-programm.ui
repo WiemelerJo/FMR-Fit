@@ -1004,7 +1004,7 @@
            </layout>
           </item>
           <item>
-           <widget class="PlotWidget" name="Ani_Const_Plot"/>
+           <widget class="Single_Plot" name="Ani_Const_Plot"/>
           </item>
          </layout>
         </item>
@@ -1345,7 +1345,18 @@
            </layout>
           </item>
           <item>
-           <widget class="PlotWidget" name="Ani_Const_Plot_Py"/>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QLabel" name="label_output_params">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="Single_Plot" name="Ani_Const_Plot_Py"/>
           </item>
          </layout>
         </item>
@@ -1463,17 +1474,17 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PlotWidget</class>
-   <extends>QGraphicsView</extends>
-   <header>lib.CustomWidgets</header>
-  </customwidget>
-  <customwidget>
    <class>Plot_pyqtgraph</class>
    <extends>QGraphicsView</extends>
    <header>lib.CustomWidgets</header>
   </customwidget>
   <customwidget>
    <class>ParameterPlot</class>
+   <extends>QGraphicsView</extends>
+   <header>lib.CustomWidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>Single_Plot</class>
    <extends>QGraphicsView</extends>
    <header>lib.CustomWidgets</header>
   </customwidget>

@@ -152,6 +152,20 @@ class ParameterPlot(QtWidgets.QWidget):
         self.vbl.addWidget(self.win)
         self.setLayout(self.vbl)
 
+class Single_Plot(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)  # Inherit from QWidget
+        self.vbl = QtWidgets.QVBoxLayout()
+        self.win = pg.GraphicsLayoutWidget()
+
+        self.plt = self.win.addPlot()
+        self.plt.setLabel('left', "Resonance Field", units='T')  # Y-Axis
+        self.plt.setLabel('bottom', 'Angle', units='Deg')  # X-Axis
+        self.plt.showGrid(True, True)  # Show Grid
+
+        self.plt.addLegend()
+        self.vbl.addWidget(self.win)
+        self.setLayout(self.vbl)
 
 class GradWidget(QtWidgets.QWidget):
     sigGradientChanged = QtCore.Signal(object)
