@@ -39,10 +39,10 @@ class Measurement_Mod(QtWidgets.QWidget):
     def plot(self,order):
         if order == 1:
             self.ui.combined_plot.img.setImage(np.asarray(self.Z_1))
-            self.ui.combined_plot.img.setRect(QtCore.QRect(0, 0, self.WinkelMax_1, self.H_range_1))
+            self.ui.combined_plot.img.setRect(QtCore.QRectF(0, 0, self.WinkelMax_1, self.H_range_1))
         else:
             self.ui.combined_plot.img2.setImage(np.asarray(self.Z_2))
-            self.ui.combined_plot.img2.setRect(QtCore.QRect(0, self.H_offset_2, self.winkel_diff_2, self.H_diff_2))
+            self.ui.combined_plot.img2.setRect(QtCore.QRectF(0, self.H_offset_2, self.winkel_diff_2, self.H_diff_2))
 
     def load_second_data(self):
         fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '/home')

@@ -209,7 +209,7 @@ class Popup_View(QtWidgets.QWidget):
         self.label = pg.TextItem(text='Hover Event',anchor=(0,0))
         view.addItem(self.label,ignoreBounds=True)
 
-        xScale.setLabel('Magnetic Field',units='mT')
+        xScale.setLabel('Magnetic Field',units='T')
         yScale.setLabel('Angle',units='Deg')
 
         img = pg.ImageItem(border='w')
@@ -218,7 +218,8 @@ class Popup_View(QtWidgets.QWidget):
         img.setImage(data)
         img.hoverEvent = self.imageHoverEvent
 
-        img.setRect(QtCore.QRect(0, 0, chunk, winkel_max))
+        print(chunk)
+        img.setRect(QtCore.QRectF(0, 0, 0.6, winkel_max))
         view.addItem(img)
 
         hist = pg.HistogramLUTItem()

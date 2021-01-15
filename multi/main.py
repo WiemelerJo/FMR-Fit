@@ -35,9 +35,7 @@ from tools.func_gen import Gen_Lorentz, Gen_Dyson
 from tools.array_gen import *
 from tools.BrukerASCIIConvert_class import BrukerASCIIConvert
 
-# TODO: Use ExpressionModel from lmfit to generate custom function to Fit. Then from the Model parameter dict() generate the names to put into the parameterTable
 # Todo : Add Polaraplot in Python Anifit
-# TODO: Maybe implement a performance mode using CuPy or MOT Module (CUDA and multiprocess optimized optimzation)
 # TODO: Robust Fit mit Multithreading?
 
 def define_value_opt():
@@ -901,6 +899,7 @@ class MyForm(QMainWindow):
             self.plot_params_to_plot_tab()
             angle_index = self.ui.select_datanumber.value()
             self.plot_data(angle_index)
+            self.save_filename = filename[0]
 
     def error_msg(self):
         self.ui.label_params_output.setText('No data fitted yet!')
