@@ -219,7 +219,7 @@ class Popup_View(QtWidgets.QWidget):
         img.hoverEvent = self.imageHoverEvent
 
         print(chunk)
-        img.setRect(QtCore.QRectF(0, 0, 0.6, winkel_max))
+        img.setRect(QtCore.QRectF(0, 0, chunk/1000, winkel_max))
         view.addItem(img)
 
         hist = pg.HistogramLUTItem()
