@@ -523,6 +523,7 @@ def make_phirange(shift_value: float, phi_array: list, circ: bool, minWinkel: fl
                 phi_array[l] -= delta_winkel
             elif phi_array[l] < minWinkel:
                 phi_array[l] += delta_winkel
+            yield phi_array[l]
 
     else:   # Angular dependences without 360 degrees need to be handled differently
         for l, i in enumerate(phi_array):   # shift array by value: shift_value
@@ -531,7 +532,8 @@ def make_phirange(shift_value: float, phi_array: list, circ: bool, minWinkel: fl
                 phi_array[l] -= 360.0
             elif phi_array[l] < 0.0:
                 phi_array[l] += 360.0
-    return phi_array
+            yield phi_array[l]
+    #return phi_array
 
 def make_phi_range():
     if add == '-':

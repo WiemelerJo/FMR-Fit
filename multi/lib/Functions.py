@@ -1,7 +1,7 @@
 import math as m
 
 def Lorentz(B, dB, R, A):
-    return(-64*A*(B-R)/(9*dB*(1+(B-R)**2/(dB*m.sqrt(3)/4)**2)**2))
+    return -32*A*dB**3*(B-R)/(3*dB**2+4*(B-R)**2)**2#-(A*12*m.sqrt(3)*(B-R)*dB**2)/(3*dB**2+4*(B-R)**2)**2#(-64*A*(B-R)/(9*2*dB*(1+(B-R)**2/(dB*m.sqrt(3)/2)**2)**2))
 
 def Dyson(B, alpha, dB, R, A):
     return((4*A*dB**2*(3*alpha*dB-4*alpha*(B-R)**2-8*m.sqrt(3)*dB*(B-R)))/(m.sqrt(3)*(4*(B-R)**2+3*dB**2)**2))

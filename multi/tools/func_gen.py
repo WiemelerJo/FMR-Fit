@@ -12,7 +12,7 @@ class Gen_Lorentz():
         str_end = "slope*B+offset" # Set linear fkt
         for i in range(1,self.num+1):   # create function/s
             str_func_args += ", dB{0}, R{0}, A{0}".format(i)
-            str_body +=  "-64*A{0}*(B-R{0})/(9*dB{0}*(1+(B-R{0})**2/(dB{0}*m.sqrt(3)/4)**2)**2)".format(i)
+            str_body += "-32*A{0}*dB{0}**3*(B-R{0})/(3*dB{0}**2+4*(B-R{0})**2)**2".format(i)
         func = "def model_fit_func(B,slope,offset{0}):\n\treturn({1} + {2})".format(str_func_args,str_body,str_end)
         return func
 
