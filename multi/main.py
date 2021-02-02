@@ -774,7 +774,7 @@ class MyForm(QMainWindow):
             else:
                 df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\t')
 
-            counts = df['Sample Angle [deg]'].value_counts()[0]
+            counts = df['Sample Angle [deg]'].value_counts().to_numpy()[-1] #df['Sample Angle [deg]'].value_counts()[0]
             chunksize = int(df.shape[0] / counts)
 
             Bdata = np.split(np.true_divide(df['Field [G]'].to_numpy(), 10000), chunksize)
