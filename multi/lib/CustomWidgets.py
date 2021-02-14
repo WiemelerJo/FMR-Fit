@@ -188,7 +188,6 @@ class Popup_View(QtWidgets.QWidget):
     #Standalone Widget; Displayed in popup window
     def __init__(self,*args):
         super().__init__()
-np.array().__rshift__()
         Z = np.asarray(args[0])
         chunk_min  =   args[1]
         chunk_max  =   args[2]
