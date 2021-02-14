@@ -248,7 +248,7 @@ class MyForm(QMainWindow):
 
     def doit(self):
         # Start Colour Plot Popup
-        self.w = Popup_View(Z,self.H_range,self.WinkelMax)
+        self.w = Popup_View(Z, self.H_range_min, self.H_range_max, self.WinkelMin, self.WinkelMax)
         self.w.setWindowTitle("Colourplot")
         self.w.setGeometry(0, 0, 1280, 720)
         self.w.show()
@@ -785,7 +785,6 @@ class MyForm(QMainWindow):
             #counts1 = counts[1]
             #n = counts1[0]
             #chunksize = int(len(D[:,0])/n)  #set chunk size for example 1024,2048,4096
-
             i = 0   # laufvariable = 0
             i_min = 0
             i_max = int(chunksize)
@@ -814,7 +813,8 @@ class MyForm(QMainWindow):
             #Y = D[:,2].reshape(72,1024)
             #Z = D[:,3].reshape(72,1024)
 
-            self.H_range = max(Bdata[0]) * 1000 # Value in mT
+            self.H_range_min = min(Bdata[0]) * 1000
+            self.H_range_max = max(Bdata[0]) * 1000 # Value in mT
             #self.H_range = max(Bdata[0])
             self.WinkelMin = df['Sample Angle [deg]'].min()     # min(D[:, 2])
             self.WinkelMax = df['Sample Angle [deg]'].max()     #max(D[:, 2])

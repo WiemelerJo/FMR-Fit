@@ -188,12 +188,13 @@ class Popup_View(QtWidgets.QWidget):
     #Standalone Widget; Displayed in popup window
     def __init__(self,*args):
         super().__init__()
-
+np.array().__rshift__()
         Z = np.asarray(args[0])
+        chunk_min  =   args[1]
+        chunk_max  =   args[2]
+        winkel_min  =  args[3]
+        winkel_max =   args[4]
         self.Z = np.transpose(Z)
-
-        chunk = args[1]
-        winkel_max = args[2]
 
         layout = QtWidgets.QGridLayout()
         #win = pg.GraphicsLayoutWidget()
@@ -218,8 +219,9 @@ class Popup_View(QtWidgets.QWidget):
         img.setImage(data)
         img.hoverEvent = self.imageHoverEvent
 
-        print(chunk)
-        img.setRect(QtCore.QRectF(0, 0, chunk/1000, winkel_max))
+        # QRect (x, y, width, height)
+        # x,y are the origin point
+        img.setRect(QtCore.QRectF(chunk_min / 1000, winkel_min, chunk_max / 1000 - chunk_min / 1000, winkel_max - winkel_min))
         view.addItem(img)
 
         hist = pg.HistogramLUTItem()
