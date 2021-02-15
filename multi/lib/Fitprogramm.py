@@ -706,6 +706,8 @@ class Ui_MainWindow(object):
         self.actionConvert_Bruker_data_to_ASCII_folder.setObjectName("actionConvert_Bruker_data_to_ASCII_folder")
         self.actionConvert_Bruker_data_to_ASCII_Single = QtWidgets.QAction(MainWindow)
         self.actionConvert_Bruker_data_to_ASCII_Single.setObjectName("actionConvert_Bruker_data_to_ASCII_Single")
+        self.actionBackground_Subtraction_Tool = QtWidgets.QAction(MainWindow)
+        self.actionBackground_Subtraction_Tool.setObjectName("actionBackground_Subtraction_Tool")
         self.menufile.addAction(self.actionOpen)
         self.menufile.addAction(self.actionSave)
         self.menufile.addAction(self.actionExit)
@@ -714,6 +716,7 @@ class Ui_MainWindow(object):
         self.menuTools.addAction(self.actionAmplitude_Inverter)
         self.menuTools.addAction(self.actionMeasurement_Modifier)
         self.menuTools.addAction(self.menuBruker_to_ASCII.menuAction())
+        self.menuTools.addAction(self.actionBackground_Subtraction_Tool)
         self.menuHelp.addAction(self.actionInfo)
         self.menuHelp.addAction(self.actionContact)
         self.menuHelp.addAction(self.actionBug_Report)
@@ -841,4 +844,5 @@ class Ui_MainWindow(object):
         self.actionConvert_Bruker_data_to_ASCII.setText(_translate("MainWindow", "Bruker to ASCII (Single)"))
         self.actionConvert_Bruker_data_to_ASCII_folder.setText(_translate("MainWindow", "Folder full of data"))
         self.actionConvert_Bruker_data_to_ASCII_Single.setText(_translate("MainWindow", "Single data file"))
+        self.actionBackground_Subtraction_Tool.setText(_translate("MainWindow", "Background Subtraction Tool"))
 from lib.CustomWidgets import ParameterPlot, Plot_pyqtgraph, Single_Plot

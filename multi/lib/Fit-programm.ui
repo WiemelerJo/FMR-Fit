@@ -1397,6 +1397,7 @@
     <addaction name="actionAmplitude_Inverter"/>
     <addaction name="actionMeasurement_Modifier"/>
     <addaction name="menuBruker_to_ASCII"/>
+    <addaction name="actionBackground_Subtraction_Tool"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1469,6 +1470,11 @@
   <action name="actionConvert_Bruker_data_to_ASCII_Single">
    <property name="text">
     <string>Single data file</string>
+   </property>
+  </action>
+  <action name="actionBackground_Subtraction_Tool">
+   <property name="text">
+    <string>Background Subtraction Tool</string>
    </property>
   </action>
  </widget>

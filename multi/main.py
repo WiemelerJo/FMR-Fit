@@ -31,6 +31,7 @@ from lib.CustomWidgets import Popup_View, Fit_Log
 from tools.parameter_plot import Params_Plot
 from tools.ani_tools import *
 from tools.Measurement_mod import Measurement_Mod
+from tools.Background_sub import Background_sub
 from tools.func_gen import Gen_Lorentz, Gen_Dyson
 from tools.array_gen import *
 from tools.BrukerASCIIConvert_class import BrukerASCIIConvert
@@ -144,6 +145,7 @@ class MyForm(QMainWindow):
         self.ui.actionMeasurement_Modifier.triggered.connect(self.measurement_modifier)
         self.ui.actionConvert_Bruker_data_to_ASCII_folder.triggered.connect(lambda: self.convertBrukerASCII(True))
         self.ui.actionConvert_Bruker_data_to_ASCII_Single.triggered.connect(lambda: self.convertBrukerASCII(False))
+        self.ui.actionBackground_Subtraction_Tool.triggered.connect(self.background_sub)
 
         # Help Menu
         self.ui.actionInfo.triggered.connect(self.open_info)
@@ -216,12 +218,25 @@ class MyForm(QMainWindow):
         # For example OOP with highfield OOP to catch hard axis
         #try:
         print('measurement_modifier')
-        self.m_mod = Measurement_Mod(Bdata, Adata, Winkeldata_raw, self.WinkelMax, self.i_min, self.i_max)
-        self.m_mod.setWindowTitle("Measurment Modifier")
-        self.m_mod.setGeometry(0,0,1000,720)
-        self.m_mod.show()
+        if hasattr(self,"Bdata"):
+            self.m_mod = Measurement_Mod(Bdata, Adata, Winkeldata_raw, self.WinkelMax, self.i_min, self.i_max)
+            self.m_mod.setWindowTitle("Measurement Modifier")
+            self.m_mod.setGeometry(0,0,1000,720)
+            self.m_mod.show()
+        else:
+            print('Please load a measurement first')
         #except Exception as e:
         #    print('Error in main.measurement_modifier: ',e)
+
+    def background_sub(self):
+        print('BackSub')
+        if hasattr(self,"Bdata"):
+            self.backsub = Background_sub(Bdata=Bdata)
+
+        else:
+            self.backsub = Background_sub()
+        self.backsub.setGeometry(0, 0, 1600, 900)
+        self.backsub.show()
 
     def convertBrukerASCII(self, folder:bool):
         # Convert native Bruker files (.DTA, .DSC) into one ASCII .dat
@@ -647,7 +662,6 @@ class MyForm(QMainWindow):
 
                     if init:
                         self.ui.Parameter_table.cellWidget(zahl, 0).valueChanged.connect(self.signal_spinbox_manual_params) #different approach to connect a signal to the spinbox
-
 
                 for zähler in range(0,self.fit_num*3): # for loop for Lorentz parameters
                     self.ui.Parameter_table.cellWidget(zähler+2,0).setDecimals(4)

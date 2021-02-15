@@ -26,6 +26,32 @@ class PlotWidget(QtWidgets.QWidget):
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
 
+class Colour_Plot(QtWidgets.QWidget):
+    def __init__(self,parent=None):
+            QtWidgets.QWidget.__init__(self, parent)  # Inherit from QWidget
+            self.layout = QtWidgets.QVBoxLayout()
+            self.win = pg.GraphicsLayoutWidget()
+            self.view = self.win.addViewBox(0, 1)
+
+            xScale = pg.AxisItem(orientation='bottom', linkView=self.view)
+            self.win.addItem(xScale, 1, 1)
+            yScale = pg.AxisItem(orientation='left', linkView=self.view)
+            self.win.addItem(yScale, 0, 0)
+
+            yScale.setLabel('Magnetic Field', units='mT')
+            xScale.setLabel('Angle', units='Deg')
+
+            self.img = pg.ImageItem(border='w')
+
+            self.view.addItem(self.img)
+
+            hist = pg.HistogramLUTItem()
+            hist.setImageItem(self.img)
+            self.win.addItem(hist, 0, 2)
+
+            self.layout.addWidget(self.win)
+            self.setLayout(self.layout)
+
 class Small_Plot(QtWidgets.QWidget):
     def __init__(self,parent=None):
         QtWidgets.QWidget.__init__(self, parent)  # Inherit from QWidget
