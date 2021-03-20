@@ -92,7 +92,6 @@ class Worker(QThread):
 
     def run(self):
         global value_opt
-        global Parameter_list
         names = []
         temp_paras = []
 
@@ -724,6 +723,7 @@ class MyForm(QMainWindow):
                     self.ui.Parameter_table.cellWidget(zähler+2,2).setValue(self.Arrays.default_boundaries_D_max[zähler]) # Boundary maximum
                     if init:
                         self.ui.Parameter_table.cellWidget(zähler + 2, 0).valueChanged.connect(self.signal_spinbox_manual_params)  # different approach to connect a signal to the spinbox
+            self.set_increment()
         except Exception as e:
             print("Error in set_default_values:",e)
         self.block_spinbox_signal(False)
@@ -734,13 +734,17 @@ class MyForm(QMainWindow):
             line_index = 1
             skip_value = 0
             no_header_cnt = 0
+            file_origin = 'Bruker'
             while True:
                 if line_index > 20 or no_header_cnt > 3:
                     break
                 temp_line = f.readline()
                 if temp_line[0] == '#':  # Converted Bruker Data
                     skip_value = False
+                    file_origin = 'Bruker_conv'
                     break
+                elif temp_line[:9] == 'Filename:':
+                    file_origin = 'R2D2'
                 for i in temp_line:
                     if i not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '\n', '.',
                                  ' ']:  # Find character different from list and declare a possible found header for this line
@@ -753,7 +757,22 @@ class MyForm(QMainWindow):
                         no_header_cnt += 1
                         break
                 line_index += 1
-        return skip_value
+        return skip_value, file_origin
+
+    def clean_array(self, arr):
+        # remove ervery char from array
+        clean_arr = []
+        for i in arr:
+            try:
+                val = np.float(i)
+                clean_arr.append(val)
+            except ValueError:
+                continue
+
+        # Numpy sometimes sets values to Nan, find these and delete the entries
+        clean_arr = np.array(clean_arr)
+        clean_arr = clean_arr[~np.isnan(clean_arr)]
+        return clean_arr
 
     def openFileDialog(self,*args):
         global value_opt
@@ -777,16 +796,24 @@ class MyForm(QMainWindow):
             fname = QFileDialog.getOpenFileName(self, 'Open file', '/home')
         if fname[0]:
             start = time.time()
-            row_skip_val = self.check_header(fname[0])
-            if row_skip_val == 0 or row_skip_val > 0:
-                try:
-                    df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=row_skip_val, sep='\s+')
-                    #D = np.loadtxt(fname[0], dtype='float', skiprows=2)  # Load Data with header file / Native Bruker Ascii
-                except:
-                    df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\s+')
-                    #D = np.loadtxt(fname[0], dtype='float')  # Load Data Without Header
+            row_skip_val, file_origin = self.check_header(fname[0])
+            if file_origin == 'R2D2':
+                df_raw = pd.read_csv(fname[0], names=['X [G]', 'Y [ ]', 'Intensity_raw'], skiprows=row_skip_val, sep='\t')
+
+                df = pd.DataFrame()
+                df['Field [G]'] = self.clean_array(df_raw['X [G]'].to_numpy())
+                df['Sample Angle [deg]'] = self.clean_array(df_raw['Y [ ]'].to_numpy())
+                df['Intensity []'] = self.clean_array(df_raw['Intensity_raw'].to_numpy())
             else:
-                df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\t')
+                if row_skip_val == 0 or row_skip_val > 0:
+                    try:
+                        df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=row_skip_val, sep='\s+')
+                        #D = np.loadtxt(fname[0], dtype='float', skiprows=2)  # Load Data with header file / Native Bruker Ascii
+                    except:
+                        df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\s+')
+                        #D = np.loadtxt(fname[0], dtype='float')  # Load Data Without Header
+                else:
+                    df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\t')
 
             counts = df['Sample Angle [deg]'].value_counts().to_numpy()[-1] #df['Sample Angle [deg]'].value_counts()[0]
             chunksize = int(df.shape[0] / counts)
@@ -995,12 +1022,17 @@ class MyForm(QMainWindow):
 
         #self.block_spinbox_signal(True)
 
-        param = self.dyn_params_table[1][self.i]
-        self.set_model_type_number(param[0])
-        if param != None and param != False:
-            for zaehler in range(0, param[1] * self.index_model_num + 2):
-                param[zaehler+2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
-            self.plot_data(self.i)
+        try:
+            param = self.dyn_params_table[1][self.i]
+            self.set_model_type_number(param[0])
+            if param != None and param != False:
+                for zaehler in range(0, param[1] * self.index_model_num + 2):
+                    param[zaehler + 2].value = self.ui.Parameter_table.cellWidget(zaehler, 0).value()
+                self.plot_data(self.i)
+        except TypeError:
+            self.plot()
+        except AttributeError:
+            print('Please load a dataset first')
 
         #self.block_spinbox_signal(False)
 
