@@ -31,7 +31,7 @@ from lib.CustomWidgets import Popup_View, Fit_Log
 from tools.parameter_plot import Params_Plot
 from tools.ani_tools import *
 from tools.Measurement_mod import Measurement_Mod
-from tools.Background_sub import Background_sub
+#from tools.Background_sub import Background_sub
 from tools.func_gen import Gen_Lorentz, Gen_Dyson
 from tools.array_gen import *
 from tools.BrukerASCIIConvert_class import BrukerASCIIConvert
@@ -1080,12 +1080,13 @@ class MyForm(QMainWindow):
 
     def plot_data(self,angle_index,*args):
         #print("DEBUG_PLOT_DATA")
-        # Plots data into a matplotlib canvas created in "pyqtgraph" skript, its the viewport for the measurement
+        # Plots data into a PyQtGraph canvas created in "pyqtgraph" skript, its the viewport for the measurement
 
         # args[0] = best_fit
         # args[1] = label name
 
         j_min, j = self.get_fit_region()
+        print(j_min, j)
         #self.block_spinbox_signal(True)
         self.ui.Plot_Indi_View.plt.clear()  # Delete previous data
         self.ui.Plot_Indi_View.plt_range.clear() # Delete previous data
