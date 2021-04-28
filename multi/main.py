@@ -31,7 +31,7 @@ from lib.CustomWidgets import Popup_View, Fit_Log
 from tools.parameter_plot import Params_Plot
 from tools.ani_tools import *
 from tools.Measurement_mod import Measurement_Mod
-#from tools.Background_sub import Background_sub
+from tools.Background_sub import Background_sub
 from tools.func_gen import Gen_Lorentz, Gen_Dyson
 from tools.array_gen import *
 from tools.BrukerASCIIConvert_class import BrukerASCIIConvert
@@ -739,12 +739,14 @@ class MyForm(QMainWindow):
                 if line_index > 20 or no_header_cnt > 3:
                     break
                 temp_line = f.readline()
-                if temp_line[0] == '#':  # Converted Bruker Data
+                if temp_line == '# index	Field [G]	SampleAngle [deg]	Intensity []':  # Converted Bruker Data
                     skip_value = False
                     file_origin = 'Bruker_conv'
                     break
                 elif temp_line[:9] == 'Filename:':
                     file_origin = 'R2D2'
+                elif temp_line[:11] == '# This file':
+                    file_origin = 'R2D2_conv'
                 for i in temp_line:
                     if i not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '\n', '.',
                                  ' ']:  # Find character different from list and declare a possible found header for this line
@@ -797,7 +799,8 @@ class MyForm(QMainWindow):
         if fname[0]:
             start = time.time()
             row_skip_val, file_origin = self.check_header(fname[0])
-            if file_origin == 'R2D2':
+            print(row_skip_val, file_origin)
+            if file_origin == 'R2D2' or file_origin == 'R2D2_conv':
                 df_raw = pd.read_csv(fname[0], names=['X [G]', 'Y [ ]', 'Intensity_raw'], skiprows=row_skip_val, sep='\t')
 
                 df = pd.DataFrame()
