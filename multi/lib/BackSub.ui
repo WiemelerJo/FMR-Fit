@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
+    <width>1063</width>
     <height>720</height>
    </rect>
   </property>
@@ -57,13 +57,6 @@
           </layout>
          </item>
          <item>
-          <widget class="QPushButton" name="Button_start">
-           <property name="text">
-            <string>Beautify my data</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="Single_Plot" name="View_Orig"/>
          </item>
          <item>
@@ -73,38 +66,6 @@
        </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <layout class="QGridLayout" name="gridLayout_4">
-           <item row="0" column="1">
-            <widget class="QPushButton" name="Button_linearize">
-             <property name="text">
-              <string>Linearize</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="Button_smoothen">
-             <property name="text">
-              <string>Smoothen</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QPushButton" name="Button_poly_base">
-             <property name="text">
-              <string>Polynomial baseline</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QPushButton" name="Button_average">
-             <property name="text">
-              <string>Average</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
          <item>
           <widget class="Colour_Plot" name="View_Colour">
            <property name="enabled">

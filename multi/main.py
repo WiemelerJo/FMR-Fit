@@ -229,11 +229,11 @@ class MyForm(QMainWindow):
 
     def background_sub(self):
         print('BackSub')
-        if hasattr(self,"Bdata"):
-            self.backsub = Background_sub(Bdata=Bdata)
-
+        if hasattr(globals(),"Bdata"):
+            self.backsub = Background_sub(Adata, Bdata)
         else:
-            self.backsub = Background_sub()
+            self.backsub = Background_sub(Adata, Bdata)
+            #self.backsub = Background_sub()
         self.backsub.setGeometry(0, 0, 1600, 900)
         self.backsub.show()
 

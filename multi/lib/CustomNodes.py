@@ -8,8 +8,6 @@ import numpy as np
 from scipy.signal import savgol_filter
 
 
-
-
 ## At this point, we need some custom Node classes since those provided in the library
 ## are not sufficient. Each node will define a set of input/output terminals, a 
 ## processing function, and optionally a control widget (to be displayed in the 
@@ -36,7 +34,6 @@ class ImageViewNode(Node):
                 self.view.setImage(np.zeros((1,1))) # give a blank array to clear the view
             else:
                 self.view.setImage(data)
-
 
 
 ## We will define a savgol filter node as a subclass of CtrlNode.
@@ -72,6 +69,40 @@ class SavGol_Smooth(CtrlNode):
 
         output = savgol_filter(dataIn, range_savgol, polynomial_order)
         return {'dataOut': output} # Returns 1dim list
+
+class SavGol_Smooth_2D(CtrlNode):
+    """Return the input data passed through a filter."""
+    nodeName = "Savitzky-Golay-2D"
+    uiTemplate = [
+        ('range',  'spin', {'value': 23.0, 'step': 1.0, 'bounds': [0.0, None]}),
+        ('polynomial order', 'spin', {'value': 2.0, 'step': 1.0,'bounds': [1.0 , None]}),
+    ]
+
+    def __init__(self, name):
+        ## Define the input / output terminals available on this node
+        terminals = {
+            'dataIn': dict(io='in'),    # each terminal needs at least a name and
+            'dataOut': dict(io='out'),  # to specify whether it is input or output
+        }                              # other more advanced options are available
+                                       # as well..
+        
+        CtrlNode.__init__(self, name, terminals=terminals)
+        
+    def process(self, dataIn, display=True):
+        # CtrlNode has created self.ctrls, which is a dict containing {ctrlName: widget}
+        range_savgol = int(self.ctrls['range'].value())
+        output = []
+
+        # Make sure range is uneven:
+        if (range_savgol % 2) == 0:
+            # range is even, so make it uneven
+            range_savgol += 1
+
+        polynomial_order = int(self.ctrls['polynomial order'].value())
+        for array in dataIn:
+            output.append(savgol_filter(array, range_savgol, polynomial_order))
+
+        return {'dataOut': np.array(output)} # Returns ndim list
 
 
 class Measurement_Select(CtrlNode):

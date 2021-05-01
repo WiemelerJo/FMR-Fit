@@ -5,14 +5,17 @@ from lib.BackSub import *
 from lib.CustomNodes import *
 
 from pyqtgraph.flowchart import Flowchart
+from pyqtgraph.flowchart.Node import NodeGraphicsItem
 #from pyqtgraph.Qt import QtGui, QtCore
 #import pyqtgraph as pg
 import numpy as np
-#import pyqtgraph.metaarray as metaarray
+import pyqtgraph.metaarray as metaarray
 
 
 class Background_sub(QtWidgets.QWidget):
-    def __init__(self,data_In=None,*args,**kwargs):
+    def __init__(self, data_In=None, dataB_In=None, *args, **kwargs):
+        super().__init__()
+
         # data_In will be Adata
         if data_In == None:
             print("Please load data")
@@ -24,17 +27,17 @@ class Background_sub(QtWidgets.QWidget):
                 dat += np.sin(np.linspace(0, 100, 1024))
                 data_In.append(dat)
         data_In = np.array(data_In)
-        super().__init__()
+
         self.ui = Ui_BackgroundSubtraction()
         self.ui.setupUi(self)
 
         # Change plot labels, because I was too lazy to create a new widget
         pw1 = self.ui.View_Orig
-        pw1.plt.setLabel('bottom', 'Magnetic Field', units='mT')  # X-Axis
+        pw1.plt.setLabel('bottom', 'Magnetic Field', units='T')  # X-Axis
         pw1.plt.setLabel('left', "Amplitude (Arb. Units)", units='')  # Y-Axis
 
         pw2 = self.ui.View_Mod
-        pw2.plt.setLabel('bottom', 'Magnetic Field', units='mT')  # X-Axis
+        pw2.plt.setLabel('bottom', 'Magnetic Field', units='T')  # X-Axis
         pw2.plt.setLabel('left',"Amplitude (Arb. Units)",units='')   # Y-Axis
 
         pw3 = self.ui.View_Colour
@@ -44,11 +47,12 @@ class Background_sub(QtWidgets.QWidget):
             'dataIn': {'io': 'in'},
             'dataOut': {'io': 'out'}
         })
+
         w = fc.widget()
-        self.ui.verticalLayout.addWidget(w)
+        self.ui.gridLayout.addWidget(w)
 
         # Create metaarray using data_In and some information
-        #data = metaarray.MetaArray(data_In, info=[{'name': 'Amplitude data', 'values': data_In}, {}])
+        #data = metaarray.MetaArray(data_In, info=[{'name': 'Amplitude data'}, {}])
 
         fc.setInput(dataIn=data_In) #Set data to Input Node
 
@@ -59,6 +63,7 @@ class Background_sub(QtWidgets.QWidget):
         # Add the node to two locations in the menu to demonstrate
         # that we can create arbitrary menu structures
         library.addNodeType(SavGol_Smooth, [('FMR', 'Filter')])
+        library.addNodeType(SavGol_Smooth_2D, [('FMR', 'Filter')])
         library.addNodeType(FMR_Subtract_Average, [('FMR', 'Filter')])
         library.addNodeType(FMR_Subtract_Average_Colour, [('FMR', 'Filter')])
         library.addNodeType(Measurement_Select, [('FMR', 'Data')])
