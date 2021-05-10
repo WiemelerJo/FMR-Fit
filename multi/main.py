@@ -231,11 +231,12 @@ class MyForm(QMainWindow):
         print('BackSub')
         if hasattr(globals(),"Bdata"):
             self.backsub = Background_sub(Adata, Bdata)
+            self.backsub.setGeometry(0, 0, 1600, 900)
+            self.backsub.show()
         else:
-            self.backsub = Background_sub(Adata, Bdata)
+            self.openFileDialog()
             #self.backsub = Background_sub()
-        self.backsub.setGeometry(0, 0, 1600, 900)
-        self.backsub.show()
+
 
     def convertBrukerASCII(self, folder:bool):
         # Convert native Bruker files (.DTA, .DSC) into one ASCII .dat
@@ -808,7 +809,7 @@ class MyForm(QMainWindow):
                 df['Sample Angle [deg]'] = self.clean_array(df_raw['Y [ ]'].to_numpy())
                 df['Intensity []'] = self.clean_array(df_raw['Intensity_raw'].to_numpy())
             else:
-                if row_skip_val == 0 or row_skip_val > 0:
+                if row_skip_val > 0:
                     try:
                         df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=row_skip_val, sep='\s+')
                         #D = np.loadtxt(fname[0], dtype='float', skiprows=2)  # Load Data with header file / Native Bruker Ascii
@@ -816,8 +817,11 @@ class MyForm(QMainWindow):
                         df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\s+')
                         #D = np.loadtxt(fname[0], dtype='float')  # Load Data Without Header
                 else:
-                    df = pd.read_csv(fname[0], names=['index', 'Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=1, sep='\t')
-
+                    try:
+                        df = pd.read_csv(fname[0], names=['Field [G]', 'Sample Angle [deg]', 'Intensity []'], skiprows=0, sep='\t')
+                        df['Sample Angle [deg]'].value_counts().to_numpy()[-1]
+                    except IndexError:
+                        df = pd.read_csv(fname[0], names=['Field [G]', 'Sample Angle [deg]', 'Intensity []'],skiprows=0, sep='\s+')
             counts = df['Sample Angle [deg]'].value_counts().to_numpy()[-1] #df['Sample Angle [deg]'].value_counts()[0]
             chunksize = int(df.shape[0] / counts)
 
@@ -1089,7 +1093,6 @@ class MyForm(QMainWindow):
         # args[1] = label name
 
         j_min, j = self.get_fit_region()
-        print(j_min, j)
         #self.block_spinbox_signal(True)
         self.ui.Plot_Indi_View.plt.clear()  # Delete previous data
         self.ui.Plot_Indi_View.plt_range.clear() # Delete previous data
