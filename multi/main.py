@@ -7,7 +7,6 @@ import numpy as np
 import math as m
 import lib.Functions as Functions
 import ast
-import tools.py2mat
 import time
 import multiprocessing as multip
 import pyqtgraph as pg
@@ -35,6 +34,7 @@ from tools.Background_sub import Background_sub
 from tools.func_gen import Gen_Lorentz, Gen_Dyson
 from tools.array_gen import *
 from tools.BrukerASCIIConvert_class import BrukerASCIIConvert
+from tools.py2mat import Py2Mat
 
 # Todo : Add Polaraplot in Python Anifit
 # TODO: Robust Fit mit Multithreading?
@@ -201,10 +201,12 @@ class MyForm(QMainWindow):
         self.show()
 
     def test(self,*args,**kwargs):
+        global Bdata
         print("Debug Funktion")
+
        #print(type(self.dyn_params_table[1][0]))
-        raw = self.dyn_params_table[1][0]
-        print(type(raw[3]),raw[3])
+        #raw = self.dyn_params_table[1][0]
+        #print(type(raw[3]),raw[3])
         #print(len(self.dyn_params_table[1]))
         #self.plot_params_to_plot_tab()
 
@@ -217,7 +219,7 @@ class MyForm(QMainWindow):
         # For example OOP with highfield OOP to catch hard axis
         #try:
         print('measurement_modifier')
-        if hasattr(self,"Bdata"):
+        if "Bdata" in globals().keys():
             self.m_mod = Measurement_Mod(Bdata, Adata, Winkeldata_raw, self.WinkelMax, self.i_min, self.i_max)
             self.m_mod.setWindowTitle("Measurement Modifier")
             self.m_mod.setGeometry(0,0,1000,720)
@@ -229,7 +231,7 @@ class MyForm(QMainWindow):
 
     def background_sub(self):
         print('BackSub')
-        if hasattr(globals(),"Bdata"):
+        if "Bdata" in globals().keys():
             self.backsub = Background_sub(Adata, Bdata)
             self.backsub.setGeometry(0, 0, 1600, 900)
             self.backsub.show()
@@ -1408,7 +1410,7 @@ class MyForm(QMainWindow):
         try:
             if choice == QMessageBox.Yes:
                 #p = Process(target=py2mat.submit(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift))
-                self.thread = py2mat.Py2Mat(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift)
+                self.thread = Py2Mat(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift)
                 self.thread.save_path_signal.connect(self.get_output_path)
                 self.thread.start()
                 #py2mat.submit(fileName,F,Params,StartVal,Ranges,Steps,fixedParams,fixedValues,anglestep,iterations,BresColumn,WinkelColumn,Shift)

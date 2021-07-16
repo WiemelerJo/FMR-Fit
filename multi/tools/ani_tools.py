@@ -78,7 +78,10 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
 
     print(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit, Plot)
 
-    maxBresDelta = 0.001  # Also adjustable by gui?
+    if ani_ori: #OOP
+        maxBresDelta = 0.1  # Also adjustable by gui?
+    else:
+        maxBresDelta = 0.001  # Also adjustable by gui?
 
     shift = shifts
 
@@ -185,7 +188,10 @@ def init_load(filename, FreeE, fit_params, fixed_params, shifts, anglestep, Fit:
         # Then create Parameter dict() and model for lmfit
         params_Fit = Parameters()
         for name, value in fit_params.items():
-            params_Fit.add(name, value)
+            if name == 'phiU':
+                params_Fit.add(name, value, min=0, max=2*m.pi)
+            else:
+                params_Fit.add(name, value)
         model = Model(Model_Fit_Fkt)
 
         # plot: bool, rules_start: dict, angle_RANGE: list, phi_array: list, B_inter: func, B_RES: sympy_object, F: sympy_object
@@ -364,7 +370,6 @@ def do_all(B_RES, F, is_OOP, angle, reference_data, pool):
     return result, Eq_angles[0], Eq_angles[1], Eq_angles[2]
 
 def solve_angle(is_OOP, fkt, start_paras, Bounds, angle, B):
-    # Todo: Add Robust Fit Method as Global Solver
     # Minimize Angles Theta, Phi, ThetaB
     # start_paras for the moment these are constant: [m.pi/2, m.pi, m.pi/2]
     # start_paras = [m.pi/2, m.pi, m.pi/2]
@@ -388,10 +393,8 @@ def solve_angle(is_OOP, fkt, start_paras, Bounds, angle, B):
     # After evaluating some minima: Global Minimum search was everytime equivalent to local minima search (sometimes modulo 2*PI). This equivalence must not be true in every case!!!
     # ----------------------------------------------------------------------------------------------------------------------------------
 
-
-    result = minimize(F_fkt, start_paras, args=(B, angle, sympify(fkt), is_OOP), method='L-BFGS-B',bounds=Bounds)
     args = (B, angle, sympify(fkt), is_OOP)
-    #result = basinhopping(F_fkt, start_paras, T=1.0, stepsize=m.pi / 8, niter=10, minimizer_kwargs={'args': args, "method": "L-BFGS-B"})
+    result = basinhopping(F_fkt, start_paras,T=1, stepsize=m.pi / 8, niter=10, minimizer_kwargs={'args': args, 'bounds': Bounds}) # Global minimiser searching around starting point for 10 steps with stepwidth pi/8
     return result.x[0], result.x[1], result.x[2]
 
 def F_fkt(x, *args):
@@ -417,6 +420,11 @@ def create_pre_fit(rules_start, angle_RANGE, angle_RANGE_deg, reference_data, B_
     FKT = F.subs({i: l for i, l in rules_start.items()})  # rule beeing inserted, for minimizing
     B_Sim = do_all(B_FKT, FKT, is_OOP, angle_RANGE, reference_data, pool)
     print('It took:', time.time() - start,'sec')
+    #plt.plot(B_Sim[1])
+    #plt.plot(B_Sim[2])
+    #plt.plot(B_Sim[3])
+    #plt.show()
+    #print(B_Sim[1],B_Sim[2],B_Sim[3])
     return B_Sim[0], reference_data, angle_RANGE_deg
 
 def main_loop(plot: bool, rules_start, angle_RANGE, reference_data, B_RES, F, model, params_Fit, fixed_params, fit_params, maxBresDelta, end_pfad, is_OOP):
@@ -554,8 +562,6 @@ def make_phi_range():
             print('angle_RANGE and reference_data have different length, change Anglestep (~ +-1 ) and try again')
     else:
         return angle_RANGE
-
-
 
 
 if __name__ == '__main__':
